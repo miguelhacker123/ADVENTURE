@@ -469,30 +469,31 @@ let platforms = [];
 let obstacles = [];
 let coins = [];
 let enemies = [];
+let plants = []; // Plantas carnívoras camufladas
 let particles = [];
 let mountains = [];
 let flag = null;
 
-/* --- GERADOR DE FASES (MAPA MAIS COMPRIDO) --- */
+/* --- GERADOR DE FASES --- */
 function generateLevel(lvl) {
     platforms = [];
     obstacles = [];
     coins = [];
     enemies = [];
+    plants = [];
     particles = [];
     mountains = [];
 
     platforms.push({ x: 0, y: 500, w: 260, h: 175, type: 'grass' });
 
     let currentX = 260;
-    // COMPRIMENTO DO MAPA AUMENTADO SIGNIFICATIVAMENTE
     const levelLength = 25 + lvl * 5;
 
-    // Gerar Montanhas Largas no Fundo
+    // Gerar Montanhas no Fundo
     let mountainX = -200;
     for (let m = 0; m < levelLength / 2; m++) {
-        let mW = 400 + Math.random() * 300; // Montanhas bem mais largas
-        let mH = 250 + Math.random() * 150; // Montanhas bem mais altas
+        let mW = 400 + Math.random() * 300;
+        let mH = 250 + Math.random() * 150;
         mountains.push({
             x: mountainX,
             y: 580 - mH,
@@ -512,6 +513,20 @@ function generateLevel(lvl) {
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
+        // Plantas Carnívoras Camufladas no Chão
+        if (i > 1 && Math.random() > 0.4) {
+            plants.push({
+                x: currentX + 30 + Math.random() * (platWidth - 80),
+                y: platY,
+                w: 48,
+                h: 12,
+                timer: 0,
+                triggered: false,
+                closed: false,
+                shake: 0
+            });
+        }
+
         // Obstáculos
         if (Math.random() > 0.45) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
@@ -527,10 +542,10 @@ function generateLevel(lvl) {
             });
         }
 
-        // Lesmas Roxas
+        // Inimigos Lesmas Roxas
         if (i > 0 && Math.random() > 0.3) {
             enemies.push({
-                x: currentX + 30,
+                x: currentX + 20,
                 y: platY - 26,
                 w: 38,
                 h: 26,
@@ -549,7 +564,7 @@ function generateLevel(lvl) {
             platforms.push({ x: logX, y: logY, w: 65, h: 22, type: 'floating_wood' });
         }
 
-        // Moedas Pixeladas
+        // Moedas
         let coinsInPlat = 1 + Math.floor(Math.random() * 3);
         for (let c = 0; c < coinsInPlat; c++) {
             coins.push({
@@ -574,7 +589,6 @@ function generateLevel(lvl) {
     player.vy = 0;
 }
 
-// Fumaça evaporando
 function spawnSmoke(x, y) {
     for (let i = 0; i < 18; i++) {
         particles.push({
@@ -594,7 +608,7 @@ let cameraX = 0;
 function update() {
     if (!isPlaying || isPaused) return;
 
-    // Movimento
+    // Movimentação do Jogador
     if (keys.right) player.vx = player.speed;
     else if (keys.left) player.vx = -player.speed;
     else player.vx = 0;
@@ -608,7 +622,7 @@ function update() {
     player.x += player.vx;
     player.y += player.vy;
 
-    // Plataformas
+    // Colisão com Plataformas
     player.grounded = false;
     for (let p of platforms) {
         if (
@@ -621,6 +635,34 @@ function update() {
             player.grounded = true;
             player.vy = 0;
             player.y = p.y - player.height;
+        }
+    }
+
+    // LÓGICA DA PLANTA CARNÍVORA CAMUFLADA
+    for (let plant of plants) {
+        let playerOnPlant = (
+            player.x < plant.x + plant.w &&
+            player.x + player.width > plant.x &&
+            player.y + player.height >= plant.y - 4 &&
+            player.y + player.height <= plant.y + 10
+        );
+
+        if (playerOnPlant) {
+            plant.triggered = true;
+        }
+
+        if (plant.triggered && !plant.closed) {
+            plant.timer += 1/60; // Avança o cronômetro (~3 segundos = 180 frames)
+            plant.shake = (Math.random() - 0.5) * 3; // Tremor de alerta
+
+            if (plant.timer >= 3.0) {
+                plant.closed = true;
+                if (playerOnPlant) {
+                    alert(i18n[currentLang].gameover);
+                    generateLevel(currentLevel);
+                    return;
+                }
+            }
         }
     }
 
@@ -645,7 +687,7 @@ function update() {
         }
     }
 
-    // Inimigos (Lesma Roxa)
+    // Lesma Roxa
     for (let i = enemies.length - 1; i >= 0; i--) {
         let e = enemies[i];
         e.x += e.vx;
@@ -745,9 +787,9 @@ function render() {
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // DESENHAR MONTANHAS (Com Parallax / Movimento mais lento)
+    // MONTANHAS COM PARALLAX
     for (let m of mountains) {
-        let mParallaxX = m.x - (cameraX * 0.25); // Move 4x mais devagar que a câmera
+        let mParallaxX = m.x - (cameraX * 0.25);
         ctx.fillStyle = m.color;
         ctx.beginPath();
         ctx.moveTo(mParallaxX, m.y + m.h);
@@ -755,7 +797,6 @@ function render() {
         ctx.lineTo(mParallaxX + m.w, m.y + m.h);
         ctx.fill();
 
-        // Picos pixelados das montanhas com neve
         ctx.fillStyle = '#ecf0f1';
         ctx.beginPath();
         ctx.moveTo(mParallaxX + m.w / 2 - 30, m.y + 40);
@@ -776,7 +817,7 @@ function render() {
         ctx.fillRect(w + 20, 600, 15, 4);
     }
 
-    // PLATAFORMAS MINECRAFT
+    // PLATAFORMAS
     const BLOCK_SIZE = 20;
     for (let p of platforms) {
         if (p.type === 'grass') {
@@ -815,6 +856,48 @@ function render() {
         }
     }
 
+    // DESENHO DA PLANTA CARNÍVORA CAMUFLADA
+    for (let plant of plants) {
+        let px = plant.x + plant.shake;
+        let py = plant.y;
+
+        if (!plant.closed) {
+            // Boca semi-camuflada e pinos/espinhos coloridos (Verde, Branco e Vermelho)
+            ctx.fillStyle = '#2e7d32'; // Base verde escura
+            ctx.fillRect(px, py - 4, plant.w, 8);
+
+            // Pinos com cores intercaladas (Verde, Branco, Vermelho)
+            const spikeColors = ['#4caf50', '#ffffff', '#e74c3c'];
+            for (let s = 0; s < plant.w; s += 6) {
+                ctx.fillStyle = spikeColors[(s / 6) % 3];
+                ctx.fillRect(px + s, py - 10, 4, 6);
+            }
+
+            // Se for ativada (estiver nos 3 segundos de contagem), abre ligeiramente a boca
+            if (plant.triggered) {
+                ctx.fillStyle = '#c0392b'; // Interior da boca vermelho
+                ctx.fillRect(px + 4, py - 16, plant.w - 8, 12);
+                ctx.fillStyle = '#fff'; // Dentes afiados pixelados
+                for (let d = 4; d < plant.w - 8; d += 8) {
+                    ctx.fillRect(px + d, py - 16, 4, 4);
+                    ctx.fillRect(px + d, py - 8, 4, 4);
+                }
+            }
+        } else {
+            // PLANTA FECHADA (Boca fechada totalmente)
+            ctx.fillStyle = '#1e5622';
+            ctx.fillRect(px - 2, py - 35, plant.w + 4, 40);
+            
+            // Espinhos vermelhos/brancos travados
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(px + 2, py - 38, 8, 6);
+            ctx.fillRect(px + 22, py - 38, 8, 6);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(px + 12, py - 38, 8, 6);
+            ctx.fillRect(px + 32, py - 38, 8, 6);
+        }
+    }
+
     // OBSTÁCULOS
     for (let obs of obstacles) {
         if (obs.type === 'stone') {
@@ -837,7 +920,7 @@ function render() {
         }
     }
 
-    // LESMA ROXA (INIMIGO)
+    // LESMA ROXA
     for (let e of enemies) {
         let bounce = Math.sin(e.animTimer * 5) * 2;
         ctx.fillStyle = '#8e44ad';
