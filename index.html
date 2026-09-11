@@ -73,7 +73,6 @@
             border-color: #ffcc00;
         }
 
-        /* APENAS HUD DE MOEDAS DA ESQUERDA */
         #coin-hud-left {
             top: 55px;
             left: 15px;
@@ -124,66 +123,61 @@
             z-index: 12;
         }
 
-        /* --- MENUS --- */
+        /* --- MENUS (ESTILO TERRA COM MUSGO) --- */
         .menu-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(10, 15, 30, 0.85);
-            backdrop-filter: blur(5px);
+            background: #4a2f1d;
+            background-image: 
+                radial-gradient(#2ecc71 15%, transparent 16%),
+                radial-gradient(#27ae60 15%, transparent 16%),
+                radial-gradient(rgba(0, 0, 0, 0.2) 15%, transparent 20%);
+            background-size: 60px 60px, 80px 80px, 30px 30px;
+            background-position: 0 0, 30px 30px, 15px 15px;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 20;
-            gap: 15px;
+            gap: 18px;
         }
 
         .title {
-            font-size: 56px;
-            color: #ffcc00;
-            text-shadow: 4px 4px 0px #ff3300, 8px 8px 0px #000;
+            font-size: 58px;
+            color: #52be80;
+            text-shadow: 4px 4px 0px #1e8449, 8px 8px 0px #3e2723, 10px 10px 15px #000;
             letter-spacing: 4px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             text-align: center;
         }
 
-        .btn-main {
-            width: 240px;
-            padding: 14px 0;
-            font-size: 20px;
-            font-weight: bold;
-            color: #fff;
-            background: linear-gradient(180deg, #2ecc71, #27ae60);
-            border: 3px solid #fff;
-            border-radius: 12px;
+        /* BOTÕES ESTILO BLOCCO DE TERRA + MUSGO */
+        .btn-moss {
+            position: relative;
+            width: 250px;
+            padding: 16px 0;
+            font-size: 22px;
+            font-weight: 900;
+            color: #ffffff;
+            background: #5d4037;
+            border: 4px solid #2e7d32;
+            border-top: 10px solid #4caf50;
+            border-radius: 10px;
             cursor: pointer;
-            box-shadow: 0 6px 0 #1e8449, 0 10px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 0 #3e2723, 0 12px 20px rgba(0,0,0,0.6);
             transition: all 0.1s;
             text-align: center;
             text-transform: uppercase;
+            text-shadow: 2px 2px 4px #000;
         }
 
-        .btn-main:active {
+        .btn-moss:active {
             transform: translateY(4px);
-            box-shadow: 0 2px 0 #1e8449, 0 5px 10px rgba(0,0,0,0.5);
-        }
-
-        .btn-fases {
-            background: linear-gradient(180deg, #3498db, #2980b9);
-            box-shadow: 0 6px 0 #1f618d, 0 10px 15px rgba(0,0,0,0.5);
-        }
-
-        .btn-reset {
-            background: linear-gradient(180deg, #e67e22, #d35400);
-            box-shadow: 0 6px 0 #a04000, 0 10px 15px rgba(0,0,0,0.5);
-        }
-
-        .btn-quit {
-            background: linear-gradient(180deg, #e74c3c, #c0392b);
-            box-shadow: 0 6px 0 #922b21, 0 10px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 0 #3e2723, 0 6px 10px rgba(0,0,0,0.6);
         }
 
         #levels-menu { display: none; }
@@ -201,8 +195,9 @@
         .level-btn {
             width: 60px;
             height: 60px;
-            background: #34495e;
-            border: 2px solid #fff;
+            background: #5d4037;
+            border: 3px solid #2e7d32;
+            border-top: 6px solid #4caf50;
             color: #fff;
             font-size: 20px;
             font-weight: bold;
@@ -212,18 +207,17 @@
             justify-content: center;
             align-items: center;
             transition: 0.2s;
+            text-shadow: 1px 1px 2px #000;
         }
 
         .level-btn.unlocked {
-            background: #e67e22;
-            box-shadow: 0 4px 0 #d35400;
+            background: #8d6e63;
+            box-shadow: 0 4px 0 #3e2723;
         }
 
         .btn-back {
-            background: #e74c3c;
-            box-shadow: 0 4px 0 #c0392b;
             margin-top: 10px;
-            width: 150px;
+            width: 160px;
             padding: 10px;
             font-size: 16px;
         }
@@ -294,7 +288,7 @@
         <button class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
 
-    <!-- UNICO HUD DE MOEDAS (ESQUERDA) -->
+    <!-- HUD DE MOEDAS -->
     <div id="coin-hud-left" class="hud-element">
         <span class="coin-icon"></span>
         <span id="coin-count-left">0</span>
@@ -308,26 +302,26 @@
     <!-- BOTÃO PAUSE -->
     <button id="btn-pause" class="hud-element" onclick="togglePause()">|| PAUSE</button>
 
-    <!-- MENU INICIAL -->
+    <!-- MENU INICIAL (TERRA & MUSGO) -->
     <div id="main-menu" class="menu-screen">
         <h1 class="title">ADVENTURES</h1>
-        <button id="btn-play" class="btn-main" onclick="startGame()">PLAY</button>
-        <button id="btn-fases" class="btn-main btn-fases" onclick="showLevels()">FASES</button>
+        <button id="btn-play" class="btn-moss" onclick="startGame()">PLAY</button>
+        <button id="btn-fases" class="btn-moss" onclick="showLevels()">FASES</button>
     </div>
 
     <!-- MENU SELEÇÃO DE FASES -->
     <div id="levels-menu" class="menu-screen">
         <h1 class="title" id="select-level-title">FASES</h1>
         <div class="levels-grid" id="levels-grid"></div>
-        <button id="btn-back" class="btn-main btn-back" onclick="hideLevels()">VOLTAR</button>
+        <button id="btn-back" class="btn-moss btn-back" onclick="hideLevels()">VOLTAR</button>
     </div>
 
-    <!-- MENU PAUSE -->
+    <!-- MENU PAUSE (BOTÕES TERRA & MUSGO) -->
     <div id="pause-menu" class="menu-screen">
         <h1 class="title" id="pause-title">PAUSADO</h1>
-        <button id="btn-resume" class="btn-main" onclick="togglePause()">CONTINUAR</button>
-        <button id="btn-reset" class="btn-main btn-reset" onclick="resetCurrentMatch()">REINICIAR</button>
-        <button id="btn-quit" class="btn-main btn-quit" onclick="quitToMenu()">MENU</button>
+        <button id="btn-resume" class="btn-moss" onclick="togglePause()">CONTINUAR</button>
+        <button id="btn-reset" class="btn-moss" onclick="resetCurrentMatch()">REINICIAR</button>
+        <button id="btn-quit" class="btn-moss" onclick="quitToMenu()">MENU</button>
     </div>
 
     <!-- CONTROLES TOUCH -->
@@ -423,29 +417,27 @@ let isPlaying = false;
 let isPaused = false;
 let keys = { left: false, right: false, up: false };
 
-// JOGADOR MAIOR E BEM DEFINIDO
+// JOGADOR UM POUQUINHO MAIOR
 const player = {
     x: 80,
     y: 300,
-    width: 34,      // Tamanho maior e visível
-    height: 52,
+    width: 38,      // Levemente maior
+    height: 56,     // Levemente maior
     vx: 0,
     vy: 0,
-    baseSpeed: 5.5,
-    speed: 5.5,
+    speed: 5.5,     // Velocidade padrão mantida
     jumpForce: -13.5,
     gravity: 0.6,
     grounded: false,
     facing: 'right',
-    animFrame: 0,
-    speedBoostTimer: 0 // Bônus de Agilidade
+    animFrame: 0
 };
 
 let platforms = [];
 let obstacles = [];
 let coins = [];
 let enemies = [];
-let apples = []; // Maçãs Vermelhas de Agilidade
+let apples = []; 
 let particles = [];
 let mountains = [];
 let flag = null;
@@ -460,7 +452,6 @@ function generateLevel(lvl) {
     apples = [];
     particles = [];
     mountains = [];
-    player.speedBoostTimer = 0;
 
     platforms.push({ x: 0, y: 500, w: 260, h: 175, type: 'grass' });
 
@@ -482,7 +473,7 @@ function generateLevel(lvl) {
         mountainX += mW - 120;
     }
 
-    const slugColors = ['#8e44ad', '#e74c3c', '#2980b9']; // Cores Sortidas
+    const slugColors = ['#8e44ad', '#e74c3c', '#2980b9'];
 
     for (let i = 0; i < levelLength; i++) {
         let gap = 80 + Math.random() * 70 + (lvl * 2);
@@ -493,8 +484,8 @@ function generateLevel(lvl) {
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
-        // MAÇÃ VERMELHA NORMAL (FLUTUANTE DE AGILIDADE)
-        if (i > 1 && Math.random() < 0.35) {
+        // MAÇÃ VERMELHA NORMAL (APENAS COLETÁVEL, SEM VELOCIDADE EXTRA)
+        if (i > 1 && Math.random() < 0.3) {
             apples.push({
                 x: currentX + platWidth / 2 - 12,
                 baseY: platY - 45,
@@ -506,7 +497,7 @@ function generateLevel(lvl) {
             });
         }
 
-        // OBSTÁCULOS IGUAL ANTES
+        // OBSTÁCULOS
         if (Math.random() > 0.45) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
             let obsW = obsType === 'stone' ? 36 : 50;
@@ -521,7 +512,7 @@ function generateLevel(lvl) {
             });
         }
 
-        // LESMAS MELHORADAS COM CORES SORTIDAS
+        // LESMAS SORTIDAS
         if (i > 0 && Math.random() > 0.3) {
             let randomColor = slugColors[Math.floor(Math.random() * slugColors.length)];
             enemies.push({
@@ -591,14 +582,6 @@ function update() {
 
     globalTime += 0.05;
 
-    // Lógica do Bônus de Agilidade da Maçã Vermelha
-    if (player.speedBoostTimer > 0) {
-        player.speedBoostTimer -= 1 / 60;
-        player.speed = player.baseSpeed * 1.6; // Super Agilidade
-    } else {
-        player.speed = player.baseSpeed;
-    }
-
     // Movimento do Jogador
     if (keys.right) {
         player.vx = player.speed;
@@ -638,7 +621,7 @@ function update() {
         }
     }
 
-    // COLETA DA MAÇÃ REDEFINIDA E 100% FUNCIONAL
+    // MAÇÃ VERMELHA NORMAL (NÃO AUMENTA A VELOCIDADE)
     for (let apple of apples) {
         if (!apple.eaten) {
             apple.y = apple.baseY + Math.sin(globalTime * 2.5 + apple.floatOffset) * 8;
@@ -650,7 +633,8 @@ function update() {
                 player.y + player.height > apple.y
             ) {
                 apple.eaten = true;
-                player.speedBoostTimer = 10; // 10 Segundos de Super Agilidade
+                totalCoins += 15; // Ganha moedas ao comer
+                updateCoinHUD();
                 spawnSmoke(apple.x + 12, apple.y + 12);
             }
         }
@@ -676,7 +660,7 @@ function update() {
         }
     }
 
-    // LESMAS SORTIDAS
+    // LESMAS
     for (let i = enemies.length - 1; i >= 0; i--) {
         let e = enemies[i];
         e.x += e.vx;
@@ -798,13 +782,8 @@ function render() {
     // Rio
     ctx.fillStyle = '#1e73be';
     ctx.fillRect(cameraX, 580, canvas.width, 100);
-    ctx.fillStyle = '#2980b9';
-    for (let w = cameraX - (cameraX % 40); w < cameraX + canvas.width + 40; w += 40) {
-        ctx.fillRect(w, 585, 20, 4);
-        ctx.fillRect(w + 20, 600, 15, 4);
-    }
 
-    // PLATAFORMAS (TEXTURA IGUAL ANTES)
+    // PLATAFORMAS
     const BLOCK_SIZE = 20;
     for (let p of platforms) {
         if (p.type === 'grass') {
@@ -815,9 +794,6 @@ function render() {
                     let isDark = ((Math.floor(bx/BLOCK_SIZE) + Math.floor(by/BLOCK_SIZE)) % 2 === 0);
                     ctx.fillStyle = isDark ? '#73462c' : '#5c3520';
                     ctx.fillRect(bx, by, bw, bh);
-                    ctx.fillStyle = '#3d2314';
-                    ctx.fillRect(bx + 4, by + 4, 4, 4);
-                    ctx.fillRect(bx + 12, by + 10, 4, 4);
                 }
             }
 
@@ -825,107 +801,72 @@ function render() {
             ctx.fillRect(p.x, p.y, p.w, 16);
             ctx.fillStyle = '#5bc22e';
             ctx.fillRect(p.x, p.y, p.w, 5);
-
-            ctx.fillStyle = '#38821d';
-            for (let gx = p.x; gx < p.x + p.w; gx += 8) {
-                let dropH = (gx % 16 === 0) ? 8 : 4;
-                ctx.fillRect(gx, p.y + 16, 6, dropH);
-            }
         } else if (p.type === 'floating_wood') {
             ctx.fillStyle = '#5c4033';
             ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = '#3d2b22';
-            ctx.fillRect(p.x + 2, p.y + 3, p.w - 4, 3);
-            ctx.fillRect(p.x + 2, p.y + 12, p.w - 4, 3);
             ctx.fillStyle = '#8b5a2b';
             ctx.fillRect(p.x, p.y, 4, p.h);
             ctx.fillRect(p.x + p.w - 4, p.y, 4, p.h);
         }
     }
 
-    // MAÇÃ VERMELHA NORMAL (FLUTUANTE)
+    // MAÇÃ VERMELHA FLUTUANTE
     for (let apple of apples) {
         if (!apple.eaten) {
             let ax = apple.x;
             let ay = apple.y;
 
-            // Fruta Vermelha
             ctx.fillStyle = '#e74c3c';
             ctx.fillRect(ax + 4, ay + 4, 16, 16);
             ctx.fillRect(ax + 6, ay + 2, 12, 20);
             ctx.fillRect(ax + 2, ay + 6, 20, 12);
 
-            // Brilho
             ctx.fillStyle = '#ff7979';
             ctx.fillRect(ax + 6, ay + 6, 4, 4);
 
-            // Cabinho & Folha Verde
             ctx.fillStyle = '#2ecc71';
             ctx.fillRect(ax + 11, ay - 2, 3, 4);
             ctx.fillRect(ax + 14, ay - 2, 4, 3);
         }
     }
 
-    // OBSTÁCULOS IGUAL ANTES
+    // OBSTÁCULOS
     for (let obs of obstacles) {
         if (obs.type === 'stone') {
             ctx.fillStyle = '#636e72';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
             ctx.fillStyle = '#b2bec3';
             ctx.fillRect(obs.x, obs.y, obs.w, 5);
-            ctx.fillRect(obs.x, obs.y, 5, obs.h);
-            ctx.fillStyle = '#2d3436';
-            ctx.fillRect(obs.x + obs.w - 5, obs.y, 5, obs.h);
-            ctx.fillRect(obs.x, obs.y + obs.h - 5, obs.w, 5);
         } else {
             ctx.fillStyle = '#6e473b';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            ctx.fillStyle = '#4a2e25';
-            ctx.fillRect(obs.x, obs.y + 6, obs.w, 4);
-            ctx.fillRect(obs.x, obs.y + 18, obs.w, 4);
             ctx.fillStyle = '#d7ccc8';
             ctx.fillRect(obs.x + 2, obs.y + 2, 6, obs.h - 4);
         }
     }
 
-    // LESMAS SORTIDAS (ROXA, VERMELHA, AZUL)
+    // LESMAS SORTIDAS
     for (let e of enemies) {
         let bounce = Math.sin(e.animTimer * 5) * 2;
         ctx.fillStyle = e.color;
         ctx.fillRect(e.x, e.y + bounce, e.w, e.h - bounce);
-
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.fillRect(e.x + 6, e.y + 4 + bounce, e.w - 12, 6);
 
         ctx.fillStyle = '#fff';
         let eyeX = e.vx > 0 ? e.x + e.w - 10 : e.x + 4;
         ctx.fillRect(eyeX, e.y + 4 + bounce, 6, 6);
         ctx.fillStyle = '#000';
         ctx.fillRect(eyeX + (e.vx > 0 ? 3 : 0), e.y + 6 + bounce, 3, 3);
-
-        ctx.fillStyle = e.color;
-        ctx.fillRect(eyeX + 1, e.y - 4 + bounce, 2, 4);
     }
 
-    // MOEDAS PIXELADAS
+    // MOEDAS
     for (let coin of coins) {
         if (!coin.collected) {
             let cx = coin.x;
             let cy = coin.y;
-
-            ctx.fillStyle = '#d4af37';
-            ctx.fillRect(cx + 8, cy, 12, 28);
-            ctx.fillRect(cx, cy + 8, 28, 12);
+            ctx.fillStyle = '#ffd700';
             ctx.fillRect(cx + 4, cy + 4, 20, 20);
-
-            ctx.fillStyle = '#ffea00';
-            ctx.fillRect(cx + 6, cy + 6, 16, 16);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(cx + 8, cy + 8, 4, 4);
-
-            ctx.fillStyle = '#c5a000';
-            ctx.fillRect(cx + 16, cy + 12, 4, 8);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(cx + 6, cy + 6, 4, 4);
         }
     }
 
@@ -950,48 +891,47 @@ function render() {
         ctx.fill();
     }
 
-    // PERSONAGEM MAIOR E BEM DETALHADO (HUMANOIDE)
+    // PERSONAGEM UM POUQUINHO MAIOR
     let px = player.x;
     let py = player.y;
-
     let legAnim = Math.sin(player.animFrame * 2) * 6;
 
-    // Cabeça / Cabelo
+    // Cabeça
     ctx.fillStyle = '#f1c40f'; // Cabelo Amarelo
-    ctx.fillRect(px + 4, py, 26, 14);
+    ctx.fillRect(px + 4, py, 30, 16);
 
-    // Rosto (Pele)
+    // Rosto
     ctx.fillStyle = '#ffdbac';
-    ctx.fillRect(px + 6, py + 10, 22, 12);
+    ctx.fillRect(px + 6, py + 12, 26, 12);
 
     // Olhos
     ctx.fillStyle = '#000';
-    let eyeX = player.facing === 'right' ? px + 20 : px + 8;
-    ctx.fillRect(eyeX, py + 14, 4, 4);
+    let eyeX = player.facing === 'right' ? px + 22 : px + 8;
+    ctx.fillRect(eyeX, py + 16, 4, 4);
 
-    // Tronco (Camisa Vermelha / Azul se ativado Super Agilidade)
-    ctx.fillStyle = player.speedBoostTimer > 0 ? '#00d2d3' : '#e74c3c';
-    ctx.fillRect(px + 4, py + 22, 26, 18);
+    // Tronco (Camisa Vermelha)
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(px + 4, py + 24, 30, 20);
 
-    // Braços Animados
+    // Braços
     ctx.fillStyle = '#ffdbac';
     if (player.facing === 'right') {
-        ctx.fillRect(px, py + 24 - legAnim, 5, 14);
-        ctx.fillRect(px + 29, py + 24 + legAnim, 5, 14);
+        ctx.fillRect(px, py + 26 - legAnim, 5, 14);
+        ctx.fillRect(px + 33, py + 26 + legAnim, 5, 14);
     } else {
-        ctx.fillRect(px, py + 24 + legAnim, 5, 14);
-        ctx.fillRect(px + 29, py + 24 - legAnim, 5, 14);
+        ctx.fillRect(px, py + 26 + legAnim, 5, 14);
+        ctx.fillRect(px + 33, py + 26 - legAnim, 5, 14);
     }
 
-    // Calça (Jeans Azul)
+    // Calça
     ctx.fillStyle = '#2980b9';
-    ctx.fillRect(px + 6 - legAnim / 2, py + 40, 9, 10);
-    ctx.fillRect(px + 19 + legAnim / 2, py + 40, 9, 10);
+    ctx.fillRect(px + 6 - legAnim / 2, py + 44, 10, 10);
+    ctx.fillRect(px + 22 + legAnim / 2, py + 44, 10, 10);
 
     // Sapatos
     ctx.fillStyle = '#34495e';
-    ctx.fillRect(px + 4 - legAnim / 2, py + 49, 11, 3);
-    ctx.fillRect(px + 19 + legAnim / 2, py + 49, 11, 3);
+    ctx.fillRect(px + 4 - legAnim / 2, py + 53, 12, 3);
+    ctx.fillRect(px + 22 + legAnim / 2, py + 53, 12, 3);
 
     ctx.restore();
 }
