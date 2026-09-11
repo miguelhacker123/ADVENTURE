@@ -49,7 +49,6 @@
             text-shadow: 2px 2px 4px #000;
         }
 
-        /* Idiomas */
         #lang-selector {
             top: 15px;
             left: 15px;
@@ -74,7 +73,6 @@
             border-color: #ffcc00;
         }
 
-        /* Moedas HUD */
         #coin-hud-left {
             top: 55px;
             left: 15px;
@@ -113,7 +111,6 @@
             display: inline-block;
         }
 
-        /* Indicador de Fase */
         #level-hud {
             top: 15px;
             left: 50%;
@@ -127,7 +124,6 @@
             border: 1px solid rgba(255,255,255,0.3);
         }
 
-        /* Botão Pause */
         #btn-pause {
             top: 15px;
             right: 15px;
@@ -203,10 +199,7 @@
             box-shadow: 0 6px 0 #922b21, 0 10px 15px rgba(0,0,0,0.5);
         }
 
-        /* Grade de Fases */
-        #levels-menu {
-            display: none;
-        }
+        #levels-menu { display: none; }
 
         .levels-grid {
             display: grid;
@@ -248,9 +241,7 @@
             font-size: 16px;
         }
 
-        #pause-menu {
-            display: none;
-        }
+        #pause-menu { display: none; }
 
         /* --- CONTROLES TOUCH --- */
         #touch-controls {
@@ -454,16 +445,18 @@ let keys = { left: false, right: false, up: false };
 const player = {
     x: 80,
     y: 300,
-    width: 36,
-    height: 48,
+    width: 26,     // Tamanho ajustado e proporcional
+    height: 42,
     vx: 0,
     vy: 0,
-    speed: 5.5,
-    jumpForce: -13.5,
+    baseSpeed: 5.0,
+    speed: 5.0,
+    jumpForce: -13.0,
     gravity: 0.6,
     grounded: false,
-    color: '#e74c3c',
-    invincibleTimer: 0 // Cronômetro de imortalidade
+    facing: 'right',
+    animFrame: 0,
+    speedBoostTimer: 0 // Bônus da Maçã Vermelha
 };
 
 let platforms = [];
@@ -471,10 +464,11 @@ let obstacles = [];
 let coins = [];
 let enemies = [];
 let plants = [];
-let goldenApples = []; // Maçãs Douradas
+let apples = []; // Maçãs Vermelhas de Agilidade
 let particles = [];
 let mountains = [];
 let flag = null;
+let globalTime = 0;
 
 /* --- GERADOR DE FASES --- */
 function generateLevel(lvl) {
@@ -483,30 +477,32 @@ function generateLevel(lvl) {
     coins = [];
     enemies = [];
     plants = [];
-    goldenApples = [];
+    apples = [];
     particles = [];
     mountains = [];
-    player.invincibleTimer = 0;
+    player.speedBoostTimer = 0;
 
     platforms.push({ x: 0, y: 500, w: 260, h: 175, type: 'grass' });
 
     let currentX = 260;
     const levelLength = 25 + lvl * 5;
 
-    // Gerar Montanhas no Fundo
-    let mountainX = -200;
+    // GERAR MONTANHAS LARGAS NO FUNDO
+    let mountainX = -300;
     for (let m = 0; m < levelLength / 2; m++) {
-        let mW = 400 + Math.random() * 300;
-        let mH = 250 + Math.random() * 150;
+        let mW = 600 + Math.random() * 500; // Montanhas bem mais largas!
+        let mH = 260 + Math.random() * 160;
         mountains.push({
             x: mountainX,
             y: 580 - mH,
             w: mW,
             h: mH,
-            color: m % 2 === 0 ? '#2d4059' : '#1f2d3d'
+            color: m % 2 === 0 ? '#2c3e50' : '#1f2d3d'
         });
-        mountainX += mW - 100;
+        mountainX += mW - 150;
     }
+
+    const slugColors = ['#8e44ad', '#e74c3c', '#2980b9']; // Cores Sortidas: Roxa, Vermelha e Azul
 
     for (let i = 0; i < levelLength; i++) {
         let gap = 80 + Math.random() * 70 + (lvl * 2);
@@ -517,36 +513,37 @@ function generateLevel(lvl) {
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
-        // MAÇÃ DOURADA (RARA DE SPAWN)
-        if (i > 2 && Math.random() < 0.12) { // 12% de chance de spawnar
-            goldenApples.push({
+        // MAÇÃ VERMELHA NORMAL (FLUTUANTE & DÁ AGILIDADE)
+        if (i > 1 && Math.random() < 0.25) {
+            apples.push({
                 x: currentX + platWidth / 2,
-                y: platY - 24,
-                w: 24,
-                h: 24,
-                eaten: false
+                baseY: platY - 45,
+                y: platY - 45,
+                w: 20,
+                h: 20,
+                eaten: false,
+                floatOffset: Math.random() * Math.PI * 2
             });
         }
 
-        // Plantas Carnívoras Camufladas no Chão
+        // VENUSPINO / PLANTA CARNÍVORA MELHORADA
         if (i > 1 && Math.random() > 0.4) {
             plants.push({
-                x: currentX + 30 + Math.random() * (platWidth - 80),
+                x: currentX + 40 + Math.random() * (platWidth - 90),
                 y: platY,
-                w: 48,
-                h: 12,
+                w: 42,
+                h: 36,
                 timer: 0,
                 triggered: false,
-                closed: false,
-                shake: 0
+                mouthAngle: 0
             });
         }
 
-        // Obstáculos
-        if (Math.random() > 0.45) {
+        // OBSTÁCULOS
+        if (Math.random() > 0.5) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
-            let obsW = obsType === 'stone' ? 36 : 50;
-            let obsH = obsType === 'stone' ? 32 : 28;
+            let obsW = obsType === 'stone' ? 36 : 48;
+            let obsH = obsType === 'stone' ? 30 : 26;
             
             obstacles.push({
                 x: currentX + platWidth / 2 - obsW / 2,
@@ -557,29 +554,31 @@ function generateLevel(lvl) {
             });
         }
 
-        // Inimigos Lesmas Roxas
+        // LESMAS MELHORADAS COM CORES SORTIDAS
         if (i > 0 && Math.random() > 0.3) {
+            let randomColor = slugColors[Math.floor(Math.random() * slugColors.length)];
             enemies.push({
                 x: currentX + 20,
-                y: platY - 26,
-                w: 38,
-                h: 26,
-                vx: 1.3,
+                y: platY - 22,
+                w: 36,
+                h: 22,
+                vx: 1.2,
                 hp: 2,
                 platMin: currentX,
                 platMax: currentX + platWidth,
-                animTimer: 0
+                animTimer: 0,
+                color: randomColor
             });
         }
 
-        // Tronco Flutuante
+        // TRONCO FLUTUANTE
         if (gap > 110 && Math.random() > 0.3) {
             let logX = currentX - gap / 2 - 30;
-            let logY = 500;
+            let logY = 490;
             platforms.push({ x: logX, y: logY, w: 65, h: 22, type: 'floating_wood' });
         }
 
-        // Moedas
+        // MOEDAS
         let coinsInPlat = 1 + Math.floor(Math.random() * 3);
         for (let c = 0; c < coinsInPlat; c++) {
             coins.push({
@@ -605,15 +604,15 @@ function generateLevel(lvl) {
 }
 
 function spawnSmoke(x, y) {
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 15; i++) {
         particles.push({
-            x: x + Math.random() * 30 - 15,
+            x: x + Math.random() * 20 - 10,
             y: y + Math.random() * 10,
-            vx: (Math.random() - 0.5) * 2.5,
+            vx: (Math.random() - 0.5) * 2,
             vy: -Math.random() * 2 - 1,
-            size: 8 + Math.random() * 12,
+            size: 6 + Math.random() * 10,
             alpha: 1,
-            color: Math.random() > 0.5 ? '#dcdde1' : '#718093'
+            color: '#bdc3c7'
         });
     }
 }
@@ -623,15 +622,29 @@ let cameraX = 0;
 function update() {
     if (!isPlaying || isPaused) return;
 
-    // Diminuir tempo de Imortalidade
-    if (player.invincibleTimer > 0) {
-        player.invincibleTimer -= 1 / 60;
+    globalTime += 0.05;
+
+    // Lógica do Bônus de Agilidade da Maçã Vermelha
+    if (player.speedBoostTimer > 0) {
+        player.speedBoostTimer -= 1 / 60;
+        player.speed = player.baseSpeed * 1.6; // Dobra/Aumenta velocidade
+    } else {
+        player.speed = player.baseSpeed;
     }
 
-    // Movimentação do Jogador
-    if (keys.right) player.vx = player.speed;
-    else if (keys.left) player.vx = -player.speed;
-    else player.vx = 0;
+    // Movimento do Jogador
+    if (keys.right) {
+        player.vx = player.speed;
+        player.facing = 'right';
+        player.animFrame += 0.2;
+    } else if (keys.left) {
+        player.vx = -player.speed;
+        player.facing = 'left';
+        player.animFrame += 0.2;
+    } else {
+        player.vx = 0;
+        player.animFrame = 0;
+    }
 
     if (keys.up && player.grounded) {
         player.vy = player.jumpForce;
@@ -658,42 +671,44 @@ function update() {
         }
     }
 
-    // COMER MAÇÃ DOURADA
-    for (let apple of goldenApples) {
-        if (!apple.eaten &&
-            player.x < apple.x + apple.w &&
-            player.x + player.width > apple.x &&
-            player.y < apple.y + apple.h &&
-            player.y + player.height > apple.y) {
-            apple.eaten = true;
-            player.invincibleTimer = 10; // 10 Segundos de Imortalidade
+    // MAÇÃ FLUTUANTE (EFEITO BOBBING)
+    for (let apple of apples) {
+        if (!apple.eaten) {
+            apple.y = apple.baseY + Math.sin(globalTime * 2 + apple.floatOffset) * 6;
+
+            if (
+                player.x < apple.x + apple.w &&
+                player.x + player.width > apple.x &&
+                player.y < apple.y + apple.h &&
+                player.y + player.height > apple.y
+            ) {
+                apple.eaten = true;
+                player.speedBoostTimer = 10; // 10 Segundos de Super Agilidade!
+            }
         }
     }
 
-    // PLANTA CARNÍVORA CAMUFLADA
+    // VENUSPINO (PLANTA CARNÍVORA MELHORADA)
     for (let plant of plants) {
-        let playerOnPlant = (
-            player.x < plant.x + plant.w &&
-            player.x + player.width > plant.x &&
-            player.y + player.height >= plant.y - 4 &&
-            player.y + player.height <= plant.y + 10
-        );
-
-        if (playerOnPlant) {
+        let dist = Math.abs((player.x + player.width / 2) - (plant.x + plant.w / 2));
+        
+        if (dist < 80) {
             plant.triggered = true;
         }
 
-        if (plant.triggered && !plant.closed) {
-            plant.timer += 1/60;
-            plant.shake = (Math.random() - 0.5) * 3;
+        if (plant.triggered) {
+            plant.timer += 0.08;
+            plant.mouthAngle = Math.abs(Math.sin(plant.timer)) * 1.2;
 
-            if (plant.timer >= 3.0) {
-                plant.closed = true;
-                if (playerOnPlant && player.invincibleTimer <= 0) {
-                    alert(i18n[currentLang].gameover);
-                    generateLevel(currentLevel);
-                    return;
-                }
+            if (
+                player.x < plant.x + plant.w &&
+                player.x + player.width > plant.x &&
+                player.y + player.height > plant.y - plant.h &&
+                player.y < plant.y
+            ) {
+                alert(i18n[currentLang].gameover);
+                generateLevel(currentLevel);
+                return;
             }
         }
     }
@@ -710,8 +725,7 @@ function update() {
                 player.x = obs.x - player.width;
             } else if (player.vx < 0 && player.x - player.vx >= obs.x + obs.w) {
                 player.x = obs.x + obs.w;
-            } 
-            else if (player.vy > 0 && player.y + player.height - player.vy <= obs.y) {
+            } else if (player.vy > 0 && player.y + player.height - player.vy <= obs.y) {
                 player.grounded = true;
                 player.vy = 0;
                 player.y = obs.y - player.height;
@@ -719,11 +733,11 @@ function update() {
         }
     }
 
-    // Lesma Roxa
+    // LESMAS SORTIDAS MELHORADAS
     for (let i = enemies.length - 1; i >= 0; i--) {
         let e = enemies[i];
         e.x += e.vx;
-        e.animTimer += 0.1;
+        e.animTimer += 0.15;
 
         if (e.x <= e.platMin || e.x + e.w >= e.platMax) {
             e.vx *= -1;
@@ -735,21 +749,17 @@ function update() {
             player.y < e.y + e.h &&
             player.y + player.height > e.y
         ) {
-            if (player.invincibleTimer > 0) {
-                // Se estiver imortal, mata o inimigo na hora
-                spawnSmoke(e.x + e.w / 2, e.y + e.h / 2);
-                enemies.splice(i, 1);
-            } else if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 12) {
+            if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 10) {
                 player.vy = -9;
                 e.hp -= 1;
 
                 if (e.hp === 1) {
-                    e.h = 16;
-                    e.y += 10;
+                    e.h = 14;
+                    e.y += 8;
                 } else if (e.hp <= 0) {
                     spawnSmoke(e.x + e.w / 2, e.y + e.h / 2);
                     coins.push({
-                        x: e.x + 5,
+                        x: e.x + 4,
                         y: e.y - 10,
                         w: 28,
                         h: 28,
@@ -771,11 +781,9 @@ function update() {
         let p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.size += 0.3;
-        p.alpha -= 0.03;
-        if (p.alpha <= 0) {
-            particles.splice(i, 1);
-        }
+        p.size += 0.2;
+        p.alpha -= 0.04;
+        if (p.alpha <= 0) particles.splice(i, 1);
     }
 
     // Coleta Moedas
@@ -801,7 +809,7 @@ function update() {
         generateLevel(currentLevel);
     }
 
-    // Chegada
+    // Vitória
     if (flag && player.x > flag.x) {
         saveProgress();
         alert(i18n[currentLang].win);
@@ -823,7 +831,7 @@ function render() {
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // MONTANHAS COM PARALLAX
+    // MONTANHAS LARGAS COM PARALLAX
     for (let m of mountains) {
         let mParallaxX = m.x - (cameraX * 0.25);
         ctx.fillStyle = m.color;
@@ -833,11 +841,12 @@ function render() {
         ctx.lineTo(mParallaxX + m.w, m.y + m.h);
         ctx.fill();
 
+        // Neve no topo
         ctx.fillStyle = '#ecf0f1';
         ctx.beginPath();
-        ctx.moveTo(mParallaxX + m.w / 2 - 30, m.y + 40);
+        ctx.moveTo(mParallaxX + m.w / 2 - 40, m.y + 50);
         ctx.lineTo(mParallaxX + m.w / 2, m.y);
-        ctx.lineTo(mParallaxX + m.w / 2 + 30, m.y + 40);
+        ctx.lineTo(mParallaxX + m.w / 2 + 40, m.y + 50);
         ctx.fill();
     }
 
@@ -847,11 +856,6 @@ function render() {
     // Rio
     ctx.fillStyle = '#1e73be';
     ctx.fillRect(cameraX, 580, canvas.width, 100);
-    ctx.fillStyle = '#2980b9';
-    for (let w = cameraX - (cameraX % 40); w < cameraX + canvas.width + 40; w += 40) {
-        ctx.fillRect(w, 585, 20, 4);
-        ctx.fillRect(w + 20, 600, 15, 4);
-    }
 
     // PLATAFORMAS
     const BLOCK_SIZE = 20;
@@ -864,9 +868,6 @@ function render() {
                     let isDark = ((Math.floor(bx/BLOCK_SIZE) + Math.floor(by/BLOCK_SIZE)) % 2 === 0);
                     ctx.fillStyle = isDark ? '#73462c' : '#5c3520';
                     ctx.fillRect(bx, by, bw, bh);
-                    ctx.fillStyle = '#3d2314';
-                    ctx.fillRect(bx + 4, by + 4, 4, 4);
-                    ctx.fillRect(bx + 12, by + 10, 4, 4);
                 }
             }
 
@@ -874,80 +875,86 @@ function render() {
             ctx.fillRect(p.x, p.y, p.w, 16);
             ctx.fillStyle = '#5bc22e';
             ctx.fillRect(p.x, p.y, p.w, 5);
-
-            ctx.fillStyle = '#38821d';
-            for (let gx = p.x; gx < p.x + p.w; gx += 8) {
-                let dropH = (gx % 16 === 0) ? 8 : 4;
-                ctx.fillRect(gx, p.y + 16, 6, dropH);
-            }
         } else if (p.type === 'floating_wood') {
             ctx.fillStyle = '#5c4033';
             ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = '#3d2b22';
-            ctx.fillRect(p.x + 2, p.y + 3, p.w - 4, 3);
-            ctx.fillRect(p.x + 2, p.y + 12, p.w - 4, 3);
             ctx.fillStyle = '#8b5a2b';
             ctx.fillRect(p.x, p.y, 4, p.h);
             ctx.fillRect(p.x + p.w - 4, p.y, 4, p.h);
         }
     }
 
-    // MAÇÃ DOURADA
-    for (let apple of goldenApples) {
+    // MAÇÃ VERMELHA NORMAL (FLUTUANTE)
+    for (let apple of apples) {
         if (!apple.eaten) {
             let ax = apple.x;
             let ay = apple.y;
-            // Fruta Dourada Brilhante
-            ctx.fillStyle = '#ffd700';
-            ctx.fillRect(ax + 4, ay + 4, 16, 16);
-            ctx.fillRect(ax + 8, ay + 2, 8, 20);
-            ctx.fillRect(ax + 2, ay + 8, 20, 8);
 
-            // Brilho Pixelado
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(ax + 6, ay + 6, 4, 4);
+            // Fruta Vermelha
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(ax + 3, ay + 3, 14, 14);
+            ctx.fillRect(ax + 5, ay + 1, 10, 18);
+            ctx.fillRect(ax + 1, ay + 5, 18, 10);
 
-            // Cabinho Verde
+            // Brilho
+            ctx.fillStyle = '#ff7979';
+            ctx.fillRect(ax + 4, ay + 4, 4, 4);
+
+            // Cabinho & Folha Verde
             ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(ax + 10, ay - 2, 4, 4);
+            ctx.fillRect(ax + 9, ay - 3, 3, 4);
+            ctx.fillRect(ax + 12, ay - 3, 4, 2);
         }
     }
 
-    // PLANTA CARNÍVORA CAMUFLADA
+    // VENUSPINO (PLANTA CARNÍVORA MELHORADA)
     for (let plant of plants) {
-        let px = plant.x + plant.shake;
+        let px = plant.x;
         let py = plant.y;
 
-        if (!plant.closed) {
-            ctx.fillStyle = '#2e7d32';
-            ctx.fillRect(px, py - 4, plant.w, 8);
+        // Caule / Vaso no chão
+        ctx.fillStyle = '#1b5e20';
+        ctx.fillRect(px + 16, py - 18, 10, 18);
 
-            const spikeColors = ['#4caf50', '#ffffff', '#e74c3c'];
-            for (let s = 0; s < plant.w; s += 6) {
-                ctx.fillStyle = spikeColors[(s / 6) % 3];
-                ctx.fillRect(px + s, py - 10, 4, 6);
-            }
+        // Cabeça do Venuspino
+        ctx.fillStyle = '#2e7d32';
+        ctx.beginPath();
+        ctx.arc(px + 21, py - 24, 18, 0, Math.PI * 2);
+        ctx.fill();
 
-            if (plant.triggered) {
-                ctx.fillStyle = '#c0392b';
-                ctx.fillRect(px + 4, py - 16, plant.w - 8, 12);
-                ctx.fillStyle = '#fff';
-                for (let d = 4; d < plant.w - 8; d += 8) {
-                    ctx.fillRect(px + d, py - 16, 4, 4);
-                    ctx.fillRect(px + d, py - 8, 4, 4);
-                }
-            }
-        } else {
-            ctx.fillStyle = '#1e5622';
-            ctx.fillRect(px - 2, py - 35, plant.w + 4, 40);
-            
-            ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(px + 2, py - 38, 8, 6);
-            ctx.fillRect(px + 22, py - 38, 8, 6);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(px + 12, py - 38, 8, 6);
-            ctx.fillRect(px + 32, py - 38, 8, 6);
+        // Boca / Dentes Animados
+        ctx.fillStyle = '#c0392b';
+        let openHeight = Math.sin(globalTime * 6) * 8 + 4;
+        ctx.fillRect(px + 8, py - 28 - openHeight / 2, 26, openHeight);
+
+        // Dentes Afiados
+        ctx.fillStyle = '#ffffff';
+        for (let d = 10; d < 32; d += 6) {
+            ctx.fillRect(px + d, py - 28 - openHeight / 2, 3, 3);
+            ctx.fillRect(px + d, py - 28 + openHeight / 2 - 3, 3, 3);
         }
+    }
+
+    // LESMAS SORTIDAS (ROXA, VERMELHA, AZUL)
+    for (let e of enemies) {
+        let squish = Math.sin(e.animTimer * 4) * 3;
+        let ew = e.w + squish;
+        let eh = e.h - squish;
+
+        // Corpo Principal da Lesma
+        ctx.fillStyle = e.color;
+        ctx.fillRect(e.x - squish / 2, e.y + squish, ew, eh);
+
+        // Textura/Brilho nas Costas
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillRect(e.x + 4, e.y + squish + 3, ew - 10, 4);
+
+        // Olhos Retráteis Pixelados
+        ctx.fillStyle = '#fff';
+        let eyeX = e.vx > 0 ? e.x + ew - 8 : e.x + 2;
+        ctx.fillRect(eyeX, e.y + squish - 4, 5, 5);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(eyeX + (e.vx > 0 ? 2 : 0), e.y + squish - 3, 3, 3);
     }
 
     // OBSTÁCULOS
@@ -956,39 +963,13 @@ function render() {
             ctx.fillStyle = '#636e72';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
             ctx.fillStyle = '#b2bec3';
-            ctx.fillRect(obs.x, obs.y, obs.w, 5);
-            ctx.fillRect(obs.x, obs.y, 5, obs.h);
-            ctx.fillStyle = '#2d3436';
-            ctx.fillRect(obs.x + obs.w - 5, obs.y, 5, obs.h);
-            ctx.fillRect(obs.x, obs.y + obs.h - 5, obs.w, 5);
+            ctx.fillRect(obs.x, obs.y, obs.w, 4);
         } else {
             ctx.fillStyle = '#6e473b';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            ctx.fillStyle = '#4a2e25';
-            ctx.fillRect(obs.x, obs.y + 6, obs.w, 4);
-            ctx.fillRect(obs.x, obs.y + 18, obs.w, 4);
             ctx.fillStyle = '#d7ccc8';
             ctx.fillRect(obs.x + 2, obs.y + 2, 6, obs.h - 4);
         }
-    }
-
-    // LESMA ROXA
-    for (let e of enemies) {
-        let bounce = Math.sin(e.animTimer * 5) * 2;
-        ctx.fillStyle = '#8e44ad';
-        ctx.fillRect(e.x, e.y + bounce, e.w, e.h - bounce);
-
-        ctx.fillStyle = '#9b59b6';
-        ctx.fillRect(e.x + 6, e.y + 4 + bounce, e.w - 12, 6);
-
-        ctx.fillStyle = '#fff';
-        let eyeX = e.vx > 0 ? e.x + e.w - 10 : e.x + 4;
-        ctx.fillRect(eyeX, e.y + 4 + bounce, 6, 6);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(eyeX + (e.vx > 0 ? 3 : 0), e.y + 6 + bounce, 3, 3);
-
-        ctx.fillStyle = '#8e44ad';
-        ctx.fillRect(eyeX + 1, e.y - 4 + bounce, 2, 4);
     }
 
     // MOEDAS PIXELADAS
@@ -996,24 +977,14 @@ function render() {
         if (!coin.collected) {
             let cx = coin.x;
             let cy = coin.y;
-
-            ctx.fillStyle = '#d4af37';
-            ctx.fillRect(cx + 8, cy, 12, 28);
-            ctx.fillRect(cx, cy + 8, 28, 12);
+            ctx.fillStyle = '#ffd700';
             ctx.fillRect(cx + 4, cy + 4, 20, 20);
-
-            ctx.fillStyle = '#ffea00';
-            ctx.fillRect(cx + 6, cy + 6, 16, 16);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(cx + 8, cy + 8, 4, 4);
-
-            ctx.fillStyle = '#c5a000';
-            ctx.fillRect(cx + 16, cy + 12, 4, 8);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(cx + 6, cy + 6, 4, 4);
         }
     }
 
-    // FUMAÇA
+    // PARTÍCULAS
     for (let p of particles) {
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.alpha);
@@ -1034,20 +1005,47 @@ function render() {
         ctx.fill();
     }
 
-    // JOGADOR (FICA DOURADO E BRILHANTE QUANDO IMORTAL)
-    let bodyColor = player.invincibleTimer > 0 ? '#ffd700' : player.color;
-    let pantsColor = player.invincibleTimer > 0 ? '#ffea00' : '#2980b9';
+    // PERSONAGEM HUMANOIDE MELHORADO (CABEÇA, BRAÇOS, PERNAS)
+    let px = player.x;
+    let py = player.y;
 
-    ctx.fillStyle = bodyColor;
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    
+    // Animação de Passos (Pernas)
+    let legOffset = Math.sin(player.animFrame * 2) * 5;
+
+    // Cabeça
+    ctx.fillStyle = '#f1c40f'; // Capacete/Cabelo Amarelo
+    ctx.fillRect(px + 4, py, 18, 12);
+    ctx.fillStyle = '#ffdbac'; // Pele
+    ctx.fillRect(px + 6, py + 8, 14, 8);
+
     // Olhos
-    ctx.fillStyle = player.invincibleTimer > 0 ? '#ffffff' : '#000';
-    ctx.fillRect(player.x + (player.vx >= 0 ? 20 : 4), player.y + 8, 8, 8);
-    
-    // Calça
-    ctx.fillStyle = pantsColor;
-    ctx.fillRect(player.x, player.y + 28, player.width, 20);
+    ctx.fillStyle = '#000';
+    let eyeOffsetX = player.facing === 'right' ? 14 : 6;
+    ctx.fillRect(px + eyeOffsetX, py + 10, 3, 3);
+
+    // Tronco (Camisa Vermelha ou Azul se tiver Agilidade)
+    ctx.fillStyle = player.speedBoostTimer > 0 ? '#00d2d3' : '#e74c3c';
+    ctx.fillRect(px + 4, py + 16, 18, 14);
+
+    // Braços Animados
+    ctx.fillStyle = '#ffdbac';
+    if (player.facing === 'right') {
+        ctx.fillRect(px + 2, py + 18 - legOffset, 4, 10);
+        ctx.fillRect(px + 20, py + 18 + legOffset, 4, 10);
+    } else {
+        ctx.fillRect(px + 2, py + 18 + legOffset, 4, 10);
+        ctx.fillRect(px + 20, py + 18 - legOffset, 4, 10);
+    }
+
+    // Calça / Pernas Animadas
+    ctx.fillStyle = '#2980b9';
+    ctx.fillRect(px + 5 - legOffset / 2, py + 30, 7, 12);
+    ctx.fillRect(px + 14 + legOffset / 2, py + 30, 7, 12);
+
+    // Sapatos
+    ctx.fillStyle = '#34495e';
+    ctx.fillRect(px + 4 - legOffset / 2, py + 39, 8, 3);
+    ctx.fillRect(px + 14 + legOffset / 2, py + 39, 8, 3);
 
     ctx.restore();
 }
