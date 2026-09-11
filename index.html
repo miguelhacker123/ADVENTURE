@@ -11,14 +11,14 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #0b0c10;
+            background-color: #05070a;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -30,10 +30,10 @@
             height: 100vh;
             max-width: 1200px;
             max-height: 675px;
-            background: #111;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            background: #000;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
             overflow: hidden;
-            border-radius: 8px;
+            border-radius: 12px;
         }
 
         canvas {
@@ -47,7 +47,6 @@
             position: absolute;
             z-index: 10;
             font-weight: bold;
-            text-shadow: 2px 2px 4px #000;
         }
 
         #lang-selector {
@@ -58,29 +57,31 @@
         }
 
         .lang-btn {
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #52be80;
-            color: #fff;
-            padding: 5px 12px;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            padding: 6px 14px;
             cursor: pointer;
-            font-weight: bold;
-            border-radius: 6px;
-            transition: 0.2s;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: all 0.2s;
+            backdrop-filter: blur(8px);
         }
 
         .lang-btn.active {
-            background: #27ae60;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: #fff;
-            border-color: #2ecc71;
-            box-shadow: 0 0 10px #2ecc71;
+            border-color: #34d399;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
         }
 
-        /* HUD MOEDAS E MAÇÃS (EMBAIXO DA MOEDA) */
-        #hud-counters {
-            top: 55px;
-            left: 15px;
+        /* HUD NO CANTO DIREITO (BAIXO DO PAUSE) */
+        #hud-counters-right {
+            top: 60px;
+            right: 15px;
             display: flex;
             flex-direction: column;
+            align-items: flex-end;
             gap: 8px;
         }
 
@@ -88,107 +89,108 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 6px 14px;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 6px 16px;
             border-radius: 20px;
-            font-size: 18px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-            width: fit-content;
+            font-size: 17px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
         }
 
-        .coin-badge { border: 2px solid #ffd700; color: #ffd700; }
-        .apple-badge { border: 2px solid #ff4757; color: #ff4757; }
+        .coin-badge { color: #facc15; border-color: rgba(250, 204, 21, 0.4); }
+        .apple-badge { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
 
-        .icon-hud {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: inline-block;
+        .canvas-icon-hud {
+            width: 24px;
+            height: 24px;
         }
-
-        .icon-coin { background: #ffd700; border: 2px solid #ffaa00; box-shadow: 0 0 6px #ffd700; }
-        .icon-apple { background: #ff4757; border: 2px solid #ff6b81; box-shadow: 0 0 6px #ff4757; }
 
         #level-hud {
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            color: #2ecc71;
-            font-size: 22px;
-            letter-spacing: 2px;
-            background: rgba(0,0,0,0.7);
-            padding: 6px 20px;
-            border-radius: 12px;
-            border: 2px solid #27ae60;
+            color: #f8fafc;
+            font-size: 20px;
+            letter-spacing: 3px;
+            background: rgba(15, 23, 42, 0.85);
+            padding: 8px 24px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
 
         #btn-pause {
             top: 15px;
             right: 15px;
-            background: rgba(231, 76, 60, 0.85);
-            border: 2px solid #fff;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border: 1px solid #fca5a5;
             color: #fff;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 16px;
+            padding: 7px 18px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
             cursor: pointer;
             z-index: 12;
             transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
-        #btn-pause:hover { background: #e74c3c; transform: scale(1.05); }
+        #btn-pause:hover { transform: translateY(-2px); filter: brightness(1.1); }
 
-        /* --- MENUS --- */
+        /* --- MENUS ELEGANTES & MODERNOS --- */
         .menu-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, #3e2723 0%, #1a0e0a 100%);
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 20;
-            gap: 20px;
+            gap: 18px;
         }
 
         .title {
-            font-size: 62px;
-            color: #2ecc71;
-            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(46, 204, 113, 0.5);
-            letter-spacing: 6px;
+            font-size: 58px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 4px 10px rgba(34, 197, 94, 0.3));
+            letter-spacing: 4px;
             margin-bottom: 10px;
             text-align: center;
         }
 
         .btn-moss {
-            position: relative;
-            width: 260px;
+            width: 250px;
             padding: 16px 0;
-            font-size: 22px;
-            font-weight: 900;
+            font-size: 18px;
+            font-weight: 800;
             color: #ffffff;
-            background: linear-gradient(180deg, #5d4037 0%, #3e2723 100%);
-            border: 3px solid #2e7d32;
-            border-top: 8px solid #4caf50;
+            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+            border: 1px solid #4ade80;
             border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 8px 0 #1b100c, 0 10px 20px rgba(0,0,0,0.7);
-            transition: all 0.15s ease-in-out;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
             text-align: center;
             text-transform: uppercase;
-            text-shadow: 2px 2px 4px #000;
+            letter-spacing: 1.5px;
         }
 
         .btn-moss:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
+            transform: translateY(-3px);
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
         }
 
         .btn-moss:active {
-            transform: translateY(4px);
-            box-shadow: 0 4px 0 #1b100c, 0 6px 10px rgba(0,0,0,0.6);
+            transform: translateY(1px);
         }
 
         #levels-menu { display: none; }
@@ -196,47 +198,47 @@
         .levels-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 14px;
+            gap: 12px;
             max-width: 80%;
             max-height: 60%;
             overflow-y: auto;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 12px;
-            border: 2px solid #4caf50;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
         }
 
         .level-btn {
-            width: 65px;
-            height: 65px;
-            background: #3e2723;
-            border: 2px solid #2e7d32;
-            border-top: 5px solid #4caf50;
-            color: #888;
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 10px;
+            width: 60px;
+            height: 60px;
+            background: #334155;
+            border: 1px solid #475569;
+            color: #94a3b8;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 12px;
             cursor: not-allowed;
             display: flex;
             justify-content: center;
             align-items: center;
             transition: 0.2s;
-            text-shadow: 1px 1px 2px #000;
         }
 
         .level-btn.unlocked {
-            background: linear-gradient(180deg, #6d4c41 0%, #4e342e 100%);
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-color: #22c55e;
             color: #fff;
             cursor: pointer;
-            box-shadow: 0 4px 0 #1b100c;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .level-btn.unlocked:hover { transform: scale(1.08); }
+        .level-btn.unlocked:hover { transform: scale(1.08); border-color: #4ade80; }
 
         .btn-back {
             margin-top: 10px;
-            width: 170px;
+            width: 160px;
             padding: 12px;
-            font-size: 18px;
+            font-size: 15px;
         }
 
         #pause-menu { display: none; }
@@ -264,32 +266,32 @@
         .basket-btn {
             width: 70px;
             height: 70px;
-            background: rgba(0, 0, 0, 0.5);
-            border: 3px solid rgba(255, 255, 255, 0.8);
-            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
             color: #fff;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: bold;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
             touch-action: manipulation;
         }
 
         .square-jump-btn {
             width: 75px;
             height: 75px;
-            background: rgba(46, 204, 113, 0.4);
-            border: 3px solid rgba(46, 204, 113, 0.8);
-            border-radius: 12px;
+            background: rgba(34, 197, 94, 0.4);
+            border: 1px solid rgba(74, 222, 128, 0.6);
+            border-radius: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
             color: #fff;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(8px);
             touch-action: manipulation;
         }
     </style>
@@ -305,14 +307,14 @@
         <button class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
 
-    <!-- HUD DE MOEDAS E MAÇÃS (EMBAIXO DA MOEDA) -->
-    <div id="hud-counters" class="hud-element">
+    <!-- HUD DE MOEDAS E MAÇÃS (CANTO DIREITO ABAIXO DO PAUSE) -->
+    <div id="hud-counters-right" class="hud-element">
         <div class="hud-badge coin-badge">
-            <span class="icon-hud icon-coin"></span>
+            <canvas id="coin-icon-hud" class="canvas-icon-hud" width="24" height="24"></canvas>
             <span id="coin-count">0</span>
         </div>
         <div class="hud-badge apple-badge">
-            <span class="icon-hud icon-apple"></span>
+            <canvas id="apple-icon-hud" class="canvas-icon-hud" width="24" height="24"></canvas>
             <span id="apple-count">0</span>
         </div>
     </div>
@@ -412,7 +414,7 @@ function setLanguage(lang) {
     updateLevelHUD();
 }
 
-/* --- MOEDAS, MAÇÃS E PROGRESSO SALVO --- */
+/* --- MOEDAS E MAÇÃS (SALVAMENTO) --- */
 let totalCoins = parseInt(localStorage.getItem('adventures_coins')) || 0;
 let totalApples = parseInt(localStorage.getItem('adventures_apples')) || 0;
 let unlockedLevel = parseInt(localStorage.getItem('adventures_level')) || 1;
@@ -457,8 +459,7 @@ const player = {
     gravity: 0.6,
     grounded: false,
     facing: 'right',
-    animFrame: 0,
-    invincibleTimer: 0 // Tempo de imortalidade por maçã
+    animFrame: 0
 };
 
 let platforms = [];
@@ -481,26 +482,26 @@ function generateLevel(lvl) {
     particles = [];
     mountains = [];
 
-    platforms.push({ x: 0, y: 500, w: 260, h: 175, type: 'grass' });
+    platforms.push({ x: 0, y: 500, w: 280, h: 175, type: 'grass' });
 
-    let currentX = 260;
+    let currentX = 280;
     const levelLength = 25 + lvl * 5;
 
     let mountainX = -300;
     for (let m = 0; m < levelLength / 2; m++) {
-        let mW = 500 + Math.random() * 400;
-        let mH = 250 + Math.random() * 150;
+        let mW = 600 + Math.random() * 400;
+        let mH = 280 + Math.random() * 160;
         mountains.push({
             x: mountainX,
             y: 580 - mH,
             w: mW,
             h: mH,
-            color: m % 2 === 0 ? '#2c3e50' : '#1f2d3d'
+            color: m % 2 === 0 ? '#1e293b' : '#0f172a'
         });
-        mountainX += mW - 120;
+        mountainX += mW - 150;
     }
 
-    const slugColors = ['#8e44ad', '#e74c3c', '#2980b9'];
+    const slugColors = ['#9333ea', '#dc2626', '#2563eb'];
 
     for (let i = 0; i < levelLength; i++) {
         let gap = 80 + Math.random() * 70 + (lvl * 2);
@@ -512,7 +513,7 @@ function generateLevel(lvl) {
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
         // MAÇÃS NO MAPA
-        if (i > 0 && Math.random() < 0.35) {
+        if (i > 0 && Math.random() < 0.4) {
             apples.push({
                 x: currentX + platWidth / 2 - 12,
                 baseY: platY - 45,
@@ -524,11 +525,11 @@ function generateLevel(lvl) {
             });
         }
 
-        // OBSTÁCULOS
+        // OBSTÁCULOS REALISTAS
         if (Math.random() > 0.45) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
-            let obsW = obsType === 'stone' ? 36 : 50;
-            let obsH = obsType === 'stone' ? 32 : 28;
+            let obsW = obsType === 'stone' ? 38 : 52;
+            let obsH = obsType === 'stone' ? 32 : 30;
             
             obstacles.push({
                 x: currentX + platWidth / 2 - obsW / 2,
@@ -560,17 +561,17 @@ function generateLevel(lvl) {
         if (gap > 110 && Math.random() > 0.3) {
             let logX = currentX - gap / 2 - 30;
             let logY = 500;
-            platforms.push({ x: logX, y: logY, w: 65, h: 22, type: 'floating_wood' });
+            platforms.push({ x: logX, y: logY, w: 70, h: 22, type: 'floating_wood' });
         }
 
-        // MOEDAS
+        // MOEDAS REALISTAS
         let coinsInPlat = 1 + Math.floor(Math.random() * 3);
         for (let c = 0; c < coinsInPlat; c++) {
             coins.push({
                 x: currentX + 25 + (c * 35),
                 y: platY - 50 - (Math.random() * 30),
-                w: 28,
-                h: 28,
+                w: 24,
+                h: 24,
                 collected: false
             });
         }
@@ -586,17 +587,16 @@ function generateLevel(lvl) {
     player.y = 400;
     player.vx = 0;
     player.vy = 0;
-    player.invincibleTimer = 0;
 }
 
-function spawnSmoke(x, y, color = '#bdc3c7') {
-    for (let i = 0; i < 15; i++) {
+function spawnSmoke(x, y, color = '#cbd5e1') {
+    for (let i = 0; i < 12; i++) {
         particles.push({
             x: x + Math.random() * 20 - 10,
             y: y + Math.random() * 10,
             vx: (Math.random() - 0.5) * 3,
             vy: -Math.random() * 2 - 1,
-            size: 6 + Math.random() * 8,
+            size: 5 + Math.random() * 6,
             alpha: 1,
             color: color
         });
@@ -609,22 +609,6 @@ function update() {
     if (!isPlaying || isPaused) return;
 
     globalTime += 0.05;
-
-    // Reduz Imortalidade
-    if (player.invincibleTimer > 0) {
-        player.invincibleTimer -= 1 / 60;
-        if (Math.random() < 0.4) {
-            particles.push({
-                x: player.x + Math.random() * player.width,
-                y: player.y + Math.random() * player.height,
-                vx: (Math.random() - 0.5) * 1.5,
-                vy: -Math.random() * 2,
-                size: 4 + Math.random() * 4,
-                alpha: 1,
-                color: '#ffd700'
-            });
-        }
-    }
 
     // Movimento do Jogador
     if (keys.right) {
@@ -665,10 +649,10 @@ function update() {
         }
     }
 
-    // COLETA DE MAÇÃ -> DOURADO & IMORTAL POR 7 SEGUNDOS
+    // MAÇÃS (COLETA NORMAL, APENAS PONTOS E CONTAGEM)
     for (let apple of apples) {
         if (!apple.eaten) {
-            apple.y = apple.baseY + Math.sin(globalTime * 2.5 + apple.floatOffset) * 8;
+            apple.y = apple.baseY + Math.sin(globalTime * 2.5 + apple.floatOffset) * 6;
 
             if (
                 player.x < apple.x + apple.w &&
@@ -678,9 +662,8 @@ function update() {
             ) {
                 apple.eaten = true;
                 totalApples += 1;
-                player.invincibleTimer = 7; // 7 segundos de imortalidade
                 updateHUDCounters();
-                spawnSmoke(apple.x + 12, apple.y + 12, '#ffd700');
+                spawnSmoke(apple.x + 12, apple.y + 12, '#f87171');
             }
         }
     }
@@ -721,7 +704,6 @@ function update() {
             player.y < e.y + e.h &&
             player.y + player.height > e.y
         ) {
-            // Se pular na cabeça OU estiver IMORTAL
             if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 12) {
                 player.vy = -9;
                 e.hp -= 1;
@@ -731,15 +713,10 @@ function update() {
                     e.y += 8;
                 } else if (e.hp <= 0) {
                     spawnSmoke(e.x + e.w / 2, e.y + e.h / 2);
-                    coins.push({ x: e.x + 5, y: e.y - 10, w: 28, h: 28, collected: false });
+                    coins.push({ x: e.x + 5, y: e.y - 10, w: 24, h: 24, collected: false });
                     enemies.splice(i, 1);
                     continue;
                 }
-            } else if (player.invincibleTimer > 0) {
-                // Se tocar na lesma estando imortal, mata a lesma direto
-                spawnSmoke(e.x + e.w / 2, e.y + e.h / 2, '#ffd700');
-                coins.push({ x: e.x + 5, y: e.y - 10, w: 28, h: 28, collected: false });
-                enemies.splice(i, 1);
             } else {
                 alert(i18n[currentLang].gameover);
                 generateLevel(currentLevel);
@@ -795,98 +772,208 @@ function update() {
     }
 }
 
-/* --- RENDERIZAÇÃO GRÁFICA --- */
+/* --- RENDERIZADORES DE ITENS REALISTAS --- */
+function drawRealisticCoin(targetCtx, x, y, size) {
+    let radius = size / 2;
+    let cx = x + radius;
+    let cy = y + radius;
+
+    // Sombra
+    targetCtx.fillStyle = 'rgba(0,0,0,0.3)';
+    targetCtx.beginPath();
+    targetCtx.ellipse(cx, cy + radius * 0.8, radius, radius * 0.3, 0, 0, Math.PI * 2);
+    targetCtx.fill();
+
+    // Borda Externa de Ouro Secundário
+    let gradOuter = targetCtx.createLinearGradient(x, y, x + size, y + size);
+    gradOuter.addColorStop(0, '#fef08a');
+    gradOuter.addColorStop(0.5, '#eab308');
+    gradOuter.addColorStop(1, '#854d0e');
+
+    targetCtx.fillStyle = gradOuter;
+    targetCtx.beginPath();
+    targetCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+    targetCtx.fill();
+
+    // Centro do Relevo
+    let gradInner = targetCtx.createLinearGradient(x, y, x + size, y + size);
+    gradInner.addColorStop(0, '#facc15');
+    gradInner.addColorStop(1, '#ca8a04');
+
+    targetCtx.fillStyle = gradInner;
+    targetCtx.beginPath();
+    targetCtx.arc(cx, cy, radius * 0.75, 0, Math.PI * 2);
+    targetCtx.fill();
+
+    // Símbolo do Cifrão
+    targetCtx.fillStyle = '#fef08a';
+    targetCtx.font = `bold ${Math.floor(size * 0.65)}px sans-serif`;
+    targetCtx.textAlign = 'center';
+    targetCtx.textBaseline = 'middle';
+    targetCtx.fillText('$', cx, cy);
+
+    // Reflexo de Luz Curvo Realista
+    targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+    targetCtx.lineWidth = Math.max(1.5, size * 0.08);
+    targetCtx.beginPath();
+    targetCtx.arc(cx, cy, radius * 0.82, Math.PI * 1.1, Math.PI * 1.6);
+    targetCtx.stroke();
+}
+
+function drawRealisticApple(targetCtx, x, y, size) {
+    let radius = size / 2;
+    let cx = x + radius;
+    let cy = y + radius;
+
+    // Corpo Redondo 3D
+    let grad = targetCtx.createRadialGradient(cx - radius*0.3, cy - radius*0.3, radius*0.1, cx, cy, radius);
+    grad.addColorStop(0, '#fca5a5');
+    grad.addColorStop(0.4, '#ef4444');
+    grad.addColorStop(1, '#991b1b');
+
+    targetCtx.fillStyle = grad;
+    targetCtx.beginPath();
+    targetCtx.arc(cx - radius*0.22, cy, radius * 0.78, 0, Math.PI * 2);
+    targetCtx.arc(cx + radius*0.22, cy, radius * 0.78, 0, Math.PI * 2);
+    targetCtx.fill();
+
+    // Cabinho
+    targetCtx.strokeStyle = '#78350f';
+    targetCtx.lineWidth = Math.max(2, size * 0.08);
+    targetCtx.beginPath();
+    targetCtx.moveTo(cx, cy - radius * 0.5);
+    targetCtx.quadraticCurveTo(cx + 4, cy - radius * 1.1, cx + 2, cy - radius * 1.2);
+    targetCtx.stroke();
+
+    // Folha
+    targetCtx.fillStyle = '#22c55e';
+    targetCtx.beginPath();
+    targetCtx.ellipse(cx + 5, cy - radius * 0.9, radius * 0.35, radius * 0.18, Math.PI / 4, 0, Math.PI * 2);
+    targetCtx.fill();
+
+    // Reflexo de Luz
+    targetCtx.fillStyle = 'rgba(255,255,255,0.45)';
+    targetCtx.beginPath();
+    targetCtx.ellipse(cx - radius*0.4, cy - radius*0.3, radius*0.2, radius*0.1, -Math.PI / 4, 0, Math.PI * 2);
+    targetCtx.fill();
+}
+
+/* --- RENDERIZAÇÃO DO JOGO --- */
 function render() {
+    // Céu Realista Gradiente
     let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    skyGradient.addColorStop(0, '#2c3e50');
-    skyGradient.addColorStop(1, '#516b8b');
+    skyGradient.addColorStop(0, '#0f172a');
+    skyGradient.addColorStop(0.5, '#1e293b');
+    skyGradient.addColorStop(1, '#334155');
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // MONTANHAS
+    // MONTANHAS REALISTAS COM SOMBRAS DE PROFUNDIDADE
     for (let m of mountains) {
         let mParallaxX = m.x - (cameraX * 0.25);
-        ctx.fillStyle = m.color;
+        let gradM = ctx.createLinearGradient(mParallaxX, m.y, mParallaxX, m.y + m.h);
+        gradM.addColorStop(0, '#334155');
+        gradM.addColorStop(1, '#0f172a');
+
+        ctx.fillStyle = gradM;
         ctx.beginPath();
         ctx.moveTo(mParallaxX, m.y + m.h);
         ctx.lineTo(mParallaxX + m.w / 2, m.y);
         ctx.lineTo(mParallaxX + m.w, m.y + m.h);
         ctx.fill();
 
-        ctx.fillStyle = '#ecf0f1';
+        // Neve no topo realista
+        let snowGrad = ctx.createLinearGradient(mParallaxX, m.y, mParallaxX, m.y + 60);
+        snowGrad.addColorStop(0, '#f8fafc');
+        snowGrad.addColorStop(1, 'rgba(248, 250, 252, 0)');
+        ctx.fillStyle = snowGrad;
         ctx.beginPath();
-        ctx.moveTo(mParallaxX + m.w / 2 - 35, m.y + 45);
+        ctx.moveTo(mParallaxX + m.w / 2 - 40, m.y + 50);
         ctx.lineTo(mParallaxX + m.w / 2, m.y);
-        ctx.lineTo(mParallaxX + m.w / 2 + 35, m.y + 45);
+        ctx.lineTo(mParallaxX + m.w / 2 + 40, m.y + 50);
         ctx.fill();
     }
 
     ctx.save();
     ctx.translate(-cameraX, 0);
 
-    // Rio
-    ctx.fillStyle = '#1e73be';
+    // Rio Realista
+    let waterGrad = ctx.createLinearGradient(0, 580, 0, 675);
+    waterGrad.addColorStop(0, '#0284c7');
+    waterGrad.addColorStop(1, '#0369a1');
+    ctx.fillStyle = waterGrad;
     ctx.fillRect(cameraX, 580, canvas.width, 100);
 
-    // PLATAFORMAS (TEXTURA IGUAL A ANTES)
-    const BLOCK_SIZE = 20;
+    // PLATAFORMAS REALISTAS (TERRA PROFUNDA + GRAMA ULTRA DETALHADA)
     for (let p of platforms) {
         if (p.type === 'grass') {
-            for (let bx = p.x; bx < p.x + p.w; bx += BLOCK_SIZE) {
-                let bw = Math.min(BLOCK_SIZE, p.x + p.w - bx);
-                for (let by = p.y + 16; by < p.y + p.h; by += BLOCK_SIZE) {
-                    let bh = Math.min(BLOCK_SIZE, p.y + p.h - by);
-                    let isDark = ((Math.floor(bx/BLOCK_SIZE) + Math.floor(by/BLOCK_SIZE)) % 2 === 0);
-                    ctx.fillStyle = isDark ? '#73462c' : '#5c3520';
-                    ctx.fillRect(bx, by, bw, bh);
-                }
+            // Bloco de Terra Realista
+            let dirtGrad = ctx.createLinearGradient(p.x, p.y + 18, p.x, p.y + p.h);
+            dirtGrad.addColorStop(0, '#78350f');
+            dirtGrad.addColorStop(0.3, '#451a03');
+            dirtGrad.addColorStop(1, '#1c100b');
+            ctx.fillStyle = dirtGrad;
+            ctx.fillRect(p.x, p.y + 18, p.w, p.h - 18);
+
+            // Detalhes de Pedras na Terra
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            for (let rx = p.x + 10; rx < p.x + p.w - 10; rx += 35) {
+                ctx.fillRect(rx, p.y + 35 + (rx % 20), 12, 8);
             }
 
-            ctx.fillStyle = '#47a025';
-            ctx.fillRect(p.x, p.y, p.w, 16);
-            ctx.fillStyle = '#5bc22e';
-            ctx.fillRect(p.x, p.y, p.w, 5);
+            // Topo da Grama Realista (Suave + Raízes penduradas)
+            let grassGrad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + 20);
+            grassGrad.addColorStop(0, '#4ade80');
+            grassGrad.addColorStop(0.6, '#16a34a');
+            grassGrad.addColorStop(1, '#15803d');
+            ctx.fillStyle = grassGrad;
+            ctx.fillRect(p.x, p.y, p.w, 18);
+
+            // Folhas de Grama em Relevo
+            ctx.fillStyle = '#86efac';
+            for (let gx = p.x; gx < p.x + p.w; gx += 6) {
+                let bladeH = 4 + (gx % 5);
+                ctx.fillRect(gx, p.y - bladeH, 3, bladeH);
+            }
         } else if (p.type === 'floating_wood') {
-            ctx.fillStyle = '#5c4033';
+            // Tronco de Madeira Realista
+            let woodGrad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
+            woodGrad.addColorStop(0, '#a16207');
+            woodGrad.addColorStop(1, '#451a03');
+            ctx.fillStyle = woodGrad;
             ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = '#8b5a2b';
-            ctx.fillRect(p.x, p.y, 4, p.h);
-            ctx.fillRect(p.x + p.w - 4, p.y, 4, p.h);
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(p.x, p.y, p.w, 3);
         }
     }
 
-    // MAÇÃ VERMELHA
+    // MAÇÃS REALISTAS
     for (let apple of apples) {
         if (!apple.eaten) {
-            let ax = apple.x;
-            let ay = apple.y;
-
-            ctx.fillStyle = '#ff4757';
-            ctx.fillRect(ax + 4, ay + 4, 16, 16);
-            ctx.fillRect(ax + 6, ay + 2, 12, 20);
-            ctx.fillRect(ax + 2, ay + 6, 20, 12);
-
-            ctx.fillStyle = '#ff6b81';
-            ctx.fillRect(ax + 6, ay + 6, 4, 4);
-
-            ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(ax + 11, ay - 2, 3, 4);
-            ctx.fillRect(ax + 14, ay - 2, 4, 3);
+            drawRealisticApple(ctx, apple.x, apple.y, apple.w);
         }
     }
 
-    // OBSTÁCULOS
+    // OBSTÁCULOS REALISTAS
     for (let obs of obstacles) {
         if (obs.type === 'stone') {
-            ctx.fillStyle = '#636e72';
-            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            ctx.fillStyle = '#b2bec3';
-            ctx.fillRect(obs.x, obs.y, obs.w, 5);
+            let stoneGrad = ctx.createLinearGradient(obs.x, obs.y, obs.x + obs.w, obs.y + obs.h);
+            stoneGrad.addColorStop(0, '#94a3b8');
+            stoneGrad.addColorStop(1, '#334155');
+            ctx.fillStyle = stoneGrad;
+            ctx.beginPath();
+            ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 6);
+            ctx.fill();
         } else {
-            ctx.fillStyle = '#6e473b';
+            let logGrad = ctx.createLinearGradient(obs.x, obs.y, obs.x, obs.y + obs.h);
+            logGrad.addColorStop(0, '#b45309');
+            logGrad.addColorStop(1, '#78350f');
+            ctx.fillStyle = logGrad;
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            ctx.fillStyle = '#d7ccc8';
-            ctx.fillRect(obs.x + 2, obs.y + 2, 6, obs.h - 4);
+            ctx.fillStyle = '#fde68a';
+            ctx.beginPath();
+            ctx.ellipse(obs.x + 4, obs.y + obs.h/2, 3, obs.h/2 - 2, 0, 0, Math.PI*2);
+            ctx.fill();
         }
     }
 
@@ -894,7 +981,9 @@ function render() {
     for (let e of enemies) {
         let bounce = Math.sin(e.animTimer * 5) * 2;
         ctx.fillStyle = e.color;
-        ctx.fillRect(e.x, e.y + bounce, e.w, e.h - bounce);
+        ctx.beginPath();
+        ctx.roundRect(e.x, e.y + bounce, e.w, e.h - bounce, [10, 10, 0, 0]);
+        ctx.fill();
 
         ctx.fillStyle = '#fff';
         let eyeX = e.vx > 0 ? e.x + e.w - 10 : e.x + 4;
@@ -903,15 +992,10 @@ function render() {
         ctx.fillRect(eyeX + (e.vx > 0 ? 3 : 0), e.y + 6 + bounce, 3, 3);
     }
 
-    // MOEDAS
+    // MOEDAS REALISTAS NO MAPA
     for (let coin of coins) {
         if (!coin.collected) {
-            let cx = coin.x;
-            let cy = coin.y;
-            ctx.fillStyle = '#ffd700';
-            ctx.fillRect(cx + 4, cy + 4, 20, 20);
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(cx + 6, cy + 6, 4, 4);
+            drawRealisticCoin(ctx, coin.x, coin.y, coin.w);
         }
     }
 
@@ -924,50 +1008,46 @@ function render() {
         ctx.restore();
     }
 
-    // BANDEIRA
+    // BANDEIRA DE CHEGADA REALISTA
     if (flag) {
-        ctx.fillStyle = '#bdc3c7';
+        ctx.fillStyle = '#cbd5e1';
         ctx.fillRect(flag.x, flag.y, 6, flag.h);
-        ctx.fillStyle = '#27ae60';
+        
+        let flagGrad = ctx.createLinearGradient(flag.x + 6, flag.y, flag.x + 50, flag.y);
+        flagGrad.addColorStop(0, '#22c55e');
+        flagGrad.addColorStop(1, '#16a34a');
+        ctx.fillStyle = flagGrad;
         ctx.beginPath();
         ctx.moveTo(flag.x + 6, flag.y);
-        ctx.lineTo(flag.x + 48, flag.y + 20);
+        ctx.lineTo(flag.x + 50, flag.y + 20);
         ctx.lineTo(flag.x + 6, flag.y + 40);
         ctx.fill();
     }
 
-    // DESENHAR PERSONAGEM
+    // DESENHAR PERSONAGEM (CABELO MARROM NATURAL)
     let px = player.x;
     let py = player.y;
     let legAnim = Math.sin(player.animFrame * 2) * 6;
-    let isGolden = player.invincibleTimer > 0;
 
-    // AURÉOLA/BRILHO DOURADO QUANDO IMORTAL
-    if (isGolden) {
-        ctx.strokeStyle = '#ffd700';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(px - 4, py - 4, player.width + 8, player.height + 8);
-    }
-
-    // Cabelo Marrom
-    ctx.fillStyle = isGolden ? '#ffee55' : '#5d4037';
+    // Cabelo Marrom Castanho
+    ctx.fillStyle = '#512b11';
     ctx.fillRect(px + 4, py, 30, 16);
 
     // Rosto
-    ctx.fillStyle = isGolden ? '#ffea00' : '#ffdbac';
+    ctx.fillStyle = '#ffdbac';
     ctx.fillRect(px + 6, py + 12, 26, 12);
 
     // Olhos
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = '#0f172a';
     let eyeX = player.facing === 'right' ? px + 22 : px + 8;
     ctx.fillRect(eyeX, py + 16, 4, 4);
 
-    // Tronco (Camisa)
-    ctx.fillStyle = isGolden ? '#ffaa00' : '#e74c3c';
+    // Tronco (Camisa Vermelha)
+    ctx.fillStyle = '#dc2626';
     ctx.fillRect(px + 4, py + 24, 30, 20);
 
     // Braços
-    ctx.fillStyle = isGolden ? '#ffea00' : '#ffdbac';
+    ctx.fillStyle = '#ffdbac';
     if (player.facing === 'right') {
         ctx.fillRect(px, py + 26 - legAnim, 5, 14);
         ctx.fillRect(px + 33, py + 26 + legAnim, 5, 14);
@@ -977,16 +1057,29 @@ function render() {
     }
 
     // Calça
-    ctx.fillStyle = isGolden ? '#ff8800' : '#2980b9';
+    ctx.fillStyle = '#2563eb';
     ctx.fillRect(px + 6 - legAnim / 2, py + 44, 10, 10);
     ctx.fillRect(px + 22 + legAnim / 2, py + 44, 10, 10);
 
     // Sapatos
-    ctx.fillStyle = '#34495e';
+    ctx.fillStyle = '#1e293b';
     ctx.fillRect(px + 4 - legAnim / 2, py + 53, 12, 3);
     ctx.fillRect(px + 22 + legAnim / 2, py + 53, 12, 3);
 
     ctx.restore();
+}
+
+/* --- RENDERIZAR ÍCONES REALISTAS NO HUD --- */
+function renderHUDIcons() {
+    const coinCanvas = document.getElementById('coin-icon-hud');
+    const coinCtx = coinCanvas.getContext('2d');
+    coinCtx.clearRect(0, 0, 24, 24);
+    drawRealisticCoin(coinCtx, 0, 0, 24);
+
+    const appleCanvas = document.getElementById('apple-icon-hud');
+    const appleCtx = appleCanvas.getContext('2d');
+    appleCtx.clearRect(0, 0, 24, 24);
+    drawRealisticApple(appleCtx, 0, 0, 24);
 }
 
 function gameLoop() {
@@ -1085,6 +1178,7 @@ bindTouch('btn-left', 'left');
 bindTouch('btn-right', 'right');
 bindTouch('btn-jump', 'up');
 
+renderHUDIcons();
 updateHUDCounters();
 setLanguage('pt');
 requestAnimationFrame(gameLoop);
