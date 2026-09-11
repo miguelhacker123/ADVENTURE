@@ -74,7 +74,7 @@
             border-color: #ffcc00;
         }
 
-        /* Moedas Topo Esquerdo (Abaixo dos idiomas) e Topo Direito Extremo */
+        /* Moedas Topo Esquerdo e Topo Direito */
         #coin-hud-left {
             top: 55px;
             left: 15px;
@@ -179,10 +179,6 @@
             box-shadow: 0 6px 0 #1f618d, 0 10px 15px rgba(0,0,0,0.5);
         }
 
-        .btn-fases:active {
-            box-shadow: 0 2px 0 #1f618d, 0 5px 10px rgba(0,0,0,0.5);
-        }
-
         /* Grade de Fases */
         #levels-menu {
             display: none;
@@ -219,10 +215,6 @@
             box-shadow: 0 4px 0 #d35400;
         }
 
-        .level-btn.unlocked:hover {
-            background: #f39c12;
-        }
-
         .btn-back {
             background: #e74c3c;
             box-shadow: 0 4px 0 #c0392b;
@@ -232,60 +224,73 @@
             font-size: 16px;
         }
 
-        /* --- CONTROLES TOUTCH (iPad / Celular) --- */
+        /* --- CONTROLES TOUCH REORGANIZADOS --- */
         #touch-controls {
             position: absolute;
-            bottom: 15px;
+            bottom: 25px;
             left: 0;
             width: 100%;
-            height: 120px;
+            height: 90px;
             z-index: 15;
             display: flex;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 25px;
             pointer-events: none;
         }
 
-        .touch-group {
+        .touch-group-left {
             display: flex;
             gap: 15px;
             pointer-events: auto;
         }
 
-        .t-btn {
-            width: 65px;
-            height: 65px;
-            background: rgba(255, 255, 255, 0.25);
-            border: 2px solid rgba(255, 255, 255, 0.6);
+        .touch-group-right {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        /* Botões direcionais (Cestinhas / Setas) no lado esquerdo */
+        .basket-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 3px solid rgba(255, 255, 255, 0.7);
             border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
             color: #fff;
-            font-size: 16px;
+            font-size: 28px;
             font-weight: bold;
             backdrop-filter: blur(4px);
             touch-action: manipulation;
         }
 
-        .t-btn:active {
-            background: rgba(255, 255, 255, 0.5);
+        .basket-btn:active {
+            background: rgba(255, 255, 255, 0.4);
             transform: scale(0.95);
         }
 
-        .btn-jump {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: rgba(231, 76, 60, 0.4);
-            border-color: rgba(231, 76, 60, 0.8);
+        /* Quadrado meio transparente para pular no lado direito */
+        .square-jump-btn {
+            width: 75px;
+            height: 75px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.6);
+            border-radius: 8px; /* Formato Quadrado */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            backdrop-filter: blur(4px);
+            touch-action: manipulation;
         }
 
-        /* Ocultar touch em telas grandes sem toque caso desejado, mas mantido visível/adaptável */
-        @media (min-width: 1025px) {
-            #touch-controls {
-                display: none; /* Esconde no PC para visual mais limpo */
-            }
+        .square-jump-btn:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.95);
         }
     </style>
 </head>
@@ -300,7 +305,7 @@
         <button class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
 
-    <!-- HUD MOEDAS (CANTO ESQUERDO E CANTO DIREITO BEM NO TOPO) -->
+    <!-- HUD MOEDAS -->
     <div id="coin-hud-left" class="hud-element">
         <span class="coin-icon"></span>
         <span id="coin-count-left">0</span>
@@ -330,14 +335,16 @@
         <button id="btn-back" class="btn-main btn-back" onclick="hideLevels()">VOLTAR</button>
     </div>
 
-    <!-- CONTROLES PARA TOUCH (CELULAR / IPAD) SEM EMOJIS -->
+    <!-- CONTROLES TOUCH REORGANIZADOS -->
     <div id="touch-controls">
-        <div class="touch-group">
-            <div class="t-btn" id="btn-left">ESQ</div>
-            <div class="t-btn" id="btn-right">DIR</div>
+        <!-- LADO ESQUERDO: Duas cestinhas para andar -->
+        <div class="touch-group-left">
+            <div class="basket-btn" id="btn-left">&lt;</div>
+            <div class="basket-btn" id="btn-right">&gt;</div>
         </div>
-        <div class="touch-group">
-            <div class="t-btn btn-jump" id="btn-jump">PULAR</div>
+        <!-- LADO DIREITO: Quadrado meio transparente para pular -->
+        <div class="touch-group-right">
+            <div class="square-jump-btn" id="btn-jump">PULAR</div>
         </div>
     </div>
 </div>
@@ -352,8 +359,6 @@ const i18n = {
         back: "VOLTAR",
         level: "FASE",
         jump: "PULAR",
-        left: "ESQ",
-        right: "DIR",
         win: "FASE CONCLUÍDA!",
         gameover: "VOCÊ CAIU NO RIO!"
     },
@@ -364,8 +369,6 @@ const i18n = {
         back: "BACK",
         level: "LEVEL",
         jump: "JUMP",
-        left: "LEFT",
-        right: "RIGHT",
         win: "LEVEL COMPLETE!",
         gameover: "YOU FELL IN THE RIVER!"
     }
@@ -384,12 +387,10 @@ function setLanguage(lang) {
     document.getElementById('select-level-title').innerText = i18n[lang].selectLevel;
     document.getElementById('btn-back').innerText = i18n[lang].back;
     document.getElementById('btn-jump').innerText = i18n[lang].jump;
-    document.getElementById('btn-left').innerText = i18n[lang].left;
-    document.getElementById('btn-right').innerText = i18n[lang].right;
     updateLevelHUD();
 }
 
-/* --- SISTEMA DE ESTATÍSTICAS E SALVAMENTO DE MOEDAS --- */
+/* --- MOEDAS E PROGRESSO --- */
 let totalCoins = parseInt(localStorage.getItem('adventures_coins')) || 0;
 let unlockedLevel = parseInt(localStorage.getItem('adventures_level')) || 1;
 let currentLevel = 1;
@@ -408,7 +409,7 @@ function saveProgress() {
     }
 }
 
-/* --- GAME ENGINE & CANVAS SETUP --- */
+/* --- CANVAS & ENGINE --- */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 canvas.width = 1200;
@@ -417,7 +418,6 @@ canvas.height = 675;
 let isPlaying = false;
 let keys = { left: false, right: false, up: false };
 
-// Propriedades do Jogador (Estilo Mario)
 const player = {
     x: 80,
     y: 300,
@@ -432,41 +432,35 @@ const player = {
     color: '#e74c3c'
 };
 
-// Elementos da Fase Atual
 let platforms = [];
-let obstacles = []; // Pedras e Troncos
+let obstacles = [];
 let coins = [];
 let flag = null;
 
-/* --- GERADOR DAS 20 FASES --- */
 function generateLevel(lvl) {
     platforms = [];
     obstacles = [];
     coins = [];
 
-    // Ilha Inicial Segura
     platforms.push({ x: 0, y: 550, w: 200, h: 125, type: 'grass' });
 
     let currentX = 200;
-    const levelLength = 15 + lvl * 3; // Fases ficam progressivamente maiores e mais longas
+    const levelLength = 15 + lvl * 3;
 
     for (let i = 0; i < levelLength; i++) {
-        let gap = 80 + Math.random() * 60 + (lvl * 3); // Buracos/Rio maiores em fases avançadas
+        let gap = 80 + Math.random() * 60 + (lvl * 3);
         currentX += gap;
 
         let platWidth = Math.max(100, 220 - lvl * 5 + Math.random() * 50);
         let platY = 400 + Math.random() * 150;
 
-        // Plataforma (Terra/Grama)
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
-        // Adiciona Obstáculos nos rios ou plataformas (Troncos e Pedras para Pular)
         if (Math.random() > 0.4) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
             let obsW = obsType === 'stone' ? 35 : 50;
             let obsH = obsType === 'stone' ? 30 : 25;
             
-            // Coloca obstáculo sobre a plataforma
             obstacles.push({
                 x: currentX + platWidth / 2 - obsW / 2,
                 y: platY - obsH,
@@ -476,14 +470,12 @@ function generateLevel(lvl) {
             });
         }
 
-        // Adiciona Tronco Flutuante no Meio do Rio (Para pular por cima)
         if (gap > 110 && Math.random() > 0.3) {
             let logX = currentX - gap / 2 - 25;
             let logY = 520;
             platforms.push({ x: logX, y: logY, w: 55, h: 20, type: 'floating_wood' });
         }
 
-        // Adiciona Moedas na fase
         let coinsInPlat = 1 + Math.floor(Math.random() * 3);
         for (let c = 0; c < coinsInPlat; c++) {
             coins.push({
@@ -498,43 +490,35 @@ function generateLevel(lvl) {
         currentX += platWidth;
     }
 
-    // Ilha Final com Bandeira
     currentX += 100;
     platforms.push({ x: currentX, y: 480, w: 250, h: 200, type: 'grass' });
     flag = { x: currentX + 150, y: 380, w: 20, h: 100 };
 
-    // Reset Player Position
     player.x = 80;
     player.y = 450;
     player.vx = 0;
     player.vy = 0;
 }
 
-/* --- LOOP DO JOGO --- */
 let cameraX = 0;
 
 function update() {
     if (!isPlaying) return;
 
-    // Movimentação Esquerda / Direita
     if (keys.right) player.vx = player.speed;
     else if (keys.left) player.vx = -player.speed;
     else player.vx = 0;
 
-    // Pulo
     if (keys.up && player.grounded) {
         player.vy = player.jumpForce;
         player.grounded = false;
     }
 
-    // Aplicação da Gravidade
     player.vy += player.gravity;
 
-    // Atualização de Posições
     player.x += player.vx;
     player.y += player.vy;
 
-    // Colisão com Plataformas e Troncos Flutuantes
     player.grounded = false;
     for (let p of platforms) {
         if (
@@ -550,7 +534,6 @@ function update() {
         }
     }
 
-    // Colisão Lateral com Obstáculos (Pedras e Troncos de Solo)
     for (let obs of obstacles) {
         if (
             player.x < obs.x + obs.w &&
@@ -558,13 +541,11 @@ function update() {
             player.y < obs.y + obs.h &&
             player.y + player.height > obs.y
         ) {
-            // Bloqueia movimento se bater de lado
             if (player.vx > 0 && player.x + player.width - player.vx <= obs.x) {
                 player.x = obs.x - player.width;
             } else if (player.vx < 0 && player.x - player.vx >= obs.x + obs.w) {
                 player.x = obs.x + obs.w;
             } 
-            // Permite subir/pular em cima do obstáculo
             else if (player.vy > 0 && player.y + player.height - player.vy <= obs.y) {
                 player.grounded = true;
                 player.vy = 0;
@@ -573,7 +554,6 @@ function update() {
         }
     }
 
-    // Coleta de Moedas
     for (let coin of coins) {
         if (!coin.collected &&
             player.x < coin.x + coin.w &&
@@ -586,17 +566,14 @@ function update() {
         }
     }
 
-    // Câmera Acompanha o Jogador
     cameraX = player.x - 200;
     if (cameraX < 0) cameraX = 0;
 
-    // Condição de Morte (Cair no Rio)
     if (player.y > canvas.height) {
         alert(i18n[currentLang].gameover);
-        generateLevel(currentLevel); // Reinicia
+        generateLevel(currentLevel);
     }
 
-    // Condição de Vitória (Alcançar a Bandeira)
     if (flag && player.x > flag.x) {
         saveProgress();
         alert(i18n[currentLang].win);
@@ -611,46 +588,41 @@ function update() {
 }
 
 function render() {
-    // Limpar Tela / Céu
     ctx.fillStyle = '#5c94fc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
     ctx.translate(-cameraX, 0);
 
-    // Desenhar Rio (Água no fundo inferior)
     ctx.fillStyle = '#1e90ff';
     ctx.fillRect(cameraX, 580, canvas.width, 100);
 
-    // Desenhar Plataformas de Terra e Troncos
     for (let p of platforms) {
         if (p.type === 'grass') {
-            ctx.fillStyle = '#27ae60'; // Topo Verde
+            ctx.fillStyle = '#27ae60';
             ctx.fillRect(p.x, p.y, p.w, 15);
-            ctx.fillStyle = '#795548'; // Terra
+            ctx.fillStyle = '#795548';
             ctx.fillRect(p.x, p.y + 15, p.w, p.h - 15);
         } else if (p.type === 'floating_wood') {
-            ctx.fillStyle = '#8d6e63'; // Madeira do Tronco no Rio
+            ctx.fillStyle = '#8d6e63';
             ctx.fillRect(p.x, p.y, p.w, p.h);
             ctx.strokeStyle = '#4e342e';
             ctx.strokeRect(p.x, p.y, p.w, p.h);
         }
     }
 
-    // Desenhar Obstáculos (Pedras e Troncos)
     for (let obs of obstacles) {
         if (obs.type === 'stone') {
-            ctx.fillStyle = '#7f8c8d'; // Pedra
+            ctx.fillStyle = '#7f8c8d';
             ctx.beginPath();
             ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 6);
             ctx.fill();
         } else {
-            ctx.fillStyle = '#a0522d'; // Tronco de solo
+            ctx.fillStyle = '#a0522d';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
         }
     }
 
-    // Desenhar Moedas (Brilhantes)
     for (let coin of coins) {
         if (!coin.collected) {
             ctx.fillStyle = '#ffd700';
@@ -662,25 +634,23 @@ function render() {
         }
     }
 
-    // Desenhar Bandeira Final
     if (flag) {
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(flag.x, flag.y, 6, flag.h); // Poste
+        ctx.fillRect(flag.x, flag.y, 6, flag.h);
         ctx.fillStyle = '#e74c3c';
         ctx.beginPath();
         ctx.moveTo(flag.x + 6, flag.y);
         ctx.lineTo(flag.x + 45, flag.y + 20);
         ctx.lineTo(flag.x + 6, flag.y + 40);
-        ctx.fill(); // Flâmula
+        ctx.fill();
     }
 
-    // Desenhar Jogador (Estilo Super Mario - Pixel Red)
     ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.width, player.height); // Corpo
+    ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.fillStyle = '#000';
-    ctx.fillRect(player.x + (player.vx >= 0 ? 20 : 4), player.y + 8, 8, 8); // Olho
+    ctx.fillRect(player.x + (player.vx >= 0 ? 20 : 4), player.y + 8, 8, 8);
     ctx.fillStyle = '#2980b9';
-    ctx.fillRect(player.x, player.y + 28, player.width, 20); // Macacão Azul
+    ctx.fillRect(player.x, player.y + 28, player.width, 20);
 
     ctx.restore();
 }
@@ -691,7 +661,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-/* --- MENUS E NAVEGAÇÃO --- */
+/* --- MENUS --- */
 function updateLevelHUD() {
     document.getElementById('level-text').innerText = `${i18n[currentLang].level} ${currentLevel}`;
 }
@@ -735,7 +705,7 @@ function showMainMenu() {
     document.getElementById('main-menu').style.display = 'flex';
 }
 
-/* --- EVENTOS DE CONTROLE (TECLADO / MOUSE / TOUCH) --- */
+/* --- EVENTOS DE CONTROLE --- */
 window.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
@@ -748,7 +718,6 @@ window.addEventListener('keyup', e => {
     if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') keys.up = false;
 });
 
-// Suporte Touch Adaptativo (iPad / Celulares)
 function bindTouch(id, keyProp) {
     const el = document.getElementById(id);
     el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyProp] = true; });
@@ -761,7 +730,6 @@ bindTouch('btn-left', 'left');
 bindTouch('btn-right', 'right');
 bindTouch('btn-jump', 'up');
 
-// Inicialização
 updateCoinHUD();
 setLanguage('pt');
 requestAnimationFrame(gameLoop);
