@@ -224,7 +224,7 @@
             font-size: 16px;
         }
 
-        /* --- CONTROLES TOUCH REORGANIZADOS --- */
+        /* --- CONTROLES TOUCH --- */
         #touch-controls {
             position: absolute;
             bottom: 25px;
@@ -249,7 +249,6 @@
             pointer-events: auto;
         }
 
-        /* Botões direcionais (Cestinhas / Setas) no lado esquerdo */
         .basket-btn {
             width: 70px;
             height: 70px;
@@ -271,13 +270,12 @@
             transform: scale(0.95);
         }
 
-        /* Quadrado meio transparente para pular no lado direito */
         .square-jump-btn {
             width: 75px;
             height: 75px;
             background: rgba(255, 255, 255, 0.2);
             border: 3px solid rgba(255, 255, 255, 0.6);
-            border-radius: 8px; /* Formato Quadrado */
+            border-radius: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -335,14 +333,12 @@
         <button id="btn-back" class="btn-main btn-back" onclick="hideLevels()">VOLTAR</button>
     </div>
 
-    <!-- CONTROLES TOUCH REORGANIZADOS -->
+    <!-- CONTROLES TOUCH -->
     <div id="touch-controls">
-        <!-- LADO ESQUERDO: Duas cestinhas para andar -->
         <div class="touch-group-left">
             <div class="basket-btn" id="btn-left">&lt;</div>
             <div class="basket-btn" id="btn-right">&gt;</div>
         </div>
-        <!-- LADO DIREITO: Quadrado meio transparente para pular -->
         <div class="touch-group-right">
             <div class="square-jump-btn" id="btn-jump">PULAR</div>
         </div>
@@ -442,24 +438,24 @@ function generateLevel(lvl) {
     obstacles = [];
     coins = [];
 
-    platforms.push({ x: 0, y: 550, w: 200, h: 125, type: 'grass' });
+    platforms.push({ x: 0, y: 500, w: 240, h: 175, type: 'grass' });
 
-    let currentX = 200;
+    let currentX = 240;
     const levelLength = 15 + lvl * 3;
 
     for (let i = 0; i < levelLength; i++) {
         let gap = 80 + Math.random() * 60 + (lvl * 3);
         currentX += gap;
 
-        let platWidth = Math.max(100, 220 - lvl * 5 + Math.random() * 50);
-        let platY = 400 + Math.random() * 150;
+        let platWidth = Math.max(120, 220 - lvl * 5 + Math.random() * 50);
+        let platY = 400 + Math.random() * 120;
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
         if (Math.random() > 0.4) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
-            let obsW = obsType === 'stone' ? 35 : 50;
-            let obsH = obsType === 'stone' ? 30 : 25;
+            let obsW = obsType === 'stone' ? 36 : 50;
+            let obsH = obsType === 'stone' ? 32 : 28;
             
             obstacles.push({
                 x: currentX + platWidth / 2 - obsW / 2,
@@ -471,9 +467,9 @@ function generateLevel(lvl) {
         }
 
         if (gap > 110 && Math.random() > 0.3) {
-            let logX = currentX - gap / 2 - 25;
-            let logY = 520;
-            platforms.push({ x: logX, y: logY, w: 55, h: 20, type: 'floating_wood' });
+            let logX = currentX - gap / 2 - 30;
+            let logY = 510;
+            platforms.push({ x: logX, y: logY, w: 60, h: 22, type: 'floating_wood' });
         }
 
         let coinsInPlat = 1 + Math.floor(Math.random() * 3);
@@ -495,7 +491,7 @@ function generateLevel(lvl) {
     flag = { x: currentX + 150, y: 380, w: 20, h: 100 };
 
     player.x = 80;
-    player.y = 450;
+    player.y = 400;
     player.vx = 0;
     player.vy = 0;
 }
@@ -587,64 +583,135 @@ function update() {
     }
 }
 
+/* --- RENDERIZAÇÃO COM TEXTURAS ESTILO MINECRAFT --- */
 function render() {
-    ctx.fillStyle = '#5c94fc';
+    // Céu em degradê
+    let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    skyGradient.addColorStop(0, '#3a88e9');
+    skyGradient.addColorStop(1, '#7ec0ee');
+    ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.save();
     ctx.translate(-cameraX, 0);
 
-    ctx.fillStyle = '#1e90ff';
+    // Rio (Água com textura de ondas)
+    ctx.fillStyle = '#1e73be';
     ctx.fillRect(cameraX, 580, canvas.width, 100);
+    ctx.fillStyle = '#2980b9';
+    for (let w = cameraX - (cameraX % 40); w < cameraX + canvas.width + 40; w += 40) {
+        ctx.fillRect(w, 585, 20, 4);
+        ctx.fillRect(w + 20, 600, 15, 4);
+    }
+
+    // DESENHAR PLATAFORMAS COM BLOCOS DE TERRA E GRAMA (ESTILO MINECRAFT)
+    const BLOCK_SIZE = 20;
 
     for (let p of platforms) {
         if (p.type === 'grass') {
-            ctx.fillStyle = '#27ae60';
-            ctx.fillRect(p.x, p.y, p.w, 15);
-            ctx.fillStyle = '#795548';
-            ctx.fillRect(p.x, p.y + 15, p.w, p.h - 15);
+            // Desenha blocos de terra pixelados
+            for (let bx = p.x; bx < p.x + p.w; bx += BLOCK_SIZE) {
+                let bw = Math.min(BLOCK_SIZE, p.x + p.w - bx);
+                for (let by = p.y + 16; by < p.y + p.h; by += BLOCK_SIZE) {
+                    let bh = Math.min(BLOCK_SIZE, p.y + p.h - by);
+
+                    // Base de terra tom marrom escuro e claro em xadrez/textura
+                    let isDark = ((Math.floor(bx/BLOCK_SIZE) + Math.floor(by/BLOCK_SIZE)) % 2 === 0);
+                    ctx.fillStyle = isDark ? '#73462c' : '#5c3520';
+                    ctx.fillRect(bx, by, bw, bh);
+
+                    // Detalhes de pedrinhas na terra (Minecraft style)
+                    ctx.fillStyle = '#3d2314';
+                    ctx.fillRect(bx + 4, by + 4, 4, 4);
+                    ctx.fillRect(bx + 12, by + 10, 4, 4);
+                }
+            }
+
+            // Topo da Grama com Relevo
+            ctx.fillStyle = '#47a025'; // Verde Principal da Grama
+            ctx.fillRect(p.x, p.y, p.w, 16);
+
+            ctx.fillStyle = '#5bc22e'; // Camada Superior Brilhante
+            ctx.fillRect(p.x, p.y, p.w, 5);
+
+            // Folhas/Grama caindo em pixel art na borda inferior do bloco de topo
+            ctx.fillStyle = '#38821d';
+            for (let gx = p.x; gx < p.x + p.w; gx += 8) {
+                let dropH = (gx % 16 === 0) ? 8 : 4;
+                ctx.fillRect(gx, p.y + 16, 6, dropH);
+            }
         } else if (p.type === 'floating_wood') {
-            ctx.fillStyle = '#8d6e63';
+            // Tronco Flutuante no Rio (Madeira Detalhada)
+            ctx.fillStyle = '#5c4033';
             ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.strokeStyle = '#4e342e';
-            ctx.strokeRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = '#3d2b22';
+            ctx.fillRect(p.x + 2, p.y + 3, p.w - 4, 3);
+            ctx.fillRect(p.x + 2, p.y + 12, p.w - 4, 3);
+            // Casca nas pontas
+            ctx.fillStyle = '#8b5a2b';
+            ctx.fillRect(p.x, p.y, 4, p.h);
+            ctx.fillRect(p.x + p.w - 4, p.y, 4, p.h);
         }
     }
 
+    // DESENHAR OBSTÁCULOS (PEDRAS E TRONCOS DE SOLO MELHORADOS)
     for (let obs of obstacles) {
         if (obs.type === 'stone') {
-            ctx.fillStyle = '#7f8c8d';
-            ctx.beginPath();
-            ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 6);
-            ctx.fill();
-        } else {
-            ctx.fillStyle = '#a0522d';
+            // Pedra 3D Pixelada
+            ctx.fillStyle = '#636e72';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            
+            // Sombra e Luz na Pedra
+            ctx.fillStyle = '#b2bec3'; // Brilho topo
+            ctx.fillRect(obs.x, obs.y, obs.w, 5);
+            ctx.fillRect(obs.x, obs.y, 5, obs.h);
+
+            ctx.fillStyle = '#2d3436'; // Sombra base
+            ctx.fillRect(obs.x + obs.w - 5, obs.y, 5, obs.h);
+            ctx.fillRect(obs.x, obs.y + obs.h - 5, obs.w, 5);
+        } else {
+            // Tronco Caído no Chão
+            ctx.fillStyle = '#6e473b';
+            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            
+            // Textura da Madeira do Tronco
+            ctx.fillStyle = '#4a2e25';
+            ctx.fillRect(obs.x, obs.y + 6, obs.w, 4);
+            ctx.fillRect(obs.x, obs.y + 18, obs.w, 4);
+
+            // Anéis da madeira no corte lateral
+            ctx.fillStyle = '#d7ccc8';
+            ctx.fillRect(obs.x + 2, obs.y + 2, 6, obs.h - 4);
         }
     }
 
+    // MOEDAS BRILHANTES
     for (let coin of coins) {
         if (!coin.collected) {
             ctx.fillStyle = '#ffd700';
             ctx.beginPath();
             ctx.arc(coin.x + 8, coin.y + 8, 8, 0, Math.PI * 2);
             ctx.fill();
-            ctx.strokeStyle = '#ffaa00';
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(coin.x + 6, coin.y + 4, 3, 3); // Brilho da moeda
+            ctx.strokeStyle = '#d4af37';
             ctx.stroke();
         }
     }
 
+    // BANDEIRA FINAL
     if (flag) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#bdc3c7';
         ctx.fillRect(flag.x, flag.y, 6, flag.h);
-        ctx.fillStyle = '#e74c3c';
+        ctx.fillStyle = '#27ae60'; // Bandeira verde de chegada
         ctx.beginPath();
         ctx.moveTo(flag.x + 6, flag.y);
-        ctx.lineTo(flag.x + 45, flag.y + 20);
+        ctx.lineTo(flag.x + 48, flag.y + 20);
         ctx.lineTo(flag.x + 6, flag.y + 40);
         ctx.fill();
     }
 
+    // JOGADOR
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.fillStyle = '#000';
