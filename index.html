@@ -462,14 +462,16 @@ const player = {
     jumpForce: -13.5,
     gravity: 0.6,
     grounded: false,
-    color: '#e74c3c'
+    color: '#e74c3c',
+    invincibleTimer: 0 // Cronômetro de imortalidade
 };
 
 let platforms = [];
 let obstacles = [];
 let coins = [];
 let enemies = [];
-let plants = []; // Plantas carnívoras camufladas
+let plants = [];
+let goldenApples = []; // Maçãs Douradas
 let particles = [];
 let mountains = [];
 let flag = null;
@@ -481,8 +483,10 @@ function generateLevel(lvl) {
     coins = [];
     enemies = [];
     plants = [];
+    goldenApples = [];
     particles = [];
     mountains = [];
+    player.invincibleTimer = 0;
 
     platforms.push({ x: 0, y: 500, w: 260, h: 175, type: 'grass' });
 
@@ -512,6 +516,17 @@ function generateLevel(lvl) {
         let platY = 380 + Math.random() * 130;
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
+
+        // MAÇÃ DOURADA (RARA DE SPAWN)
+        if (i > 2 && Math.random() < 0.12) { // 12% de chance de spawnar
+            goldenApples.push({
+                x: currentX + platWidth / 2,
+                y: platY - 24,
+                w: 24,
+                h: 24,
+                eaten: false
+            });
+        }
 
         // Plantas Carnívoras Camufladas no Chão
         if (i > 1 && Math.random() > 0.4) {
@@ -608,6 +623,11 @@ let cameraX = 0;
 function update() {
     if (!isPlaying || isPaused) return;
 
+    // Diminuir tempo de Imortalidade
+    if (player.invincibleTimer > 0) {
+        player.invincibleTimer -= 1 / 60;
+    }
+
     // Movimentação do Jogador
     if (keys.right) player.vx = player.speed;
     else if (keys.left) player.vx = -player.speed;
@@ -638,7 +658,19 @@ function update() {
         }
     }
 
-    // LÓGICA DA PLANTA CARNÍVORA CAMUFLADA
+    // COMER MAÇÃ DOURADA
+    for (let apple of goldenApples) {
+        if (!apple.eaten &&
+            player.x < apple.x + apple.w &&
+            player.x + player.width > apple.x &&
+            player.y < apple.y + apple.h &&
+            player.y + player.height > apple.y) {
+            apple.eaten = true;
+            player.invincibleTimer = 10; // 10 Segundos de Imortalidade
+        }
+    }
+
+    // PLANTA CARNÍVORA CAMUFLADA
     for (let plant of plants) {
         let playerOnPlant = (
             player.x < plant.x + plant.w &&
@@ -652,12 +684,12 @@ function update() {
         }
 
         if (plant.triggered && !plant.closed) {
-            plant.timer += 1/60; // Avança o cronômetro (~3 segundos = 180 frames)
-            plant.shake = (Math.random() - 0.5) * 3; // Tremor de alerta
+            plant.timer += 1/60;
+            plant.shake = (Math.random() - 0.5) * 3;
 
             if (plant.timer >= 3.0) {
                 plant.closed = true;
-                if (playerOnPlant) {
+                if (playerOnPlant && player.invincibleTimer <= 0) {
                     alert(i18n[currentLang].gameover);
                     generateLevel(currentLevel);
                     return;
@@ -703,7 +735,11 @@ function update() {
             player.y < e.y + e.h &&
             player.y + player.height > e.y
         ) {
-            if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 12) {
+            if (player.invincibleTimer > 0) {
+                // Se estiver imortal, mata o inimigo na hora
+                spawnSmoke(e.x + e.w / 2, e.y + e.h / 2);
+                enemies.splice(i, 1);
+            } else if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 12) {
                 player.vy = -9;
                 e.hp -= 1;
 
@@ -856,39 +892,55 @@ function render() {
         }
     }
 
-    // DESENHO DA PLANTA CARNÍVORA CAMUFLADA
+    // MAÇÃ DOURADA
+    for (let apple of goldenApples) {
+        if (!apple.eaten) {
+            let ax = apple.x;
+            let ay = apple.y;
+            // Fruta Dourada Brilhante
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(ax + 4, ay + 4, 16, 16);
+            ctx.fillRect(ax + 8, ay + 2, 8, 20);
+            ctx.fillRect(ax + 2, ay + 8, 20, 8);
+
+            // Brilho Pixelado
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(ax + 6, ay + 6, 4, 4);
+
+            // Cabinho Verde
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(ax + 10, ay - 2, 4, 4);
+        }
+    }
+
+    // PLANTA CARNÍVORA CAMUFLADA
     for (let plant of plants) {
         let px = plant.x + plant.shake;
         let py = plant.y;
 
         if (!plant.closed) {
-            // Boca semi-camuflada e pinos/espinhos coloridos (Verde, Branco e Vermelho)
-            ctx.fillStyle = '#2e7d32'; // Base verde escura
+            ctx.fillStyle = '#2e7d32';
             ctx.fillRect(px, py - 4, plant.w, 8);
 
-            // Pinos com cores intercaladas (Verde, Branco, Vermelho)
             const spikeColors = ['#4caf50', '#ffffff', '#e74c3c'];
             for (let s = 0; s < plant.w; s += 6) {
                 ctx.fillStyle = spikeColors[(s / 6) % 3];
                 ctx.fillRect(px + s, py - 10, 4, 6);
             }
 
-            // Se for ativada (estiver nos 3 segundos de contagem), abre ligeiramente a boca
             if (plant.triggered) {
-                ctx.fillStyle = '#c0392b'; // Interior da boca vermelho
+                ctx.fillStyle = '#c0392b';
                 ctx.fillRect(px + 4, py - 16, plant.w - 8, 12);
-                ctx.fillStyle = '#fff'; // Dentes afiados pixelados
+                ctx.fillStyle = '#fff';
                 for (let d = 4; d < plant.w - 8; d += 8) {
                     ctx.fillRect(px + d, py - 16, 4, 4);
                     ctx.fillRect(px + d, py - 8, 4, 4);
                 }
             }
         } else {
-            // PLANTA FECHADA (Boca fechada totalmente)
             ctx.fillStyle = '#1e5622';
             ctx.fillRect(px - 2, py - 35, plant.w + 4, 40);
             
-            // Espinhos vermelhos/brancos travados
             ctx.fillStyle = '#e74c3c';
             ctx.fillRect(px + 2, py - 38, 8, 6);
             ctx.fillRect(px + 22, py - 38, 8, 6);
@@ -982,12 +1034,19 @@ function render() {
         ctx.fill();
     }
 
-    // JOGADOR
-    ctx.fillStyle = player.color;
+    // JOGADOR (FICA DOURADO E BRILHANTE QUANDO IMORTAL)
+    let bodyColor = player.invincibleTimer > 0 ? '#ffd700' : player.color;
+    let pantsColor = player.invincibleTimer > 0 ? '#ffea00' : '#2980b9';
+
+    ctx.fillStyle = bodyColor;
     ctx.fillRect(player.x, player.y, player.width, player.height);
-    ctx.fillStyle = '#000';
+    
+    // Olhos
+    ctx.fillStyle = player.invincibleTimer > 0 ? '#ffffff' : '#000';
     ctx.fillRect(player.x + (player.vx >= 0 ? 20 : 4), player.y + 8, 8, 8);
-    ctx.fillStyle = '#2980b9';
+    
+    // Calça
+    ctx.fillStyle = pantsColor;
     ctx.fillRect(player.x, player.y + 28, player.width, 20);
 
     ctx.restore();
