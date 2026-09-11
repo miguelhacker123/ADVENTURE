@@ -18,7 +18,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000;
+            background-color: #0b0c10;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,8 +31,9 @@
             max-width: 1200px;
             max-height: 675px;
             background: #111;
-            box-shadow: 0 0 30px rgba(0, 255, 200, 0.2);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
             overflow: hidden;
+            border-radius: 8px;
         }
 
         canvas {
@@ -57,127 +58,137 @@
         }
 
         .lang-btn {
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid #fff;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #52be80;
             color: #fff;
-            padding: 6px 12px;
+            padding: 5px 12px;
             cursor: pointer;
             font-weight: bold;
-            border-radius: 4px;
+            border-radius: 6px;
             transition: 0.2s;
         }
 
         .lang-btn.active {
-            background: #ffcc00;
-            color: #000;
-            border-color: #ffcc00;
+            background: #27ae60;
+            color: #fff;
+            border-color: #2ecc71;
+            box-shadow: 0 0 10px #2ecc71;
         }
 
-        #coin-hud-left {
+        /* HUD MOEDAS E MAÇÃS (EMBAIXO DA MOEDA) */
+        #hud-counters {
             top: 55px;
             left: 15px;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 6px 16px;
-            border-radius: 20px;
-            border: 2px solid #ffd700;
-            color: #ffd700;
-            font-size: 20px;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .coin-icon {
-            width: 22px;
-            height: 22px;
-            background: #ffd700;
+        .hud-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 18px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            width: fit-content;
+        }
+
+        .coin-badge { border: 2px solid #ffd700; color: #ffd700; }
+        .apple-badge { border: 2px solid #ff4757; color: #ff4757; }
+
+        .icon-hud {
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            border: 2px solid #ffaa00;
-            box-shadow: 0 0 8px #ffd700;
             display: inline-block;
         }
+
+        .icon-coin { background: #ffd700; border: 2px solid #ffaa00; box-shadow: 0 0 6px #ffd700; }
+        .icon-apple { background: #ff4757; border: 2px solid #ff6b81; box-shadow: 0 0 6px #ff4757; }
 
         #level-hud {
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            color: #fff;
+            color: #2ecc71;
             font-size: 22px;
             letter-spacing: 2px;
-            background: rgba(0,0,0,0.5);
-            padding: 6px 16px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.7);
+            padding: 6px 20px;
+            border-radius: 12px;
+            border: 2px solid #27ae60;
         }
 
         #btn-pause {
             top: 15px;
             right: 15px;
-            background: rgba(231, 76, 60, 0.8);
+            background: rgba(231, 76, 60, 0.85);
             border: 2px solid #fff;
             color: #fff;
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 6px 14px;
+            border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
             z-index: 12;
+            transition: 0.2s;
         }
+        #btn-pause:hover { background: #e74c3c; transform: scale(1.05); }
 
-        /* --- MENUS (ESTILO TERRA COM MUSGO) --- */
+        /* --- MENUS --- */
         .menu-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: #4a2f1d;
-            background-image: 
-                radial-gradient(#2ecc71 15%, transparent 16%),
-                radial-gradient(#27ae60 15%, transparent 16%),
-                radial-gradient(rgba(0, 0, 0, 0.2) 15%, transparent 20%);
-            background-size: 60px 60px, 80px 80px, 30px 30px;
-            background-position: 0 0, 30px 30px, 15px 15px;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+            background: radial-gradient(circle, #3e2723 0%, #1a0e0a 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 20;
-            gap: 18px;
+            gap: 20px;
         }
 
         .title {
-            font-size: 58px;
-            color: #52be80;
-            text-shadow: 4px 4px 0px #1e8449, 8px 8px 0px #3e2723, 10px 10px 15px #000;
-            letter-spacing: 4px;
-            margin-bottom: 15px;
+            font-size: 62px;
+            color: #2ecc71;
+            text-shadow: 4px 4px 0px #1b5e20, 0 0 20px rgba(46, 204, 113, 0.5);
+            letter-spacing: 6px;
+            margin-bottom: 10px;
             text-align: center;
         }
 
-        /* BOTÕES ESTILO BLOCCO DE TERRA + MUSGO */
         .btn-moss {
             position: relative;
-            width: 250px;
+            width: 260px;
             padding: 16px 0;
             font-size: 22px;
             font-weight: 900;
             color: #ffffff;
-            background: #5d4037;
-            border: 4px solid #2e7d32;
-            border-top: 10px solid #4caf50;
-            border-radius: 10px;
+            background: linear-gradient(180deg, #5d4037 0%, #3e2723 100%);
+            border: 3px solid #2e7d32;
+            border-top: 8px solid #4caf50;
+            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 8px 0 #3e2723, 0 12px 20px rgba(0,0,0,0.6);
-            transition: all 0.1s;
+            box-shadow: 0 8px 0 #1b100c, 0 10px 20px rgba(0,0,0,0.7);
+            transition: all 0.15s ease-in-out;
             text-align: center;
             text-transform: uppercase;
             text-shadow: 2px 2px 4px #000;
         }
 
+        .btn-moss:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
         .btn-moss:active {
             transform: translateY(4px);
-            box-shadow: 0 4px 0 #3e2723, 0 6px 10px rgba(0,0,0,0.6);
+            box-shadow: 0 4px 0 #1b100c, 0 6px 10px rgba(0,0,0,0.6);
         }
 
         #levels-menu { display: none; }
@@ -185,24 +196,27 @@
         .levels-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
+            gap: 14px;
             max-width: 80%;
             max-height: 60%;
             overflow-y: auto;
-            padding: 10px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            border: 2px solid #4caf50;
         }
 
         .level-btn {
-            width: 60px;
-            height: 60px;
-            background: #5d4037;
-            border: 3px solid #2e7d32;
-            border-top: 6px solid #4caf50;
-            color: #fff;
+            width: 65px;
+            height: 65px;
+            background: #3e2723;
+            border: 2px solid #2e7d32;
+            border-top: 5px solid #4caf50;
+            color: #888;
             font-size: 20px;
             font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
+            border-radius: 10px;
+            cursor: not-allowed;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -211,15 +225,18 @@
         }
 
         .level-btn.unlocked {
-            background: #8d6e63;
-            box-shadow: 0 4px 0 #3e2723;
+            background: linear-gradient(180deg, #6d4c41 0%, #4e342e 100%);
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #1b100c;
         }
+        .level-btn.unlocked:hover { transform: scale(1.08); }
 
         .btn-back {
             margin-top: 10px;
-            width: 160px;
-            padding: 10px;
-            font-size: 16px;
+            width: 170px;
+            padding: 12px;
+            font-size: 18px;
         }
 
         #pause-menu { display: none; }
@@ -247,9 +264,9 @@
         .basket-btn {
             width: 70px;
             height: 70px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 3px solid rgba(255, 255, 255, 0.7);
-            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            border-radius: 14px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -263,14 +280,14 @@
         .square-jump-btn {
             width: 75px;
             height: 75px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 3px solid rgba(255, 255, 255, 0.6);
-            border-radius: 8px;
+            background: rgba(46, 204, 113, 0.4);
+            border: 3px solid rgba(46, 204, 113, 0.8);
+            border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
             color: #fff;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: bold;
             backdrop-filter: blur(4px);
             touch-action: manipulation;
@@ -282,16 +299,22 @@
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
 
-    <!-- HUD SELEÇÃO DE IDIOMAS -->
+    <!-- SELEÇÃO DE IDIOMAS -->
     <div id="lang-selector" class="hud-element">
         <button class="lang-btn active" onclick="setLanguage('pt')">PT</button>
         <button class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
 
-    <!-- HUD DE MOEDAS -->
-    <div id="coin-hud-left" class="hud-element">
-        <span class="coin-icon"></span>
-        <span id="coin-count-left">0</span>
+    <!-- HUD DE MOEDAS E MAÇÃS (EMBAIXO DA MOEDA) -->
+    <div id="hud-counters" class="hud-element">
+        <div class="hud-badge coin-badge">
+            <span class="icon-hud icon-coin"></span>
+            <span id="coin-count">0</span>
+        </div>
+        <div class="hud-badge apple-badge">
+            <span class="icon-hud icon-apple"></span>
+            <span id="apple-count">0</span>
+        </div>
     </div>
 
     <!-- HUD FASE ATUAL -->
@@ -302,7 +325,7 @@
     <!-- BOTÃO PAUSE -->
     <button id="btn-pause" class="hud-element" onclick="togglePause()">|| PAUSE</button>
 
-    <!-- MENU INICIAL (TERRA & MUSGO) -->
+    <!-- MENU INICIAL -->
     <div id="main-menu" class="menu-screen">
         <h1 class="title">ADVENTURES</h1>
         <button id="btn-play" class="btn-moss" onclick="startGame()">PLAY</button>
@@ -316,7 +339,7 @@
         <button id="btn-back" class="btn-moss btn-back" onclick="hideLevels()">VOLTAR</button>
     </div>
 
-    <!-- MENU PAUSE (BOTÕES TERRA & MUSGO) -->
+    <!-- MENU PAUSE -->
     <div id="pause-menu" class="menu-screen">
         <h1 class="title" id="pause-title">PAUSADO</h1>
         <button id="btn-resume" class="btn-moss" onclick="togglePause()">CONTINUAR</button>
@@ -389,18 +412,22 @@ function setLanguage(lang) {
     updateLevelHUD();
 }
 
-/* --- MOEDAS E PROGRESSO --- */
+/* --- MOEDAS, MAÇÃS E PROGRESSO SALVO --- */
 let totalCoins = parseInt(localStorage.getItem('adventures_coins')) || 0;
+let totalApples = parseInt(localStorage.getItem('adventures_apples')) || 0;
 let unlockedLevel = parseInt(localStorage.getItem('adventures_level')) || 1;
 let currentLevel = 1;
 
-function updateCoinHUD() {
-    document.getElementById('coin-count-left').innerText = totalCoins;
+function updateHUDCounters() {
+    document.getElementById('coin-count').innerText = totalCoins;
+    document.getElementById('apple-count').innerText = totalApples;
     localStorage.setItem('adventures_coins', totalCoins);
+    localStorage.setItem('adventures_apples', totalApples);
 }
 
 function saveProgress() {
     localStorage.setItem('adventures_coins', totalCoins);
+    localStorage.setItem('adventures_apples', totalApples);
     if (currentLevel >= unlockedLevel && unlockedLevel < 20) {
         unlockedLevel = currentLevel + 1;
         localStorage.setItem('adventures_level', unlockedLevel);
@@ -417,20 +444,21 @@ let isPlaying = false;
 let isPaused = false;
 let keys = { left: false, right: false, up: false };
 
-// JOGADOR UM POUQUINHO MAIOR
+// JOGADOR
 const player = {
     x: 80,
     y: 300,
-    width: 38,      // Levemente maior
-    height: 56,     // Levemente maior
+    width: 38,
+    height: 56,
     vx: 0,
     vy: 0,
-    speed: 5.5,     // Velocidade padrão mantida
+    speed: 5.5,
     jumpForce: -13.5,
     gravity: 0.6,
     grounded: false,
     facing: 'right',
-    animFrame: 0
+    animFrame: 0,
+    invincibleTimer: 0 // Tempo de imortalidade por maçã
 };
 
 let platforms = [];
@@ -458,7 +486,6 @@ function generateLevel(lvl) {
     let currentX = 260;
     const levelLength = 25 + lvl * 5;
 
-    // GERAR MONTANHAS LARGAS NO FUNDO
     let mountainX = -300;
     for (let m = 0; m < levelLength / 2; m++) {
         let mW = 500 + Math.random() * 400;
@@ -484,8 +511,8 @@ function generateLevel(lvl) {
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
-        // MAÇÃ VERMELHA NORMAL (APENAS COLETÁVEL, SEM VELOCIDADE EXTRA)
-        if (i > 1 && Math.random() < 0.3) {
+        // MAÇÃS NO MAPA
+        if (i > 0 && Math.random() < 0.35) {
             apples.push({
                 x: currentX + platWidth / 2 - 12,
                 baseY: platY - 45,
@@ -512,7 +539,7 @@ function generateLevel(lvl) {
             });
         }
 
-        // LESMAS SORTIDAS
+        // LESMAS
         if (i > 0 && Math.random() > 0.3) {
             let randomColor = slugColors[Math.floor(Math.random() * slugColors.length)];
             enemies.push({
@@ -559,18 +586,19 @@ function generateLevel(lvl) {
     player.y = 400;
     player.vx = 0;
     player.vy = 0;
+    player.invincibleTimer = 0;
 }
 
-function spawnSmoke(x, y) {
+function spawnSmoke(x, y, color = '#bdc3c7') {
     for (let i = 0; i < 15; i++) {
         particles.push({
             x: x + Math.random() * 20 - 10,
             y: y + Math.random() * 10,
-            vx: (Math.random() - 0.5) * 2,
+            vx: (Math.random() - 0.5) * 3,
             vy: -Math.random() * 2 - 1,
-            size: 6 + Math.random() * 10,
+            size: 6 + Math.random() * 8,
             alpha: 1,
-            color: '#bdc3c7'
+            color: color
         });
     }
 }
@@ -581,6 +609,22 @@ function update() {
     if (!isPlaying || isPaused) return;
 
     globalTime += 0.05;
+
+    // Reduz Imortalidade
+    if (player.invincibleTimer > 0) {
+        player.invincibleTimer -= 1 / 60;
+        if (Math.random() < 0.4) {
+            particles.push({
+                x: player.x + Math.random() * player.width,
+                y: player.y + Math.random() * player.height,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: -Math.random() * 2,
+                size: 4 + Math.random() * 4,
+                alpha: 1,
+                color: '#ffd700'
+            });
+        }
+    }
 
     // Movimento do Jogador
     if (keys.right) {
@@ -621,7 +665,7 @@ function update() {
         }
     }
 
-    // MAÇÃ VERMELHA NORMAL (NÃO AUMENTA A VELOCIDADE)
+    // COLETA DE MAÇÃ -> DOURADO & IMORTAL POR 7 SEGUNDOS
     for (let apple of apples) {
         if (!apple.eaten) {
             apple.y = apple.baseY + Math.sin(globalTime * 2.5 + apple.floatOffset) * 8;
@@ -633,9 +677,10 @@ function update() {
                 player.y + player.height > apple.y
             ) {
                 apple.eaten = true;
-                totalCoins += 15; // Ganha moedas ao comer
-                updateCoinHUD();
-                spawnSmoke(apple.x + 12, apple.y + 12);
+                totalApples += 1;
+                player.invincibleTimer = 7; // 7 segundos de imortalidade
+                updateHUDCounters();
+                spawnSmoke(apple.x + 12, apple.y + 12, '#ffd700');
             }
         }
     }
@@ -676,6 +721,7 @@ function update() {
             player.y < e.y + e.h &&
             player.y + player.height > e.y
         ) {
+            // Se pular na cabeça OU estiver IMORTAL
             if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 12) {
                 player.vy = -9;
                 e.hp -= 1;
@@ -685,16 +731,15 @@ function update() {
                     e.y += 8;
                 } else if (e.hp <= 0) {
                     spawnSmoke(e.x + e.w / 2, e.y + e.h / 2);
-                    coins.push({
-                        x: e.x + 5,
-                        y: e.y - 10,
-                        w: 28,
-                        h: 28,
-                        collected: false
-                    });
+                    coins.push({ x: e.x + 5, y: e.y - 10, w: 28, h: 28, collected: false });
                     enemies.splice(i, 1);
                     continue;
                 }
+            } else if (player.invincibleTimer > 0) {
+                // Se tocar na lesma estando imortal, mata a lesma direto
+                spawnSmoke(e.x + e.w / 2, e.y + e.h / 2, '#ffd700');
+                coins.push({ x: e.x + 5, y: e.y - 10, w: 28, h: 28, collected: false });
+                enemies.splice(i, 1);
             } else {
                 alert(i18n[currentLang].gameover);
                 generateLevel(currentLevel);
@@ -708,7 +753,7 @@ function update() {
         let p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.size += 0.2;
+        p.size += 0.1;
         p.alpha -= 0.04;
         if (p.alpha <= 0) particles.splice(i, 1);
     }
@@ -722,7 +767,7 @@ function update() {
             player.y + player.height > coin.y) {
             coin.collected = true;
             totalCoins += 10;
-            updateCoinHUD();
+            updateHUDCounters();
         }
     }
 
@@ -758,7 +803,7 @@ function render() {
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // MONTANHAS LARGAS COM PARALLAX
+    // MONTANHAS
     for (let m of mountains) {
         let mParallaxX = m.x - (cameraX * 0.25);
         ctx.fillStyle = m.color;
@@ -783,7 +828,7 @@ function render() {
     ctx.fillStyle = '#1e73be';
     ctx.fillRect(cameraX, 580, canvas.width, 100);
 
-    // PLATAFORMAS
+    // PLATAFORMAS (TEXTURA IGUAL A ANTES)
     const BLOCK_SIZE = 20;
     for (let p of platforms) {
         if (p.type === 'grass') {
@@ -810,18 +855,18 @@ function render() {
         }
     }
 
-    // MAÇÃ VERMELHA FLUTUANTE
+    // MAÇÃ VERMELHA
     for (let apple of apples) {
         if (!apple.eaten) {
             let ax = apple.x;
             let ay = apple.y;
 
-            ctx.fillStyle = '#e74c3c';
+            ctx.fillStyle = '#ff4757';
             ctx.fillRect(ax + 4, ay + 4, 16, 16);
             ctx.fillRect(ax + 6, ay + 2, 12, 20);
             ctx.fillRect(ax + 2, ay + 6, 20, 12);
 
-            ctx.fillStyle = '#ff7979';
+            ctx.fillStyle = '#ff6b81';
             ctx.fillRect(ax + 6, ay + 6, 4, 4);
 
             ctx.fillStyle = '#2ecc71';
@@ -845,7 +890,7 @@ function render() {
         }
     }
 
-    // LESMAS SORTIDAS
+    // LESMAS
     for (let e of enemies) {
         let bounce = Math.sin(e.animTimer * 5) * 2;
         ctx.fillStyle = e.color;
@@ -879,7 +924,7 @@ function render() {
         ctx.restore();
     }
 
-    // BANDEIRA FINAL
+    // BANDEIRA
     if (flag) {
         ctx.fillStyle = '#bdc3c7';
         ctx.fillRect(flag.x, flag.y, 6, flag.h);
@@ -891,17 +936,25 @@ function render() {
         ctx.fill();
     }
 
-    // PERSONAGEM UM POUQUINHO MAIOR
+    // DESENHAR PERSONAGEM
     let px = player.x;
     let py = player.y;
     let legAnim = Math.sin(player.animFrame * 2) * 6;
+    let isGolden = player.invincibleTimer > 0;
 
-    // Cabeça
-    ctx.fillStyle = '#f1c40f'; // Cabelo Amarelo
+    // AURÉOLA/BRILHO DOURADO QUANDO IMORTAL
+    if (isGolden) {
+        ctx.strokeStyle = '#ffd700';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(px - 4, py - 4, player.width + 8, player.height + 8);
+    }
+
+    // Cabelo Marrom
+    ctx.fillStyle = isGolden ? '#ffee55' : '#5d4037';
     ctx.fillRect(px + 4, py, 30, 16);
 
     // Rosto
-    ctx.fillStyle = '#ffdbac';
+    ctx.fillStyle = isGolden ? '#ffea00' : '#ffdbac';
     ctx.fillRect(px + 6, py + 12, 26, 12);
 
     // Olhos
@@ -909,12 +962,12 @@ function render() {
     let eyeX = player.facing === 'right' ? px + 22 : px + 8;
     ctx.fillRect(eyeX, py + 16, 4, 4);
 
-    // Tronco (Camisa Vermelha)
-    ctx.fillStyle = '#e74c3c';
+    // Tronco (Camisa)
+    ctx.fillStyle = isGolden ? '#ffaa00' : '#e74c3c';
     ctx.fillRect(px + 4, py + 24, 30, 20);
 
     // Braços
-    ctx.fillStyle = '#ffdbac';
+    ctx.fillStyle = isGolden ? '#ffea00' : '#ffdbac';
     if (player.facing === 'right') {
         ctx.fillRect(px, py + 26 - legAnim, 5, 14);
         ctx.fillRect(px + 33, py + 26 + legAnim, 5, 14);
@@ -924,7 +977,7 @@ function render() {
     }
 
     // Calça
-    ctx.fillStyle = '#2980b9';
+    ctx.fillStyle = isGolden ? '#ff8800' : '#2980b9';
     ctx.fillRect(px + 6 - legAnim / 2, py + 44, 10, 10);
     ctx.fillRect(px + 22 + legAnim / 2, py + 44, 10, 10);
 
@@ -942,7 +995,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-/* --- PAUSE E CONTROLE DE MENUS --- */
+/* --- PAUSE E MENUS --- */
 function togglePause() {
     if (!isPlaying) return;
     isPaused = !isPaused;
@@ -1032,7 +1085,7 @@ bindTouch('btn-left', 'left');
 bindTouch('btn-right', 'right');
 bindTouch('btn-jump', 'up');
 
-updateCoinHUD();
+updateHUDCounters();
 setLanguage('pt');
 requestAnimationFrame(gameLoop);
 
