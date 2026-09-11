@@ -73,32 +73,19 @@
             border-color: #ffcc00;
         }
 
+        /* APENAS HUD DE MOEDAS DA ESQUERDA */
         #coin-hud-left {
             top: 55px;
             left: 15px;
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 6px 14px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 6px 16px;
             border-radius: 20px;
             border: 2px solid #ffd700;
             color: #ffd700;
-            font-size: 18px;
-        }
-
-        #coin-hud-right {
-            top: 15px;
-            right: 80px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 6px 14px;
-            border-radius: 20px;
-            border: 2px solid #ffd700;
-            color: #ffd700;
-            font-size: 18px;
+            font-size: 20px;
         }
 
         .coin-icon {
@@ -307,15 +294,10 @@
         <button class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
 
-    <!-- HUD MOEDAS -->
+    <!-- UNICO HUD DE MOEDAS (ESQUERDA) -->
     <div id="coin-hud-left" class="hud-element">
         <span class="coin-icon"></span>
         <span id="coin-count-left">0</span>
-    </div>
-
-    <div id="coin-hud-right" class="hud-element">
-        <span class="coin-icon"></span>
-        <span id="coin-count-right">0</span>
     </div>
 
     <!-- HUD FASE ATUAL -->
@@ -420,7 +402,6 @@ let currentLevel = 1;
 
 function updateCoinHUD() {
     document.getElementById('coin-count-left').innerText = totalCoins;
-    document.getElementById('coin-count-right').innerText = totalCoins;
     localStorage.setItem('adventures_coins', totalCoins);
 }
 
@@ -442,28 +423,28 @@ let isPlaying = false;
 let isPaused = false;
 let keys = { left: false, right: false, up: false };
 
+// JOGADOR MAIOR E BEM DEFINIDO
 const player = {
     x: 80,
     y: 300,
-    width: 26,     // Tamanho ajustado e proporcional
-    height: 42,
+    width: 34,      // Tamanho maior e visível
+    height: 52,
     vx: 0,
     vy: 0,
-    baseSpeed: 5.0,
-    speed: 5.0,
-    jumpForce: -13.0,
+    baseSpeed: 5.5,
+    speed: 5.5,
+    jumpForce: -13.5,
     gravity: 0.6,
     grounded: false,
     facing: 'right',
     animFrame: 0,
-    speedBoostTimer: 0 // Bônus da Maçã Vermelha
+    speedBoostTimer: 0 // Bônus de Agilidade
 };
 
 let platforms = [];
 let obstacles = [];
 let coins = [];
 let enemies = [];
-let plants = [];
 let apples = []; // Maçãs Vermelhas de Agilidade
 let particles = [];
 let mountains = [];
@@ -476,7 +457,6 @@ function generateLevel(lvl) {
     obstacles = [];
     coins = [];
     enemies = [];
-    plants = [];
     apples = [];
     particles = [];
     mountains = [];
@@ -490,8 +470,8 @@ function generateLevel(lvl) {
     // GERAR MONTANHAS LARGAS NO FUNDO
     let mountainX = -300;
     for (let m = 0; m < levelLength / 2; m++) {
-        let mW = 600 + Math.random() * 500; // Montanhas bem mais largas!
-        let mH = 260 + Math.random() * 160;
+        let mW = 500 + Math.random() * 400;
+        let mH = 250 + Math.random() * 150;
         mountains.push({
             x: mountainX,
             y: 580 - mH,
@@ -499,10 +479,10 @@ function generateLevel(lvl) {
             h: mH,
             color: m % 2 === 0 ? '#2c3e50' : '#1f2d3d'
         });
-        mountainX += mW - 150;
+        mountainX += mW - 120;
     }
 
-    const slugColors = ['#8e44ad', '#e74c3c', '#2980b9']; // Cores Sortidas: Roxa, Vermelha e Azul
+    const slugColors = ['#8e44ad', '#e74c3c', '#2980b9']; // Cores Sortidas
 
     for (let i = 0; i < levelLength; i++) {
         let gap = 80 + Math.random() * 70 + (lvl * 2);
@@ -513,37 +493,24 @@ function generateLevel(lvl) {
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
-        // MAÇÃ VERMELHA NORMAL (FLUTUANTE & DÁ AGILIDADE)
-        if (i > 1 && Math.random() < 0.25) {
+        // MAÇÃ VERMELHA NORMAL (FLUTUANTE DE AGILIDADE)
+        if (i > 1 && Math.random() < 0.35) {
             apples.push({
-                x: currentX + platWidth / 2,
+                x: currentX + platWidth / 2 - 12,
                 baseY: platY - 45,
                 y: platY - 45,
-                w: 20,
-                h: 20,
+                w: 24,
+                h: 24,
                 eaten: false,
                 floatOffset: Math.random() * Math.PI * 2
             });
         }
 
-        // VENUSPINO / PLANTA CARNÍVORA MELHORADA
-        if (i > 1 && Math.random() > 0.4) {
-            plants.push({
-                x: currentX + 40 + Math.random() * (platWidth - 90),
-                y: platY,
-                w: 42,
-                h: 36,
-                timer: 0,
-                triggered: false,
-                mouthAngle: 0
-            });
-        }
-
-        // OBSTÁCULOS
-        if (Math.random() > 0.5) {
+        // OBSTÁCULOS IGUAL ANTES
+        if (Math.random() > 0.45) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
-            let obsW = obsType === 'stone' ? 36 : 48;
-            let obsH = obsType === 'stone' ? 30 : 26;
+            let obsW = obsType === 'stone' ? 36 : 50;
+            let obsH = obsType === 'stone' ? 32 : 28;
             
             obstacles.push({
                 x: currentX + platWidth / 2 - obsW / 2,
@@ -559,10 +526,10 @@ function generateLevel(lvl) {
             let randomColor = slugColors[Math.floor(Math.random() * slugColors.length)];
             enemies.push({
                 x: currentX + 20,
-                y: platY - 22,
-                w: 36,
-                h: 22,
-                vx: 1.2,
+                y: platY - 24,
+                w: 38,
+                h: 24,
+                vx: 1.3,
                 hp: 2,
                 platMin: currentX,
                 platMax: currentX + platWidth,
@@ -574,7 +541,7 @@ function generateLevel(lvl) {
         // TRONCO FLUTUANTE
         if (gap > 110 && Math.random() > 0.3) {
             let logX = currentX - gap / 2 - 30;
-            let logY = 490;
+            let logY = 500;
             platforms.push({ x: logX, y: logY, w: 65, h: 22, type: 'floating_wood' });
         }
 
@@ -627,7 +594,7 @@ function update() {
     // Lógica do Bônus de Agilidade da Maçã Vermelha
     if (player.speedBoostTimer > 0) {
         player.speedBoostTimer -= 1 / 60;
-        player.speed = player.baseSpeed * 1.6; // Dobra/Aumenta velocidade
+        player.speed = player.baseSpeed * 1.6; // Super Agilidade
     } else {
         player.speed = player.baseSpeed;
     }
@@ -636,11 +603,11 @@ function update() {
     if (keys.right) {
         player.vx = player.speed;
         player.facing = 'right';
-        player.animFrame += 0.2;
+        player.animFrame += 0.25;
     } else if (keys.left) {
         player.vx = -player.speed;
         player.facing = 'left';
-        player.animFrame += 0.2;
+        player.animFrame += 0.25;
     } else {
         player.vx = 0;
         player.animFrame = 0;
@@ -671,10 +638,10 @@ function update() {
         }
     }
 
-    // MAÇÃ FLUTUANTE (EFEITO BOBBING)
+    // COLETA DA MAÇÃ REDEFINIDA E 100% FUNCIONAL
     for (let apple of apples) {
         if (!apple.eaten) {
-            apple.y = apple.baseY + Math.sin(globalTime * 2 + apple.floatOffset) * 6;
+            apple.y = apple.baseY + Math.sin(globalTime * 2.5 + apple.floatOffset) * 8;
 
             if (
                 player.x < apple.x + apple.w &&
@@ -683,32 +650,8 @@ function update() {
                 player.y + player.height > apple.y
             ) {
                 apple.eaten = true;
-                player.speedBoostTimer = 10; // 10 Segundos de Super Agilidade!
-            }
-        }
-    }
-
-    // VENUSPINO (PLANTA CARNÍVORA MELHORADA)
-    for (let plant of plants) {
-        let dist = Math.abs((player.x + player.width / 2) - (plant.x + plant.w / 2));
-        
-        if (dist < 80) {
-            plant.triggered = true;
-        }
-
-        if (plant.triggered) {
-            plant.timer += 0.08;
-            plant.mouthAngle = Math.abs(Math.sin(plant.timer)) * 1.2;
-
-            if (
-                player.x < plant.x + plant.w &&
-                player.x + player.width > plant.x &&
-                player.y + player.height > plant.y - plant.h &&
-                player.y < plant.y
-            ) {
-                alert(i18n[currentLang].gameover);
-                generateLevel(currentLevel);
-                return;
+                player.speedBoostTimer = 10; // 10 Segundos de Super Agilidade
+                spawnSmoke(apple.x + 12, apple.y + 12);
             }
         }
     }
@@ -733,7 +676,7 @@ function update() {
         }
     }
 
-    // LESMAS SORTIDAS MELHORADAS
+    // LESMAS SORTIDAS
     for (let i = enemies.length - 1; i >= 0; i--) {
         let e = enemies[i];
         e.x += e.vx;
@@ -749,17 +692,17 @@ function update() {
             player.y < e.y + e.h &&
             player.y + player.height > e.y
         ) {
-            if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 10) {
+            if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 12) {
                 player.vy = -9;
                 e.hp -= 1;
 
                 if (e.hp === 1) {
-                    e.h = 14;
+                    e.h = 16;
                     e.y += 8;
                 } else if (e.hp <= 0) {
                     spawnSmoke(e.x + e.w / 2, e.y + e.h / 2);
                     coins.push({
-                        x: e.x + 4,
+                        x: e.x + 5,
                         y: e.y - 10,
                         w: 28,
                         h: 28,
@@ -841,12 +784,11 @@ function render() {
         ctx.lineTo(mParallaxX + m.w, m.y + m.h);
         ctx.fill();
 
-        // Neve no topo
         ctx.fillStyle = '#ecf0f1';
         ctx.beginPath();
-        ctx.moveTo(mParallaxX + m.w / 2 - 40, m.y + 50);
+        ctx.moveTo(mParallaxX + m.w / 2 - 35, m.y + 45);
         ctx.lineTo(mParallaxX + m.w / 2, m.y);
-        ctx.lineTo(mParallaxX + m.w / 2 + 40, m.y + 50);
+        ctx.lineTo(mParallaxX + m.w / 2 + 35, m.y + 45);
         ctx.fill();
     }
 
@@ -856,8 +798,13 @@ function render() {
     // Rio
     ctx.fillStyle = '#1e73be';
     ctx.fillRect(cameraX, 580, canvas.width, 100);
+    ctx.fillStyle = '#2980b9';
+    for (let w = cameraX - (cameraX % 40); w < cameraX + canvas.width + 40; w += 40) {
+        ctx.fillRect(w, 585, 20, 4);
+        ctx.fillRect(w + 20, 600, 15, 4);
+    }
 
-    // PLATAFORMAS
+    // PLATAFORMAS (TEXTURA IGUAL ANTES)
     const BLOCK_SIZE = 20;
     for (let p of platforms) {
         if (p.type === 'grass') {
@@ -868,6 +815,9 @@ function render() {
                     let isDark = ((Math.floor(bx/BLOCK_SIZE) + Math.floor(by/BLOCK_SIZE)) % 2 === 0);
                     ctx.fillStyle = isDark ? '#73462c' : '#5c3520';
                     ctx.fillRect(bx, by, bw, bh);
+                    ctx.fillStyle = '#3d2314';
+                    ctx.fillRect(bx + 4, by + 4, 4, 4);
+                    ctx.fillRect(bx + 12, by + 10, 4, 4);
                 }
             }
 
@@ -875,9 +825,18 @@ function render() {
             ctx.fillRect(p.x, p.y, p.w, 16);
             ctx.fillStyle = '#5bc22e';
             ctx.fillRect(p.x, p.y, p.w, 5);
+
+            ctx.fillStyle = '#38821d';
+            for (let gx = p.x; gx < p.x + p.w; gx += 8) {
+                let dropH = (gx % 16 === 0) ? 8 : 4;
+                ctx.fillRect(gx, p.y + 16, 6, dropH);
+            }
         } else if (p.type === 'floating_wood') {
             ctx.fillStyle = '#5c4033';
             ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = '#3d2b22';
+            ctx.fillRect(p.x + 2, p.y + 3, p.w - 4, 3);
+            ctx.fillRect(p.x + 2, p.y + 12, p.w - 4, 3);
             ctx.fillStyle = '#8b5a2b';
             ctx.fillRect(p.x, p.y, 4, p.h);
             ctx.fillRect(p.x + p.w - 4, p.y, 4, p.h);
@@ -892,84 +851,60 @@ function render() {
 
             // Fruta Vermelha
             ctx.fillStyle = '#e74c3c';
-            ctx.fillRect(ax + 3, ay + 3, 14, 14);
-            ctx.fillRect(ax + 5, ay + 1, 10, 18);
-            ctx.fillRect(ax + 1, ay + 5, 18, 10);
+            ctx.fillRect(ax + 4, ay + 4, 16, 16);
+            ctx.fillRect(ax + 6, ay + 2, 12, 20);
+            ctx.fillRect(ax + 2, ay + 6, 20, 12);
 
             // Brilho
             ctx.fillStyle = '#ff7979';
-            ctx.fillRect(ax + 4, ay + 4, 4, 4);
+            ctx.fillRect(ax + 6, ay + 6, 4, 4);
 
             // Cabinho & Folha Verde
             ctx.fillStyle = '#2ecc71';
-            ctx.fillRect(ax + 9, ay - 3, 3, 4);
-            ctx.fillRect(ax + 12, ay - 3, 4, 2);
+            ctx.fillRect(ax + 11, ay - 2, 3, 4);
+            ctx.fillRect(ax + 14, ay - 2, 4, 3);
         }
     }
 
-    // VENUSPINO (PLANTA CARNÍVORA MELHORADA)
-    for (let plant of plants) {
-        let px = plant.x;
-        let py = plant.y;
-
-        // Caule / Vaso no chão
-        ctx.fillStyle = '#1b5e20';
-        ctx.fillRect(px + 16, py - 18, 10, 18);
-
-        // Cabeça do Venuspino
-        ctx.fillStyle = '#2e7d32';
-        ctx.beginPath();
-        ctx.arc(px + 21, py - 24, 18, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Boca / Dentes Animados
-        ctx.fillStyle = '#c0392b';
-        let openHeight = Math.sin(globalTime * 6) * 8 + 4;
-        ctx.fillRect(px + 8, py - 28 - openHeight / 2, 26, openHeight);
-
-        // Dentes Afiados
-        ctx.fillStyle = '#ffffff';
-        for (let d = 10; d < 32; d += 6) {
-            ctx.fillRect(px + d, py - 28 - openHeight / 2, 3, 3);
-            ctx.fillRect(px + d, py - 28 + openHeight / 2 - 3, 3, 3);
-        }
-    }
-
-    // LESMAS SORTIDAS (ROXA, VERMELHA, AZUL)
-    for (let e of enemies) {
-        let squish = Math.sin(e.animTimer * 4) * 3;
-        let ew = e.w + squish;
-        let eh = e.h - squish;
-
-        // Corpo Principal da Lesma
-        ctx.fillStyle = e.color;
-        ctx.fillRect(e.x - squish / 2, e.y + squish, ew, eh);
-
-        // Textura/Brilho nas Costas
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.fillRect(e.x + 4, e.y + squish + 3, ew - 10, 4);
-
-        // Olhos Retráteis Pixelados
-        ctx.fillStyle = '#fff';
-        let eyeX = e.vx > 0 ? e.x + ew - 8 : e.x + 2;
-        ctx.fillRect(eyeX, e.y + squish - 4, 5, 5);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(eyeX + (e.vx > 0 ? 2 : 0), e.y + squish - 3, 3, 3);
-    }
-
-    // OBSTÁCULOS
+    // OBSTÁCULOS IGUAL ANTES
     for (let obs of obstacles) {
         if (obs.type === 'stone') {
             ctx.fillStyle = '#636e72';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
             ctx.fillStyle = '#b2bec3';
-            ctx.fillRect(obs.x, obs.y, obs.w, 4);
+            ctx.fillRect(obs.x, obs.y, obs.w, 5);
+            ctx.fillRect(obs.x, obs.y, 5, obs.h);
+            ctx.fillStyle = '#2d3436';
+            ctx.fillRect(obs.x + obs.w - 5, obs.y, 5, obs.h);
+            ctx.fillRect(obs.x, obs.y + obs.h - 5, obs.w, 5);
         } else {
             ctx.fillStyle = '#6e473b';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            ctx.fillStyle = '#4a2e25';
+            ctx.fillRect(obs.x, obs.y + 6, obs.w, 4);
+            ctx.fillRect(obs.x, obs.y + 18, obs.w, 4);
             ctx.fillStyle = '#d7ccc8';
             ctx.fillRect(obs.x + 2, obs.y + 2, 6, obs.h - 4);
         }
+    }
+
+    // LESMAS SORTIDAS (ROXA, VERMELHA, AZUL)
+    for (let e of enemies) {
+        let bounce = Math.sin(e.animTimer * 5) * 2;
+        ctx.fillStyle = e.color;
+        ctx.fillRect(e.x, e.y + bounce, e.w, e.h - bounce);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillRect(e.x + 6, e.y + 4 + bounce, e.w - 12, 6);
+
+        ctx.fillStyle = '#fff';
+        let eyeX = e.vx > 0 ? e.x + e.w - 10 : e.x + 4;
+        ctx.fillRect(eyeX, e.y + 4 + bounce, 6, 6);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(eyeX + (e.vx > 0 ? 3 : 0), e.y + 6 + bounce, 3, 3);
+
+        ctx.fillStyle = e.color;
+        ctx.fillRect(eyeX + 1, e.y - 4 + bounce, 2, 4);
     }
 
     // MOEDAS PIXELADAS
@@ -977,10 +912,20 @@ function render() {
         if (!coin.collected) {
             let cx = coin.x;
             let cy = coin.y;
-            ctx.fillStyle = '#ffd700';
+
+            ctx.fillStyle = '#d4af37';
+            ctx.fillRect(cx + 8, cy, 12, 28);
+            ctx.fillRect(cx, cy + 8, 28, 12);
             ctx.fillRect(cx + 4, cy + 4, 20, 20);
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(cx + 6, cy + 6, 4, 4);
+
+            ctx.fillStyle = '#ffea00';
+            ctx.fillRect(cx + 6, cy + 6, 16, 16);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(cx + 8, cy + 8, 4, 4);
+
+            ctx.fillStyle = '#c5a000';
+            ctx.fillRect(cx + 16, cy + 12, 4, 8);
         }
     }
 
@@ -1005,47 +950,48 @@ function render() {
         ctx.fill();
     }
 
-    // PERSONAGEM HUMANOIDE MELHORADO (CABEÇA, BRAÇOS, PERNAS)
+    // PERSONAGEM MAIOR E BEM DETALHADO (HUMANOIDE)
     let px = player.x;
     let py = player.y;
 
-    // Animação de Passos (Pernas)
-    let legOffset = Math.sin(player.animFrame * 2) * 5;
+    let legAnim = Math.sin(player.animFrame * 2) * 6;
 
-    // Cabeça
-    ctx.fillStyle = '#f1c40f'; // Capacete/Cabelo Amarelo
-    ctx.fillRect(px + 4, py, 18, 12);
-    ctx.fillStyle = '#ffdbac'; // Pele
-    ctx.fillRect(px + 6, py + 8, 14, 8);
+    // Cabeça / Cabelo
+    ctx.fillStyle = '#f1c40f'; // Cabelo Amarelo
+    ctx.fillRect(px + 4, py, 26, 14);
+
+    // Rosto (Pele)
+    ctx.fillStyle = '#ffdbac';
+    ctx.fillRect(px + 6, py + 10, 22, 12);
 
     // Olhos
     ctx.fillStyle = '#000';
-    let eyeOffsetX = player.facing === 'right' ? 14 : 6;
-    ctx.fillRect(px + eyeOffsetX, py + 10, 3, 3);
+    let eyeX = player.facing === 'right' ? px + 20 : px + 8;
+    ctx.fillRect(eyeX, py + 14, 4, 4);
 
-    // Tronco (Camisa Vermelha ou Azul se tiver Agilidade)
+    // Tronco (Camisa Vermelha / Azul se ativado Super Agilidade)
     ctx.fillStyle = player.speedBoostTimer > 0 ? '#00d2d3' : '#e74c3c';
-    ctx.fillRect(px + 4, py + 16, 18, 14);
+    ctx.fillRect(px + 4, py + 22, 26, 18);
 
     // Braços Animados
     ctx.fillStyle = '#ffdbac';
     if (player.facing === 'right') {
-        ctx.fillRect(px + 2, py + 18 - legOffset, 4, 10);
-        ctx.fillRect(px + 20, py + 18 + legOffset, 4, 10);
+        ctx.fillRect(px, py + 24 - legAnim, 5, 14);
+        ctx.fillRect(px + 29, py + 24 + legAnim, 5, 14);
     } else {
-        ctx.fillRect(px + 2, py + 18 + legOffset, 4, 10);
-        ctx.fillRect(px + 20, py + 18 - legOffset, 4, 10);
+        ctx.fillRect(px, py + 24 + legAnim, 5, 14);
+        ctx.fillRect(px + 29, py + 24 - legAnim, 5, 14);
     }
 
-    // Calça / Pernas Animadas
+    // Calça (Jeans Azul)
     ctx.fillStyle = '#2980b9';
-    ctx.fillRect(px + 5 - legOffset / 2, py + 30, 7, 12);
-    ctx.fillRect(px + 14 + legOffset / 2, py + 30, 7, 12);
+    ctx.fillRect(px + 6 - legAnim / 2, py + 40, 9, 10);
+    ctx.fillRect(px + 19 + legAnim / 2, py + 40, 9, 10);
 
     // Sapatos
     ctx.fillStyle = '#34495e';
-    ctx.fillRect(px + 4 - legOffset / 2, py + 39, 8, 3);
-    ctx.fillRect(px + 14 + legOffset / 2, py + 39, 8, 3);
+    ctx.fillRect(px + 4 - legAnim / 2, py + 49, 11, 3);
+    ctx.fillRect(px + 19 + legAnim / 2, py + 49, 11, 3);
 
     ctx.restore();
 }
