@@ -104,8 +104,8 @@
         }
 
         .coin-icon {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             background: #ffd700;
             border-radius: 50%;
             border: 2px solid #ffaa00;
@@ -356,7 +356,7 @@ const i18n = {
         level: "FASE",
         jump: "PULAR",
         win: "FASE CONCLUÍDA!",
-        gameover: "VOCÊ CAIU NO RIO!"
+        gameover: "VOCÊ MORREU!"
     },
     en: {
         play: "PLAY",
@@ -366,7 +366,7 @@ const i18n = {
         level: "LEVEL",
         jump: "JUMP",
         win: "LEVEL COMPLETE!",
-        gameover: "YOU FELL IN THE RIVER!"
+        gameover: "YOU DIED!"
     }
 };
 
@@ -431,12 +431,17 @@ const player = {
 let platforms = [];
 let obstacles = [];
 let coins = [];
+let enemies = [];
+let particles = [];
 let flag = null;
 
+/* --- GERADOR DE FASES --- */
 function generateLevel(lvl) {
     platforms = [];
     obstacles = [];
     coins = [];
+    enemies = [];
+    particles = [];
 
     platforms.push({ x: 0, y: 500, w: 240, h: 175, type: 'grass' });
 
@@ -447,12 +452,13 @@ function generateLevel(lvl) {
         let gap = 80 + Math.random() * 60 + (lvl * 3);
         currentX += gap;
 
-        let platWidth = Math.max(120, 220 - lvl * 5 + Math.random() * 50);
+        let platWidth = Math.max(140, 240 - lvl * 5 + Math.random() * 50);
         let platY = 400 + Math.random() * 120;
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
-        if (Math.random() > 0.4) {
+        // Adiciona Obstáculos
+        if (Math.random() > 0.5) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
             let obsW = obsType === 'stone' ? 36 : 50;
             let obsH = obsType === 'stone' ? 32 : 28;
@@ -466,19 +472,36 @@ function generateLevel(lvl) {
             });
         }
 
+        // Adiciona Lesmas Roxas (Inimigos)
+        if (i > 0 && Math.random() > 0.35) {
+            enemies.push({
+                x: currentX + 20,
+                y: platY - 26,
+                w: 38,
+                h: 26,
+                vx: 1.2,
+                hp: 2,
+                platMin: currentX,
+                platMax: currentX + platWidth,
+                animTimer: 0
+            });
+        }
+
+        // Adiciona Tronco Flutuante no Rio
         if (gap > 110 && Math.random() > 0.3) {
             let logX = currentX - gap / 2 - 30;
             let logY = 510;
             platforms.push({ x: logX, y: logY, w: 60, h: 22, type: 'floating_wood' });
         }
 
+        // Adiciona Moedas Grandes e Pixeladas na plataforma
         let coinsInPlat = 1 + Math.floor(Math.random() * 3);
         for (let c = 0; c < coinsInPlat; c++) {
             coins.push({
-                x: currentX + 30 + (c * 30),
-                y: platY - 40 - (Math.random() * 40),
-                w: 16,
-                h: 16,
+                x: currentX + 25 + (c * 35),
+                y: platY - 50 - (Math.random() * 30),
+                w: 28,
+                h: 28,
                 collected: false
             });
         }
@@ -496,11 +519,27 @@ function generateLevel(lvl) {
     player.vy = 0;
 }
 
+// Cria efeito de Fumaça evaporando ao matar a lesma
+function spawnSmoke(x, y) {
+    for (let i = 0; i < 16; i++) {
+        particles.push({
+            x: x + Math.random() * 30 - 15,
+            y: y + Math.random() * 10,
+            vx: (Math.random() - 0.5) * 2.5,
+            vy: -Math.random() * 2 - 1,
+            size: 8 + Math.random() * 10,
+            alpha: 1,
+            color: Math.random() > 0.5 ? '#dcdde1' : '#718093'
+        });
+    }
+}
+
 let cameraX = 0;
 
 function update() {
     if (!isPlaying) return;
 
+    // Movimentação do Jogador
     if (keys.right) player.vx = player.speed;
     else if (keys.left) player.vx = -player.speed;
     else player.vx = 0;
@@ -511,10 +550,10 @@ function update() {
     }
 
     player.vy += player.gravity;
-
     player.x += player.vx;
     player.y += player.vy;
 
+    // Colisão com Plataformas
     player.grounded = false;
     for (let p of platforms) {
         if (
@@ -530,6 +569,7 @@ function update() {
         }
     }
 
+    // Colisão com Obstáculos
     for (let obs of obstacles) {
         if (
             player.x < obs.x + obs.w &&
@@ -550,6 +590,67 @@ function update() {
         }
     }
 
+    // Atualização dos Inimigos (Lesma Roxa)
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        let e = enemies[i];
+        e.x += e.vx;
+        e.animTimer += 0.1;
+
+        // Bate e volta nas bordas da plataforma
+        if (e.x <= e.platMin || e.x + e.w >= e.platMax) {
+            e.vx *= -1;
+        }
+
+        // Colisão Jogador vs Lesma Roxa
+        if (
+            player.x < e.x + e.w &&
+            player.x + player.width > e.x &&
+            player.y < e.y + e.h &&
+            player.y + player.height > e.y
+        ) {
+            // Pulo em cima da lesma
+            if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 12) {
+                player.vy = -9; // Quica no inimigo
+                e.hp -= 1;
+
+                if (e.hp === 1) {
+                    e.h = 16; // Encolhe ao tomar o 1º golpe
+                    e.y += 10;
+                } else if (e.hp <= 0) {
+                    // Morre no 2º pulo: Cria fumaça, dropa moeda e remove inimigo
+                    spawnSmoke(e.x + e.w / 2, e.y + e.h / 2);
+                    coins.push({
+                        x: e.x + 5,
+                        y: e.y - 10,
+                        w: 28,
+                        h: 28,
+                        collected: false
+                    });
+                    enemies.splice(i, 1);
+                    continue;
+                }
+            } else {
+                // Jogador toca do lado (Morre)
+                alert(i18n[currentLang].gameover);
+                generateLevel(currentLevel);
+                return;
+            }
+        }
+    }
+
+    // Atualização de Partículas de Fumaça
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.size += 0.3;
+        p.alpha -= 0.03;
+        if (p.alpha <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+
+    // Coleta de Moedas
     for (let coin of coins) {
         if (!coin.collected &&
             player.x < coin.x + coin.w &&
@@ -562,14 +663,17 @@ function update() {
         }
     }
 
+    // Câmera
     cameraX = player.x - 200;
     if (cameraX < 0) cameraX = 0;
 
+    // Queda no rio
     if (player.y > canvas.height) {
         alert(i18n[currentLang].gameover);
         generateLevel(currentLevel);
     }
 
+    // Chegada
     if (flag && player.x > flag.x) {
         saveProgress();
         alert(i18n[currentLang].win);
@@ -583,9 +687,8 @@ function update() {
     }
 }
 
-/* --- RENDERIZAÇÃO COM TEXTURAS ESTILO MINECRAFT --- */
+/* --- RENDERIZAÇÃO GRÁFICA --- */
 function render() {
-    // Céu em degradê
     let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     skyGradient.addColorStop(0, '#3a88e9');
     skyGradient.addColorStop(1, '#7ec0ee');
@@ -595,7 +698,7 @@ function render() {
     ctx.save();
     ctx.translate(-cameraX, 0);
 
-    // Rio (Água com textura de ondas)
+    // Rio
     ctx.fillStyle = '#1e73be';
     ctx.fillRect(cameraX, 580, canvas.width, 100);
     ctx.fillStyle = '#2980b9';
@@ -604,106 +707,128 @@ function render() {
         ctx.fillRect(w + 20, 600, 15, 4);
     }
 
-    // DESENHAR PLATAFORMAS COM BLOCOS DE TERRA E GRAMA (ESTILO MINECRAFT)
+    // PLATAFORMAS COM ESTILO MINECRAFT
     const BLOCK_SIZE = 20;
-
     for (let p of platforms) {
         if (p.type === 'grass') {
-            // Desenha blocos de terra pixelados
             for (let bx = p.x; bx < p.x + p.w; bx += BLOCK_SIZE) {
                 let bw = Math.min(BLOCK_SIZE, p.x + p.w - bx);
                 for (let by = p.y + 16; by < p.y + p.h; by += BLOCK_SIZE) {
                     let bh = Math.min(BLOCK_SIZE, p.y + p.h - by);
-
-                    // Base de terra tom marrom escuro e claro em xadrez/textura
                     let isDark = ((Math.floor(bx/BLOCK_SIZE) + Math.floor(by/BLOCK_SIZE)) % 2 === 0);
                     ctx.fillStyle = isDark ? '#73462c' : '#5c3520';
                     ctx.fillRect(bx, by, bw, bh);
-
-                    // Detalhes de pedrinhas na terra (Minecraft style)
                     ctx.fillStyle = '#3d2314';
                     ctx.fillRect(bx + 4, by + 4, 4, 4);
                     ctx.fillRect(bx + 12, by + 10, 4, 4);
                 }
             }
 
-            // Topo da Grama com Relevo
-            ctx.fillStyle = '#47a025'; // Verde Principal da Grama
+            ctx.fillStyle = '#47a025';
             ctx.fillRect(p.x, p.y, p.w, 16);
-
-            ctx.fillStyle = '#5bc22e'; // Camada Superior Brilhante
+            ctx.fillStyle = '#5bc22e';
             ctx.fillRect(p.x, p.y, p.w, 5);
 
-            // Folhas/Grama caindo em pixel art na borda inferior do bloco de topo
             ctx.fillStyle = '#38821d';
             for (let gx = p.x; gx < p.x + p.w; gx += 8) {
                 let dropH = (gx % 16 === 0) ? 8 : 4;
                 ctx.fillRect(gx, p.y + 16, 6, dropH);
             }
         } else if (p.type === 'floating_wood') {
-            // Tronco Flutuante no Rio (Madeira Detalhada)
             ctx.fillStyle = '#5c4033';
             ctx.fillRect(p.x, p.y, p.w, p.h);
             ctx.fillStyle = '#3d2b22';
             ctx.fillRect(p.x + 2, p.y + 3, p.w - 4, 3);
             ctx.fillRect(p.x + 2, p.y + 12, p.w - 4, 3);
-            // Casca nas pontas
             ctx.fillStyle = '#8b5a2b';
             ctx.fillRect(p.x, p.y, 4, p.h);
             ctx.fillRect(p.x + p.w - 4, p.y, 4, p.h);
         }
     }
 
-    // DESENHAR OBSTÁCULOS (PEDRAS E TRONCOS DE SOLO MELHORADOS)
+    // OBSTÁCULOS
     for (let obs of obstacles) {
         if (obs.type === 'stone') {
-            // Pedra 3D Pixelada
             ctx.fillStyle = '#636e72';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            
-            // Sombra e Luz na Pedra
-            ctx.fillStyle = '#b2bec3'; // Brilho topo
+            ctx.fillStyle = '#b2bec3';
             ctx.fillRect(obs.x, obs.y, obs.w, 5);
             ctx.fillRect(obs.x, obs.y, 5, obs.h);
-
-            ctx.fillStyle = '#2d3436'; // Sombra base
+            ctx.fillStyle = '#2d3436';
             ctx.fillRect(obs.x + obs.w - 5, obs.y, 5, obs.h);
             ctx.fillRect(obs.x, obs.y + obs.h - 5, obs.w, 5);
         } else {
-            // Tronco Caído no Chão
             ctx.fillStyle = '#6e473b';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            
-            // Textura da Madeira do Tronco
             ctx.fillStyle = '#4a2e25';
             ctx.fillRect(obs.x, obs.y + 6, obs.w, 4);
             ctx.fillRect(obs.x, obs.y + 18, obs.w, 4);
-
-            // Anéis da madeira no corte lateral
             ctx.fillStyle = '#d7ccc8';
             ctx.fillRect(obs.x + 2, obs.y + 2, 6, obs.h - 4);
         }
     }
 
-    // MOEDAS BRILHANTES
+    // LESMA ROXA (INIMIGO)
+    for (let e of enemies) {
+        let bounce = Math.sin(e.animTimer * 5) * 2;
+        ctx.fillStyle = '#8e44ad'; // Corpo Roxo Principal
+        ctx.fillRect(e.x, e.y + bounce, e.w, e.h - bounce);
+
+        ctx.fillStyle = '#9b59b6'; // Detalhe de Brilho no Lombo
+        ctx.fillRect(e.x + 6, e.y + 4 + bounce, e.w - 12, 6);
+
+        // Olhos da Lesma
+        ctx.fillStyle = '#fff';
+        let eyeX = e.vx > 0 ? e.x + e.w - 10 : e.x + 4;
+        ctx.fillRect(eyeX, e.y + 4 + bounce, 6, 6);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(eyeX + (e.vx > 0 ? 3 : 0), e.y + 6 + bounce, 3, 3);
+
+        // Anteninhas Pixeladas
+        ctx.fillStyle = '#8e44ad';
+        ctx.fillRect(eyeX + 1, e.y - 4 + bounce, 2, 4);
+    }
+
+    // MOEDAS GRANDES E PIXELADAS (28x28)
     for (let coin of coins) {
         if (!coin.collected) {
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.arc(coin.x + 8, coin.y + 8, 8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(coin.x + 6, coin.y + 4, 3, 3); // Brilho da moeda
-            ctx.strokeStyle = '#d4af37';
-            ctx.stroke();
+            let cx = coin.x;
+            let cy = coin.y;
+
+            // Borda Externa Dourada Escura Pixelada
+            ctx.fillStyle = '#d4af37';
+            ctx.fillRect(cx + 8, cy, 12, 28);
+            ctx.fillRect(cx, cy + 8, 28, 12);
+            ctx.fillRect(cx + 4, cy + 4, 20, 20);
+
+            // Centro Amarelo Ouro Vivo
+            ctx.fillStyle = '#ffea00';
+            ctx.fillRect(cx + 6, cy + 6, 16, 16);
+
+            // Detalhe de Brilho Branco no Topo Esquerdo (Pixel Art)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(cx + 8, cy + 8, 4, 4);
+
+            // Sombra Interna
+            ctx.fillStyle = '#c5a000';
+            ctx.fillRect(cx + 16, cy + 12, 4, 8);
         }
+    }
+
+    // PARTÍCULAS DE FUMAÇA (EVAPORAÇÃO)
+    for (let p of particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+        ctx.restore();
     }
 
     // BANDEIRA FINAL
     if (flag) {
         ctx.fillStyle = '#bdc3c7';
         ctx.fillRect(flag.x, flag.y, 6, flag.h);
-        ctx.fillStyle = '#27ae60'; // Bandeira verde de chegada
+        ctx.fillStyle = '#27ae60';
         ctx.beginPath();
         ctx.moveTo(flag.x + 6, flag.y);
         ctx.lineTo(flag.x + 48, flag.y + 20);
