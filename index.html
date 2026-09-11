@@ -75,7 +75,7 @@
             box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
         }
 
-        /* HUD NO CANTO DIREITO (BAIXO DO PAUSE) */
+        /* HUD NO CANTO DIREITO (ABAIXO DO PAUSE) */
         #hud-counters-right {
             top: 60px;
             right: 15px;
@@ -119,6 +119,48 @@
             border: 1px solid rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        /* BARRA DE VIDA DO BOSS */
+        #boss-hp-container {
+            position: absolute;
+            top: 65px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 320px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #ef4444;
+            border-radius: 12px;
+            padding: 6px 12px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            z-index: 10;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        #boss-hp-label {
+            color: #fca5a5;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+        }
+
+        #boss-hp-bar-outer {
+            width: 100%;
+            height: 14px;
+            background: #1e293b;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #boss-hp-bar-inner {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+            transition: width 0.2s ease;
         }
 
         #btn-pause {
@@ -189,10 +231,6 @@
             box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
         }
 
-        .btn-moss:active {
-            transform: translateY(1px);
-        }
-
         #levels-menu { display: none; }
 
         .levels-grid {
@@ -232,7 +270,6 @@
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .level-btn.unlocked:hover { transform: scale(1.08); border-color: #4ade80; }
 
         .btn-back {
             margin-top: 10px;
@@ -249,7 +286,7 @@
             bottom: 25px;
             left: 0;
             width: 100%;
-            height: 90px;
+            height: 180px;
             z-index: 15;
             display: flex;
             justify-content: space-between;
@@ -257,10 +294,20 @@
             pointer-events: none;
         }
 
-        .touch-group-left, .touch-group-right {
+        .touch-group-left {
             display: flex;
             gap: 15px;
             pointer-events: auto;
+            align-self: flex-end;
+        }
+
+        .touch-group-right {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-end;
+            pointer-events: auto;
+            align-self: flex-end;
         }
 
         .basket-btn {
@@ -281,7 +328,7 @@
 
         .square-jump-btn {
             width: 75px;
-            height: 75px;
+            height: 65px;
             background: rgba(34, 197, 94, 0.4);
             border: 1px solid rgba(74, 222, 128, 0.6);
             border-radius: 16px;
@@ -293,6 +340,24 @@
             font-weight: bold;
             backdrop-filter: blur(8px);
             touch-action: manipulation;
+        }
+
+        /* BOTÃO DA BAZUCA (ACIMA DO BOTÃO DE PULAR) */
+        .bazooka-btn {
+            width: 75px;
+            height: 65px;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.8) 0%, rgba(34, 197, 94, 0.8) 100%);
+            border: 2px solid #ea580c;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 900;
+            backdrop-filter: blur(8px);
+            touch-action: manipulation;
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
         }
     </style>
 </head>
@@ -322,6 +387,14 @@
     <!-- HUD FASE ATUAL -->
     <div id="level-hud" class="hud-element">
         <span id="level-text">FASE 1</span>
+    </div>
+
+    <!-- BARRA DE VIDA DO BOSS -->
+    <div id="boss-hp-container">
+        <span id="boss-hp-label">ROBÔ SLUG BOSS</span>
+        <div id="boss-hp-bar-outer">
+            <div id="boss-hp-bar-inner"></div>
+        </div>
     </div>
 
     <!-- BOTÃO PAUSE -->
@@ -356,6 +429,8 @@
             <div class="basket-btn" id="btn-right">&gt;</div>
         </div>
         <div class="touch-group-right">
+            <!-- BOTÃO DA BAZUCA LOCALIZADO EXATAMENTE ACIMA DO BOTÃO PULAR -->
+            <div class="bazooka-btn" id="btn-bazooka">BAZUCA</div>
             <div class="square-jump-btn" id="btn-jump">PULAR</div>
         </div>
     </div>
@@ -459,7 +534,8 @@ const player = {
     gravity: 0.6,
     grounded: false,
     facing: 'right',
-    animFrame: 0
+    animFrame: 0,
+    hasBazookaEquipped: false // Bazuca no inventário / equipada
 };
 
 let platforms = [];
@@ -469,6 +545,9 @@ let enemies = [];
 let apples = []; 
 let particles = [];
 let mountains = [];
+let bullets = []; // Disparos da Bazuca (Bolas de Musgo)
+let bossProjectiles = []; // Projéteis do Boss
+let boss = null;
 let flag = null;
 let globalTime = 0;
 
@@ -481,11 +560,13 @@ function generateLevel(lvl) {
     apples = [];
     particles = [];
     mountains = [];
+    bullets = [];
+    bossProjectiles = [];
 
     platforms.push({ x: 0, y: 500, w: 280, h: 175, type: 'grass' });
 
     let currentX = 280;
-    const levelLength = 25 + lvl * 5;
+    const levelLength = 20 + lvl * 4;
 
     let mountainX = -300;
     for (let m = 0; m < levelLength / 2; m++) {
@@ -512,7 +593,7 @@ function generateLevel(lvl) {
 
         platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
 
-        // MAÇÃS NO MAPA
+        // MAÇÃS
         if (i > 0 && Math.random() < 0.4) {
             apples.push({
                 x: currentX + platWidth / 2 - 12,
@@ -525,7 +606,7 @@ function generateLevel(lvl) {
             });
         }
 
-        // OBSTÁCULOS REALISTAS
+        // OBSTÁCULOS
         if (Math.random() > 0.45) {
             let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
             let obsW = obsType === 'stone' ? 38 : 52;
@@ -564,7 +645,7 @@ function generateLevel(lvl) {
             platforms.push({ x: logX, y: logY, w: 70, h: 22, type: 'floating_wood' });
         }
 
-        // MOEDAS REALISTAS
+        // MOEDAS
         let coinsInPlat = 1 + Math.floor(Math.random() * 3);
         for (let c = 0; c < coinsInPlat; c++) {
             coins.push({
@@ -579,14 +660,62 @@ function generateLevel(lvl) {
         currentX += platWidth;
     }
 
-    currentX += 100;
-    platforms.push({ x: currentX, y: 480, w: 280, h: 200, type: 'grass' });
-    flag = { x: currentX + 180, y: 380, w: 20, h: 100 };
+    // ARENA DO BOSS
+    currentX += 80;
+    let arenaWidth = 800;
+    platforms.push({ x: currentX, y: 460, w: arenaWidth, h: 220, type: 'grass' });
+
+    // CRIAR BOSS ROBÔ
+    let maxHp = 10 + lvl * 5;
+    boss = {
+        x: currentX + arenaWidth - 180,
+        y: 460 - 130,
+        w: 110,
+        h: 130,
+        vx: -1.5,
+        maxHp: maxHp,
+        hp: maxHp,
+        active: false,
+        arenaX: currentX,
+        arenaMaxX: currentX + arenaWidth,
+        shootTimer: 0
+    };
+
+    flag = { x: currentX + arenaWidth - 80, y: 360, w: 20, h: 100 };
+
+    document.getElementById('boss-hp-container').style.display = 'none';
 
     player.x = 80;
     player.y = 400;
     player.vx = 0;
     player.vy = 0;
+    player.hasBazookaEquipped = false;
+}
+
+/* --- FUNÇÃO DE USAR / ATIRAR BAZUCA --- */
+function useBazooka() {
+    if (!isPlaying || isPaused) return;
+
+    // Se ainda não tirou a bazuca do inventário, equipa ela primeiro
+    if (!player.hasBazookaEquipped) {
+        player.hasBazookaEquipped = true;
+        spawnSmoke(player.x + 19, player.y + 20, '#f97316');
+        return;
+    }
+
+    // Se já estiver com a bazuca equipada, atira a Bola de Musgo!
+    let bulletSpeed = player.facing === 'right' ? 11 : -11;
+    bullets.push({
+        x: player.facing === 'right' ? player.x + player.width : player.x - 22,
+        y: player.y + 18,
+        w: 22,
+        h: 22,
+        vx: bulletSpeed,
+        vy: -0.5
+    });
+
+    // Partículas do disparo
+    spawnSmoke(player.x + (player.facing === 'right' ? player.width : 0), player.y + 20, '#22c55e');
 }
 
 function spawnSmoke(x, y, color = '#cbd5e1') {
@@ -649,7 +778,7 @@ function update() {
         }
     }
 
-    // MAÇÃS (COLETA NORMAL, APENAS PONTOS E CONTAGEM)
+    // MAÇÃS
     for (let apple of apples) {
         if (!apple.eaten) {
             apple.y = apple.baseY + Math.sin(globalTime * 2.5 + apple.floatOffset) * 6;
@@ -665,6 +794,128 @@ function update() {
                 updateHUDCounters();
                 spawnSmoke(apple.x + 12, apple.y + 12, '#f87171');
             }
+        }
+    }
+
+    // ATUALIZAR PROJÉTEIS DE MUSGO (BAZUCA)
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        let b = bullets[i];
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // Fumaça de Musgo
+        if (Math.random() < 0.4) {
+            particles.push({
+                x: b.x + 11,
+                y: b.y + 11,
+                vx: (Math.random() - 0.5) * 1,
+                vy: (Math.random() - 0.5) * 1,
+                size: 4 + Math.random() * 4,
+                alpha: 0.8,
+                color: '#4ade80'
+            });
+        }
+
+        // Colisão Tiro com Lesmas
+        for (let j = enemies.length - 1; j >= 0; j--) {
+            let e = enemies[j];
+            if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
+                spawnSmoke(e.x + e.w / 2, e.y + e.h / 2, '#4ade80');
+                coins.push({ x: e.x + 5, y: e.y - 10, w: 24, h: 24, collected: false });
+                enemies.splice(j, 1);
+                bullets.splice(i, 1);
+                break;
+            }
+        }
+
+        // Colisão Tiro com Boss
+        if (boss && boss.active && boss.hp > 0) {
+            if (b.x < boss.x + boss.w && b.x + b.w > boss.x && b.y < boss.y + boss.h && b.y + b.h > boss.y) {
+                boss.hp -= 2.5;
+                spawnSmoke(b.x, b.y, '#f97316');
+                bullets.splice(i, 1);
+
+                if (boss.hp <= 0) {
+                    boss.hp = 0;
+                    spawnSmoke(boss.x + boss.w / 2, boss.y + boss.h / 2, '#ef4444');
+                }
+                updateBossHPUI();
+            }
+        }
+
+        if (bullets[i] && (b.x < cameraX - 100 || b.x > cameraX + canvas.width + 100)) {
+            bullets.splice(i, 1);
+        }
+    }
+
+    // ATUALIZAR BOSS ROBÔ COM LESMA
+    if (boss) {
+        // Ativar Boss se jogador chegar na arena
+        if (!boss.active && player.x > boss.arenaX + 50) {
+            boss.active = true;
+            document.getElementById('boss-hp-container').style.display = 'flex';
+            updateBossHPUI();
+        }
+
+        if (boss.active && boss.hp > 0) {
+            boss.x += boss.vx;
+            if (boss.x <= boss.arenaX + 40 || boss.x + boss.w >= boss.arenaMaxX - 40) {
+                boss.vx *= -1;
+            }
+
+            // Tiro de Broca do Boss
+            boss.shootTimer += 0.05;
+            if (boss.shootTimer >= 3.5) {
+                boss.shootTimer = 0;
+                let bDir = player.x < boss.x ? -6 : 6;
+                bossProjectiles.push({
+                    x: boss.x + boss.w / 2,
+                    y: boss.y + 60,
+                    w: 20,
+                    h: 12,
+                    vx: bDir
+                });
+            }
+
+            // Colisão Jogador vs Boss
+            if (
+                player.x < boss.x + boss.w &&
+                player.x + player.width > boss.x &&
+                player.y < boss.y + boss.h &&
+                player.y + player.height > boss.y
+            ) {
+                if (player.vy > 0 && player.y + player.height - player.vy <= boss.y + 25) {
+                    player.vy = -12;
+                    boss.hp -= 1.5;
+                    spawnSmoke(boss.x + boss.w / 2, boss.y + 15, '#ef4444');
+                    updateBossHPUI();
+                } else {
+                    alert(i18n[currentLang].gameover);
+                    generateLevel(currentLevel);
+                    return;
+                }
+            }
+        }
+    }
+
+    // Projéteis do Boss
+    for (let i = bossProjectiles.length - 1; i >= 0; i--) {
+        let bp = bossProjectiles[i];
+        bp.x += bp.vx;
+
+        if (
+            player.x < bp.x + bp.w &&
+            player.x + player.width > bp.x &&
+            player.y < bp.y + bp.h &&
+            player.y + player.height > bp.y
+        ) {
+            alert(i18n[currentLang].gameover);
+            generateLevel(currentLevel);
+            return;
+        }
+
+        if (bp.x < cameraX - 100 || bp.x > cameraX + canvas.width + 100) {
+            bossProjectiles.splice(i, 1);
         }
     }
 
@@ -758,18 +1009,28 @@ function update() {
         generateLevel(currentLevel);
     }
 
-    // Vitória
+    // Vitória (Só se derrotar o Boss)
     if (flag && player.x > flag.x) {
-        saveProgress();
-        alert(i18n[currentLang].win);
-        if (currentLevel < 20) {
-            currentLevel++;
-            updateLevelHUD();
-            generateLevel(currentLevel);
+        if (boss && boss.hp > 0) {
+            player.x = flag.x - 10; // Bloqueia passar sem matar o Boss
         } else {
-            showMainMenu();
+            saveProgress();
+            alert(i18n[currentLang].win);
+            if (currentLevel < 20) {
+                currentLevel++;
+                updateLevelHUD();
+                generateLevel(currentLevel);
+            } else {
+                showMainMenu();
+            }
         }
     }
+}
+
+function updateBossHPUI() {
+    if (!boss) return;
+    let pct = Math.max(0, (boss.hp / boss.maxHp) * 100);
+    document.getElementById('boss-hp-bar-inner').style.width = pct + '%';
 }
 
 /* --- RENDERIZADORES DE ITENS REALISTAS --- */
@@ -778,13 +1039,6 @@ function drawRealisticCoin(targetCtx, x, y, size) {
     let cx = x + radius;
     let cy = y + radius;
 
-    // Sombra
-    targetCtx.fillStyle = 'rgba(0,0,0,0.3)';
-    targetCtx.beginPath();
-    targetCtx.ellipse(cx, cy + radius * 0.8, radius, radius * 0.3, 0, 0, Math.PI * 2);
-    targetCtx.fill();
-
-    // Borda Externa de Ouro Secundário
     let gradOuter = targetCtx.createLinearGradient(x, y, x + size, y + size);
     gradOuter.addColorStop(0, '#fef08a');
     gradOuter.addColorStop(0.5, '#eab308');
@@ -795,7 +1049,6 @@ function drawRealisticCoin(targetCtx, x, y, size) {
     targetCtx.arc(cx, cy, radius, 0, Math.PI * 2);
     targetCtx.fill();
 
-    // Centro do Relevo
     let gradInner = targetCtx.createLinearGradient(x, y, x + size, y + size);
     gradInner.addColorStop(0, '#facc15');
     gradInner.addColorStop(1, '#ca8a04');
@@ -805,19 +1058,11 @@ function drawRealisticCoin(targetCtx, x, y, size) {
     targetCtx.arc(cx, cy, radius * 0.75, 0, Math.PI * 2);
     targetCtx.fill();
 
-    // Símbolo do Cifrão
     targetCtx.fillStyle = '#fef08a';
     targetCtx.font = `bold ${Math.floor(size * 0.65)}px sans-serif`;
     targetCtx.textAlign = 'center';
     targetCtx.textBaseline = 'middle';
     targetCtx.fillText('$', cx, cy);
-
-    // Reflexo de Luz Curvo Realista
-    targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-    targetCtx.lineWidth = Math.max(1.5, size * 0.08);
-    targetCtx.beginPath();
-    targetCtx.arc(cx, cy, radius * 0.82, Math.PI * 1.1, Math.PI * 1.6);
-    targetCtx.stroke();
 }
 
 function drawRealisticApple(targetCtx, x, y, size) {
@@ -825,7 +1070,6 @@ function drawRealisticApple(targetCtx, x, y, size) {
     let cx = x + radius;
     let cy = y + radius;
 
-    // Corpo Redondo 3D
     let grad = targetCtx.createRadialGradient(cx - radius*0.3, cy - radius*0.3, radius*0.1, cx, cy, radius);
     grad.addColorStop(0, '#fca5a5');
     grad.addColorStop(0.4, '#ef4444');
@@ -837,7 +1081,6 @@ function drawRealisticApple(targetCtx, x, y, size) {
     targetCtx.arc(cx + radius*0.22, cy, radius * 0.78, 0, Math.PI * 2);
     targetCtx.fill();
 
-    // Cabinho
     targetCtx.strokeStyle = '#78350f';
     targetCtx.lineWidth = Math.max(2, size * 0.08);
     targetCtx.beginPath();
@@ -845,22 +1088,14 @@ function drawRealisticApple(targetCtx, x, y, size) {
     targetCtx.quadraticCurveTo(cx + 4, cy - radius * 1.1, cx + 2, cy - radius * 1.2);
     targetCtx.stroke();
 
-    // Folha
     targetCtx.fillStyle = '#22c55e';
     targetCtx.beginPath();
     targetCtx.ellipse(cx + 5, cy - radius * 0.9, radius * 0.35, radius * 0.18, Math.PI / 4, 0, Math.PI * 2);
-    targetCtx.fill();
-
-    // Reflexo de Luz
-    targetCtx.fillStyle = 'rgba(255,255,255,0.45)';
-    targetCtx.beginPath();
-    targetCtx.ellipse(cx - radius*0.4, cy - radius*0.3, radius*0.2, radius*0.1, -Math.PI / 4, 0, Math.PI * 2);
     targetCtx.fill();
 }
 
 /* --- RENDERIZAÇÃO DO JOGO --- */
 function render() {
-    // Céu Realista Gradiente
     let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     skyGradient.addColorStop(0, '#0f172a');
     skyGradient.addColorStop(0.5, '#1e293b');
@@ -868,7 +1103,6 @@ function render() {
     ctx.fillStyle = skyGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // MONTANHAS REALISTAS COM SOMBRAS DE PROFUNDIDADE
     for (let m of mountains) {
         let mParallaxX = m.x - (cameraX * 0.25);
         let gradM = ctx.createLinearGradient(mParallaxX, m.y, mParallaxX, m.y + m.h);
@@ -880,17 +1114,6 @@ function render() {
         ctx.moveTo(mParallaxX, m.y + m.h);
         ctx.lineTo(mParallaxX + m.w / 2, m.y);
         ctx.lineTo(mParallaxX + m.w, m.y + m.h);
-        ctx.fill();
-
-        // Neve no topo realista
-        let snowGrad = ctx.createLinearGradient(mParallaxX, m.y, mParallaxX, m.y + 60);
-        snowGrad.addColorStop(0, '#f8fafc');
-        snowGrad.addColorStop(1, 'rgba(248, 250, 252, 0)');
-        ctx.fillStyle = snowGrad;
-        ctx.beginPath();
-        ctx.moveTo(mParallaxX + m.w / 2 - 40, m.y + 50);
-        ctx.lineTo(mParallaxX + m.w / 2, m.y);
-        ctx.lineTo(mParallaxX + m.w / 2 + 40, m.y + 50);
         ctx.fill();
     }
 
@@ -904,10 +1127,9 @@ function render() {
     ctx.fillStyle = waterGrad;
     ctx.fillRect(cameraX, 580, canvas.width, 100);
 
-    // PLATAFORMAS REALISTAS (TERRA PROFUNDA + GRAMA ULTRA DETALHADA)
+    // PLATAFORMAS REALISTAS
     for (let p of platforms) {
         if (p.type === 'grass') {
-            // Bloco de Terra Realista
             let dirtGrad = ctx.createLinearGradient(p.x, p.y + 18, p.x, p.y + p.h);
             dirtGrad.addColorStop(0, '#78350f');
             dirtGrad.addColorStop(0.3, '#451a03');
@@ -915,65 +1137,36 @@ function render() {
             ctx.fillStyle = dirtGrad;
             ctx.fillRect(p.x, p.y + 18, p.w, p.h - 18);
 
-            // Detalhes de Pedras na Terra
-            ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            for (let rx = p.x + 10; rx < p.x + p.w - 10; rx += 35) {
-                ctx.fillRect(rx, p.y + 35 + (rx % 20), 12, 8);
-            }
-
-            // Topo da Grama Realista (Suave + Raízes penduradas)
             let grassGrad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + 20);
             grassGrad.addColorStop(0, '#4ade80');
             grassGrad.addColorStop(0.6, '#16a34a');
             grassGrad.addColorStop(1, '#15803d');
             ctx.fillStyle = grassGrad;
             ctx.fillRect(p.x, p.y, p.w, 18);
-
-            // Folhas de Grama em Relevo
-            ctx.fillStyle = '#86efac';
-            for (let gx = p.x; gx < p.x + p.w; gx += 6) {
-                let bladeH = 4 + (gx % 5);
-                ctx.fillRect(gx, p.y - bladeH, 3, bladeH);
-            }
         } else if (p.type === 'floating_wood') {
-            // Tronco de Madeira Realista
             let woodGrad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
             woodGrad.addColorStop(0, '#a16207');
             woodGrad.addColorStop(1, '#451a03');
             ctx.fillStyle = woodGrad;
             ctx.fillRect(p.x, p.y, p.w, p.h);
-            ctx.fillStyle = 'rgba(255,255,255,0.1)';
-            ctx.fillRect(p.x, p.y, p.w, 3);
         }
     }
 
-    // MAÇÃS REALISTAS
+    // MAÇÃS
     for (let apple of apples) {
-        if (!apple.eaten) {
-            drawRealisticApple(ctx, apple.x, apple.y, apple.w);
-        }
+        if (!apple.eaten) drawRealisticApple(ctx, apple.x, apple.y, apple.w);
     }
 
-    // OBSTÁCULOS REALISTAS
+    // OBSTÁCULOS
     for (let obs of obstacles) {
         if (obs.type === 'stone') {
-            let stoneGrad = ctx.createLinearGradient(obs.x, obs.y, obs.x + obs.w, obs.y + obs.h);
-            stoneGrad.addColorStop(0, '#94a3b8');
-            stoneGrad.addColorStop(1, '#334155');
-            ctx.fillStyle = stoneGrad;
+            ctx.fillStyle = '#64748b';
             ctx.beginPath();
             ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 6);
             ctx.fill();
         } else {
-            let logGrad = ctx.createLinearGradient(obs.x, obs.y, obs.x, obs.y + obs.h);
-            logGrad.addColorStop(0, '#b45309');
-            logGrad.addColorStop(1, '#78350f');
-            ctx.fillStyle = logGrad;
+            ctx.fillStyle = '#78350f';
             ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-            ctx.fillStyle = '#fde68a';
-            ctx.beginPath();
-            ctx.ellipse(obs.x + 4, obs.y + obs.h/2, 3, obs.h/2 - 2, 0, 0, Math.PI*2);
-            ctx.fill();
         }
     }
 
@@ -984,19 +1177,77 @@ function render() {
         ctx.beginPath();
         ctx.roundRect(e.x, e.y + bounce, e.w, e.h - bounce, [10, 10, 0, 0]);
         ctx.fill();
-
-        ctx.fillStyle = '#fff';
-        let eyeX = e.vx > 0 ? e.x + e.w - 10 : e.x + 4;
-        ctx.fillRect(eyeX, e.y + 4 + bounce, 6, 6);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(eyeX + (e.vx > 0 ? 3 : 0), e.y + 6 + bounce, 3, 3);
     }
 
-    // MOEDAS REALISTAS NO MAPA
+    // DISPAROS DE MUSGO (BAZUCA)
+    for (let b of bullets) {
+        let mossGrad = ctx.createRadialGradient(b.x + 11, b.y + 11, 2, b.x + 11, b.y + 11, 11);
+        mossGrad.addColorStop(0, '#86efac');
+        mossGrad.addColorStop(0.5, '#22c55e');
+        mossGrad.addColorStop(1, '#14532d');
+        ctx.fillStyle = mossGrad;
+        ctx.beginPath();
+        ctx.arc(b.x + 11, b.y + 11, 11, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // BOSS ROBÔ COM CÂMARA DE VIDRO E LESMA VERMELHA
+    if (boss && boss.hp > 0) {
+        let bx = boss.x;
+        let by = boss.y;
+
+        // Corpo do Robô (Preto e Cinza Metálico)
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(bx + 15, by + 50, boss.w - 30, 50);
+
+        // Ombreiras & Detalhes Vermelhos
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(bx + 5, by + 45, 20, 25);
+        ctx.fillRect(bx + boss.w - 25, by + 45, 20, 25);
+
+        // Pernas Mecânicas (Cinza Escuro)
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(bx + 20, by + 100, 18, 30);
+        ctx.fillRect(bx + boss.w - 38, by + 100, 18, 30);
+
+        // Pés do Robô
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(bx + 12, by + 120, 28, 10);
+        ctx.fillRect(bx + boss.w - 40, by + 120, 28, 10);
+
+        // CABEÇA / CÚPULA DE VIDRO
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.35)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(bx + boss.w / 2, by + 30, 28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // LESMA VERMELHA BEM FODA DENTRO DO VIDRO (PILOTO)
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.ellipse(bx + boss.w / 2, by + 32, 16, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Olhos Malvados da Lesma
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(bx + boss.w / 2 - 8, by + 26, 5, 5);
+        ctx.fillRect(bx + boss.w / 2 + 3, by + 26, 5, 5);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(bx + boss.w / 2 - 6, by + 28, 2, 2);
+        ctx.fillRect(bx + boss.w / 2 + 5, by + 28, 2, 2);
+    }
+
+    // Projéteis do Boss (Brocas)
+    for (let bp of bossProjectiles) {
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(bp.x, bp.y, bp.w, bp.h);
+    }
+
+    // MOEDAS
     for (let coin of coins) {
-        if (!coin.collected) {
-            drawRealisticCoin(ctx, coin.x, coin.y, coin.w);
-        }
+        if (!coin.collected) drawRealisticCoin(ctx, coin.x, coin.y, coin.w);
     }
 
     // PARTÍCULAS
@@ -1008,15 +1259,11 @@ function render() {
         ctx.restore();
     }
 
-    // BANDEIRA DE CHEGADA REALISTA
+    // BANDEIRA
     if (flag) {
         ctx.fillStyle = '#cbd5e1';
         ctx.fillRect(flag.x, flag.y, 6, flag.h);
-        
-        let flagGrad = ctx.createLinearGradient(flag.x + 6, flag.y, flag.x + 50, flag.y);
-        flagGrad.addColorStop(0, '#22c55e');
-        flagGrad.addColorStop(1, '#16a34a');
-        ctx.fillStyle = flagGrad;
+        ctx.fillStyle = '#22c55e';
         ctx.beginPath();
         ctx.moveTo(flag.x + 6, flag.y);
         ctx.lineTo(flag.x + 50, flag.y + 20);
@@ -1024,7 +1271,7 @@ function render() {
         ctx.fill();
     }
 
-    // DESENHAR PERSONAGEM (CABELO MARROM NATURAL)
+    // DESENHAR PERSONAGEM
     let px = player.x;
     let py = player.y;
     let legAnim = Math.sin(player.animFrame * 2) * 6;
@@ -1042,26 +1289,33 @@ function render() {
     let eyeX = player.facing === 'right' ? px + 22 : px + 8;
     ctx.fillRect(eyeX, py + 16, 4, 4);
 
-    // Tronco (Camisa Vermelha)
+    // Camisa Vermelha
     ctx.fillStyle = '#dc2626';
     ctx.fillRect(px + 4, py + 24, 30, 20);
 
-    // Braços
-    ctx.fillStyle = '#ffdbac';
-    if (player.facing === 'right') {
-        ctx.fillRect(px, py + 26 - legAnim, 5, 14);
-        ctx.fillRect(px + 33, py + 26 + legAnim, 5, 14);
-    } else {
-        ctx.fillRect(px, py + 26 + legAnim, 5, 14);
-        ctx.fillRect(px + 33, py + 26 - legAnim, 5, 14);
+    // BAZUCA LARANJA COM VERDE NAS MÃOS
+    if (player.hasBazookaEquipped) {
+        let bazX = player.facing === 'right' ? px + 18 : px - 22;
+        let bazY = py + 22;
+
+        // Corpo da Bazuca (Laranja)
+        ctx.fillStyle = '#f97316';
+        ctx.fillRect(bazX, bazY, 32, 12);
+
+        // Detalhes em Verde
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(bazX + 8, bazY - 2, 8, 16);
+        ctx.fillRect(bazX + 22, bazY, 6, 12);
+
+        // Bocal da Bazuca
+        ctx.fillStyle = '#ea580c';
+        ctx.fillRect(player.facing === 'right' ? bazX + 30 : bazX - 4, bazY - 2, 6, 16);
     }
 
-    // Calça
+    // Calça e Sapatos
     ctx.fillStyle = '#2563eb';
     ctx.fillRect(px + 6 - legAnim / 2, py + 44, 10, 10);
     ctx.fillRect(px + 22 + legAnim / 2, py + 44, 10, 10);
-
-    // Sapatos
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(px + 4 - legAnim / 2, py + 53, 12, 3);
     ctx.fillRect(px + 22 + legAnim / 2, py + 53, 12, 3);
@@ -1069,7 +1323,6 @@ function render() {
     ctx.restore();
 }
 
-/* --- RENDERIZAR ÍCONES REALISTAS NO HUD --- */
 function renderHUDIcons() {
     const coinCanvas = document.getElementById('coin-icon-hud');
     const coinCtx = coinCanvas.getContext('2d');
@@ -1157,6 +1410,7 @@ window.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
     if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') keys.up = true;
+    if (e.key === 'f' || e.key === 'F' || e.key === 'Shift') useBazooka();
     if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') togglePause();
 });
 
@@ -1166,17 +1420,27 @@ window.addEventListener('keyup', e => {
     if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') keys.up = false;
 });
 
-function bindTouch(id, keyProp) {
+function bindTouch(id, actionFn) {
     const el = document.getElementById(id);
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyProp] = true; });
-    el.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyProp] = false; });
-    el.addEventListener('mousedown', () => { keys[keyProp] = true; });
-    el.addEventListener('mouseup', () => { keys[keyProp] = false; });
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); actionFn(true); });
+    el.addEventListener('touchend', (e) => { e.preventDefault(); actionFn(false); });
+    el.addEventListener('mousedown', () => { actionFn(true); });
+    el.addEventListener('mouseup', () => { actionFn(false); });
 }
 
-bindTouch('btn-left', 'left');
-bindTouch('btn-right', 'right');
-bindTouch('btn-jump', 'up');
+bindTouch('btn-left', (val) => keys.left = val);
+bindTouch('btn-right', (val) => keys.right = val);
+bindTouch('btn-jump', (val) => keys.up = val);
+
+// BOTÃO DA BAZUCA (SÓ ATIRA AO CLICAR)
+document.getElementById('btn-bazooka').addEventListener('click', (e) => {
+    e.preventDefault();
+    useBazooka();
+});
+document.getElementById('btn-bazooka').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    useBazooka();
+});
 
 renderHUDIcons();
 updateHUDCounters();
