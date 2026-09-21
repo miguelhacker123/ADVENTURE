@@ -3,90 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Bike 2D - Pulo, Grau e Mortal</title>
+<title>Bike 3D Runner</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: system-ui, sans-serif; user-select: none; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a14; font-family: system-ui, sans-serif; user-select: none; }
   #game { display: block; width: 100%; height: 100%; touch-action: none; }
 
   #hud {
     position: fixed; top: 12px; left: 12px; color: #fff;
-    font-size: 18px; font-weight: bold; text-shadow: 0 2px 6px rgba(0,0,0,.6);
+    font-size: 17px; font-weight: bold; text-shadow: 0 2px 6px rgba(0,0,0,.8);
     pointer-events: none; line-height: 1.5;
   }
-  #hud .best { font-size: 13px; opacity: .8; font-weight: 500; }
+  #hud .best { font-size: 12px; opacity: .8; font-weight: 500; }
+  #hud .spd { font-size: 12px; opacity: .9; color: #4ecdc4; font-weight: 600; }
 
   #combo {
     position: fixed; top: 12px; right: 12px; color: #ffd166;
-    font-size: 20px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,.6);
-    pointer-events: none; opacity: 0; transition: opacity .2s;
-    text-align: right;
+    font-size: 20px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,.8);
+    pointer-events: none; opacity: 0; transition: opacity .2s; text-align: right;
   }
   #combo.on { opacity: 1; }
-  #combo .flip { display: block; color: #4ecdc4; font-size: 16px; }
+  #combo .flip { display: block; color: #4ecdc4; font-size: 15px; }
 
-  /* Botões */
+  /* ---------- Botões ---------- */
   .btn {
     position: fixed;
-    width: 88px; height: 88px;
-    border-radius: 18px;
+    width: 78px; height: 78px;
+    border-radius: 16px;
     border: 3px solid rgba(255,255,255,0.35);
     background: rgba(255,255,255,0.08);
     display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     touch-action: none; cursor: pointer;
-    transition: transform .08s, background .12s, border-color .12s;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    transition: transform .08s, background .12s, border-color .12s, box-shadow .12s;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
     padding: 0;
+    z-index: 10;
   }
   .btn svg { width: 62%; height: 62%; display: block; }
   .btn:active, .btn.pressed {
     transform: scale(0.93);
-    background: rgba(255,255,255,0.28);
+    background: rgba(255,255,255,0.3);
     border-color: #fff;
   }
 
-  /* Botão PULAR — fica em cima do GRAU, à esquerda */
-  #btnJump {
-    right: 128px; bottom: 22px;
-    border-color: rgba(78, 205, 196, 0.75);
-    background: rgba(78, 205, 196, 0.15);
-  }
-  #btnJump:active, #btnJump.pressed {
-    background: rgba(78, 205, 196, 0.5);
-    border-color: #4ecdc4;
+  /* ---- Direção (canto esquerdo) ---- */
+  #btnUp    { left: 105px; bottom: 108px; border-color: rgba(120,200,255,0.8); background: rgba(120,200,255,0.14); }
+  #btnDown  { left: 105px; bottom: 22px;  border-color: rgba(120,200,255,0.8); background: rgba(120,200,255,0.14); }
+  #btnLeft  { left: 22px;  bottom: 65px;  border-color: rgba(120,200,255,0.8); background: rgba(120,200,255,0.14); }
+  #btnRight { left: 188px; bottom: 65px;  border-color: rgba(120,200,255,0.8); background: rgba(120,200,255,0.14); }
+
+  #btnUp.pressed, #btnDown.pressed, #btnLeft.pressed, #btnRight.pressed {
+    background: rgba(120,200,255,0.55);
+    border-color: #78c8ff;
+    box-shadow: 0 0 20px rgba(120,200,255,0.7);
   }
 
-  /* Botão GRAU — canto inferior direito */
-  #btnGrau {
-    right: 22px; bottom: 22px;
-    border-color: rgba(255, 82, 82, 0.75);
-    background: rgba(255, 82, 82, 0.15);
-  }
-  #btnGrau:active, #btnGrau.pressed {
-    background: rgba(255, 82, 82, 0.5);
-    border-color: #ff5252;
+  /* ---- Ação (canto direito) ---- */
+  #btnGrau { right: 22px; bottom: 22px; border-color: rgba(255,82,82,0.75); background: rgba(255,82,82,0.15); }
+  #btnGrau.pressed { background: rgba(255,82,82,0.55); border-color: #ff5252; box-shadow: 0 0 20px rgba(255,82,82,0.6); }
+
+  #btnJump { right: 110px; bottom: 22px; border-color: rgba(78,205,196,0.75); background: rgba(78,205,196,0.15); }
+  #btnJump.pressed { background: rgba(78,205,196,0.55); border-color: #4ecdc4; box-shadow: 0 0 20px rgba(78,205,196,0.6); }
+
+  #btnFlip { right: 66px; bottom: 110px; border-color: rgba(255,209,102,0.85); background: rgba(255,209,102,0.15); }
+  #btnFlip.pressed { background: rgba(255,209,102,0.6); border-color: #ffd166; box-shadow: 0 0 22px rgba(255,209,102,0.8); }
+
+  @media (max-height: 540px) {
+    .btn { width: 64px; height: 64px; border-radius: 13px; }
+    #btnUp    { left: 84px;  bottom: 88px; }
+    #btnDown  { left: 84px;  bottom: 16px; }
+    #btnLeft  { left: 16px;  bottom: 52px; }
+    #btnRight { left: 152px; bottom: 52px; }
+    #btnGrau  { right: 16px; bottom: 16px; }
+    #btnJump  { right: 88px; bottom: 16px; }
+    #btnFlip  { right: 52px; bottom: 88px; }
   }
 
-  /* Botão MORTAL — em cima, no meio dos dois */
-  #btnFlip {
-    right: 75px; bottom: 122px;
-    border-color: rgba(255, 209, 102, 0.8);
-    background: rgba(255, 209, 102, 0.15);
+  #overlay {
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center; flex-direction: column;
+    background: rgba(0,0,0,0.65); z-index: 20; color: #fff; text-align: center;
+    padding: 20px;
   }
-  #btnFlip:active, #btnFlip.pressed {
-    background: rgba(255, 209, 102, 0.55);
-    border-color: #ffd166;
-    box-shadow: 0 0 22px rgba(255, 209, 102, 0.7);
+  #overlay.on { display: flex; }
+  #overlay h1 { font-size: 44px; margin-bottom: 8px; color: #ff5252; text-shadow: 0 4px 20px rgba(255,82,82,0.5); }
+  #overlay .pts { font-size: 26px; color: #f4a261; font-weight: 700; margin-bottom: 4px; }
+  #overlay .best { font-size: 15px; color: #aaa; margin-bottom: 24px; }
+  #overlay button {
+    padding: 14px 32px; font-size: 17px; font-weight: 800;
+    border-radius: 14px; border: 3px solid #4ecdc4;
+    background: rgba(78,205,196,0.2); color: #fff; cursor: pointer;
+    font-family: inherit; letter-spacing: 0.5px;
   }
-
-  @media (max-height: 520px) {
-    .btn { width: 72px; height: 72px; border-radius: 14px; }
-    #btnJump { right: 104px; bottom: 14px; }
-    #btnGrau { right: 14px; bottom: 14px; }
-    #btnFlip { right: 59px; bottom: 96px; }
-  }
+  #overlay button:active { background: rgba(78,205,196,0.5); }
 </style>
 </head>
 <body>
@@ -94,53 +105,74 @@
 <div id="hud">
   <div>Pontos: <span id="score">0</span></div>
   <div class="best">Recorde: <span id="best">0</span></div>
+  <div class="spd">Vel: <span id="spd">0</span> km/h</div>
 </div>
 <div id="combo"></div>
 
-<!-- Botão PULAR: seta pra cima -->
-<button class="btn" id="btnJump" aria-label="Pular">
+<!-- Direção (esquerda) -->
+<button class="btn" id="btnUp" aria-label="Acelerar">
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 14 L82 52 H66 V86 H34 V52 H18 Z"
-          fill="#4ecdc4" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M50 26 L70 50 H60 V78 H40 V50 H30 Z"
-          fill="rgba(255,255,255,0.35)"/>
+    <path d="M50 12 L84 54 H66 V88 H34 V54 H16 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M50 26 L70 50 H60 V78 H40 V50 H30 Z" fill="rgba(255,255,255,0.35)"/>
+  </svg>
+</button>
+<button class="btn" id="btnDown" aria-label="Frear">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50 88 L16 46 H34 V12 H66 V46 H84 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M50 74 L30 50 H40 V22 H60 V50 H70 Z" fill="rgba(255,255,255,0.35)"/>
+  </svg>
+</button>
+<button class="btn" id="btnLeft" aria-label="Esquerda">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 50 L54 16 V34 H88 V66 H54 V84 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M26 50 L50 30 V40 H78 V60 H50 V70 Z" fill="rgba(255,255,255,0.35)"/>
+  </svg>
+</button>
+<button class="btn" id="btnRight" aria-label="Direita">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M88 50 L46 16 V34 H12 V66 H46 V84 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M74 50 L50 30 V40 H22 V60 H50 V70 Z" fill="rgba(255,255,255,0.35)"/>
   </svg>
 </button>
 
-<!-- Botão GRAU: bike empinada -->
+<!-- Ação (direita) -->
 <button class="btn" id="btnGrau" aria-label="Grau">
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <line x1="6" y1="86" x2="94" y2="86" stroke="rgba(255,255,255,0.45)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="6" y1="86" x2="94" y2="86" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
     <circle cx="26" cy="72" r="14" fill="none" stroke="#ff5252" stroke-width="5"/>
     <circle cx="26" cy="72" r="3" fill="#ff5252"/>
     <circle cx="72" cy="30" r="12" fill="none" stroke="#ff5252" stroke-width="5"/>
     <circle cx="72" cy="30" r="3" fill="#ff5252"/>
-    <path d="M26 72 L44 58 L60 44 L72 30"
-          stroke="#ff5252" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    <line x1="40" y1="62" x2="50" y2="54" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
-    <line x1="60" y1="44" x2="68" y2="38" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
-    <circle cx="52" cy="42" r="7" fill="#4ecdc4" stroke="#ffffff" stroke-width="3"/>
-    <path d="M48 58 L54 48 L64 42"
-          stroke="#4ecdc4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M26 72 L44 58 L60 44 L72 30" stroke="#ff5252" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="40" y1="62" x2="50" y2="54" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+    <line x1="60" y1="44" x2="68" y2="38" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="52" cy="42" r="7" fill="#4ecdc4" stroke="#fff" stroke-width="3"/>
+    <path d="M48 58 L54 48 L64 42" stroke="#4ecdc4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+<button class="btn" id="btnJump" aria-label="Pular">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M50 14 L82 52 H66 V86 H34 V52 H18 Z" fill="#4ecdc4" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M50 26 L70 50 H60 V78 H40 V50 H30 Z" fill="rgba(255,255,255,0.35)"/>
+  </svg>
+</button>
+<button class="btn" id="btnFlip" aria-label="Mortal">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M72 28 A30 30 0 1 1 28 28" stroke="#ffd166" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <path d="M28 28 L22 40 L36 38 Z" fill="#ffd166" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="50" cy="52" r="7" fill="none" stroke="#fff" stroke-width="3"/>
+    <circle cx="50" cy="52" r="1.8" fill="#fff"/>
+    <line x1="50" y1="52" x2="60" y2="44" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+    <line x1="50" y1="52" x2="42" y2="44" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
   </svg>
 </button>
 
-<!-- Botão MORTAL: seta circular (giro 360) -->
-<button class="btn" id="btnFlip" aria-label="Mortal">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- arco circular quase completo -->
-    <path d="M72 28 A30 30 0 1 1 28 28"
-          stroke="#ffd166" stroke-width="7" stroke-linecap="round" fill="none"/>
-    <!-- ponta da seta -->
-    <path d="M28 28 L22 40 L36 38 Z"
-          fill="#ffd166" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
-    <!-- bike girando no centro (pequena) -->
-    <circle cx="50" cy="52" r="7" fill="none" stroke="#ffffff" stroke-width="3"/>
-    <circle cx="50" cy="52" r="1.8" fill="#ffffff"/>
-    <line x1="50" y1="52" x2="60" y2="44" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-    <line x1="50" y1="52" x2="42" y2="44" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-  </svg>
-</button>
+<div id="overlay">
+  <h1>BATEU!</h1>
+  <div class="pts">Pontos: <span id="finalScore">0</span></div>
+  <div class="best">Recorde: <span id="finalBest">0</span></div>
+  <button id="restartBtn">JOGAR DE NOVO</button>
+</div>
 
 <script>
 (() => {
@@ -148,14 +180,14 @@
   const ctx = canvas.getContext('2d');
   const scoreEl = document.getElementById('score');
   const bestEl  = document.getElementById('best');
+  const spdEl   = document.getElementById('spd');
   const comboEl = document.getElementById('combo');
-  const btnJump = document.getElementById('btnJump');
-  const btnGrau = document.getElementById('btnGrau');
-  const btnFlip = document.getElementById('btnFlip');
+  const overlay = document.getElementById('overlay');
+  const finalScore = document.getElementById('finalScore');
+  const finalBest  = document.getElementById('finalBest');
+  const restartBtn = document.getElementById('restartBtn');
 
   let W = 0, H = 0, DPR = 1;
-  let groundY = 0;
-
   function resize() {
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth;
@@ -165,733 +197,1082 @@
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    groundY = H - Math.max(80, H * 0.16);
   }
   window.addEventListener('resize', resize);
   resize();
 
-  // ---------- Estado ----------
-  const bike = {
-    x: 0, y: 0, vy: 0,
-    angle: 0,          // rotação visual total
-    wheelie: 0,        // 0..1 grau
-    spin: 0,           // rotação do mortal (radianos)
-    spinSpeed: 0,
-    onGround: true,
-    wheelRadius: 0
+  // ============================================================
+  // PROJEÇÃO 3D SIMPLES
+  // Câmera atrás da moto. Mundo em (x, y, z):
+  //   x = lateral (-1 esquerda, +1 direita)
+  //   y = altura (0 = chão)
+  //   z = profundidade (0 = bike, +z = longe)
+  // Projetamos em perspectiva: escala = focal / (focal + z)
+  // ============================================================
+  const CAM = {
+    height: 70,        // altura da câmera acima do chão
+    back: 220,         // distância atrás da moto
+    focal: 420,        // distância focal (afeta a perspectiva)
+    lookAhead: 60,     // quanto à frente do bike o horizonte fica
   };
 
-  const GRAVITY = 2600;
-  const JUMP_VELOCITY = -1000;
-  const MAX_WHEELIE = 0.85;
-  const WHEELIE_UP = 3.5;
-  const WHEELIE_DOWN = 4.5;
+  let horizonY = 0;
+  let laneWidth = 1;
+  const ROAD_HALF = 3.2;   // meia largura da estrada em unidades do mundo
+  const UNITS_PER_M = 8;   // 1 unidade ≈ 8m (só pra escala visual)
 
-  const FLIP_SPEED = 9.0;    // rad/s de giro
-  const FLIP_MAX = Math.PI * 2;
+  // estado do mundo
+  const state = {
+    // bike
+    bikeZ: 0,           // posição z da bike (avança com velocidade)
+    bikeX: 0,           // posição lateral (-3.2 a +3.2)
+    targetX: 0,
+    bikeY: 0,           // altura (pulo)
+    vy: 0,
+    onGround: true,
+    pitch: 0,           // inclinação (grau / rampa)
+    roll: 0,            // lean lateral
+    wheelie: 0,
+    spin: 0,            // rotação do mortal
+    spinSpeed: 0,
 
-  let jumpHeld = false;
-  let grauHeld = false;
-  let flipHeld = false;
+    speed: 0,           // m/s
+    maxSpeed: 45,
+    accel: 28,
+    brake: 45,
+    friction: 4,
 
-  const obstacles = [];
-  let obstacleTimer = 0;
+    distance: 0,
+    score: 0,
+    airTime: 0,
+    wheelieTime: 0,
+    comboMult: 1,
+    comboTimer: 0,
+    flipPending: false,
+  };
 
-  // rampas fixas (rolam com o mundo)
-  const ramps = [];
-  let rampTimer = 0;
-
-  let speed = 420;
-  let score = 0;
-  let best = +(localStorage.getItem('bikeBest') || 0);
+  let best = +(localStorage.getItem('bikeBest3D') || 0);
   bestEl.textContent = Math.floor(best);
 
-  let worldOffset = 0;
-  let gameOver = false;
+  // inputs
+  const input = { up:false, down:false, left:false, right:false, jump:false, grau:false, flip:false };
+  let jumpWasPressed = false;
 
-  let airTime = 0;
-  let wheelieTime = 0;
-  let comboMult = 1;
-  let comboTimer = 0;
-  let flipScorePending = 0;
-
-  const particles = [];
-
+  // obstáculos e rampas no mundo (z crescente)
+  const objects = [];
+  // partículas 3D
+  const parts = [];
+  // nuvens
   const clouds = [];
-  for (let i = 0; i < 8; i++) {
-    clouds.push({
-      x: Math.random() * 2000,
-      y: Math.random() * (H * 0.42) + 20,
-      s: 0.6 + Math.random() * 0.9,
-      sp: 0.15 + Math.random() * 0.25
-    });
+  for (let i = 0; i < 14; i++) {
+    clouds.push({ x: Math.random()*2-1, y: Math.random()*0.5+0.05, z: Math.random()*2000, s: 0.4+Math.random()*0.7 });
+  }
+  // prédios (parallax no horizonte)
+  const buildings = [];
+  for (let i = 0; i < 40; i++) {
+    buildings.push({ x: Math.random()*3-1.5, z: Math.random()*3000, w: 0.4+Math.random()*0.8, h: 0.3+Math.random()*1.4, c: Math.random() });
   }
 
-  function reset() {
-    bike.x = W * 0.22;
-    bike.y = groundY;
-    bike.vy = 0;
-    bike.angle = 0;
-    bike.wheelie = 0;
-    bike.spin = 0;
-    bike.spinSpeed = 0;
-    bike.onGround = true;
-    bike.wheelRadius = Math.max(14, Math.min(W, H) * 0.032);
+  let gameOver = false;
+  let gameStarted = false;
+  let worldZ = 0; // offset total já percorrido (pra saber o que já passou)
 
-    obstacles.length = 0;
-    ramps.length = 0;
-    particles.length = 0;
-    obstacleTimer = 1.5;
-    rampTimer = 2.5;
-    speed = 420;
-    score = 0;
-    airTime = 0;
-    wheelieTime = 0;
-    comboMult = 1;
-    comboTimer = 0;
-    flipScorePending = 0;
-    worldOffset = 0;
+  // ============================================================
+  function reset() {
+    state.bikeZ = 0;
+    state.bikeX = 0;
+    state.targetX = 0;
+    state.bikeY = 0;
+    state.vy = 0;
+    state.onGround = true;
+    state.pitch = 0;
+    state.roll = 0;
+    state.wheelie = 0;
+    state.spin = 0;
+    state.spinSpeed = 0;
+    state.speed = 0;
+    state.distance = 0;
+    state.score = 0;
+    state.airTime = 0;
+    state.wheelieTime = 0;
+    state.comboMult = 1;
+    state.comboTimer = 0;
+    state.flipPending = false;
+
+    objects.length = 0;
+    parts.length = 0;
+    worldZ = 0;
+
+    // spawna as primeiras coisas
+    for (let z = 100; z < 900; z += 80) {
+      spawnStuff(z);
+    }
+
     gameOver = false;
-    jumpHeld = false;
-    grauHeld = false;
-    flipHeld = false;
-    btnJump.classList.remove('pressed');
-    btnGrau.classList.remove('pressed');
-    btnFlip.classList.remove('pressed');
+    gameStarted = false;
+    overlay.classList.remove('on');
     comboEl.classList.remove('on');
     updateHUD();
   }
 
+  function spawnStuff(z) {
+    const r = Math.random();
+    if (r < 0.28) {
+      // rampa
+      const w = 2.4 + Math.random() * 1.2;
+      objects.push({ type: 'ramp', x: (Math.random()*2-1) * (ROAD_HALF - w*0.6), z, w, h: 1.4 + Math.random() * 0.8, hit: false });
+    } else if (r < 0.72) {
+      // caixa
+      const w = 0.7 + Math.random() * 0.7;
+      objects.push({ type: 'box', x: (Math.random()*2-1) * (ROAD_HALF - w*0.7), z, w, h: 0.8 + Math.random() * 0.7, hit: false });
+    } else {
+      // cone
+      const w = 0.5;
+      objects.push({ type: 'cone', x: (Math.random()*2-1) * (ROAD_HALF - w*0.7), z, w, h: 0.7, hit: false });
+    }
+  }
+
   function updateHUD() {
-    scoreEl.textContent = Math.floor(score);
+    scoreEl.textContent = Math.floor(state.score);
+    spdEl.textContent = Math.round(state.speed * 3.6);
   }
 
-  // ---------- Entrada ----------
-  function onJumpDown(e) {
-    e && e.preventDefault();
-    if (gameOver) { reset(); return; }
-    jumpHeld = true;
-    btnJump.classList.add('pressed');
-    if (bike.onGround) {
-      bike.vy = JUMP_VELOCITY;
-      bike.onGround = false;
-      spawnDust(bike.x - bike.wheelRadius, groundY, 8);
-    }
-  }
-  function onJumpUp(e) {
-    e && e.preventDefault();
-    jumpHeld = false;
-    btnJump.classList.remove('pressed');
-  }
-  function onGrauDown(e) {
-    e && e.preventDefault();
-    if (gameOver) { reset(); return; }
-    grauHeld = true;
-    btnGrau.classList.add('pressed');
-    if (bike.onGround) spawnDust(bike.x - bike.wheelRadius, groundY, 4);
-  }
-  function onGrauUp(e) {
-    e && e.preventDefault();
-    grauHeld = false;
-    btnGrau.classList.remove('pressed');
-  }
-  function onFlipDown(e) {
-    e && e.preventDefault();
-    if (gameOver) { reset(); return; }
-    flipHeld = true;
-    btnFlip.classList.add('pressed');
-    // se está no chão, dá um impulso pra cima e começa o mortal
-    if (bike.onGround) {
-      bike.vy = JUMP_VELOCITY * 1.15;
-      bike.onGround = false;
-      spawnDust(bike.x - bike.wheelRadius, groundY, 10);
-    }
-    // só gira se estiver no ar
-    if (!bike.onGround) {
-      bike.spinSpeed = FLIP_SPEED;
-    }
-  }
-  function onFlipUp(e) {
-    e && e.preventDefault();
-    flipHeld = false;
-    btnFlip.classList.remove('pressed');
+  // ============================================================
+  // INPUT
+  // ============================================================
+  function bind(btn, key, onDown, onUp) {
+    btn.addEventListener('pointerdown', e => { e.preventDefault(); btn.classList.add('pressed'); input[key] = true; onDown && onDown(); });
+    const up = e => { e && e.preventDefault(); btn.classList.remove('pressed'); input[key] = false; onUp && onUp(); };
+    btn.addEventListener('pointerup', up);
+    btn.addEventListener('pointercancel', up);
+    btn.addEventListener('pointerleave', up);
   }
 
-  btnJump.addEventListener('pointerdown', onJumpDown);
-  btnJump.addEventListener('pointerup', onJumpUp);
-  btnJump.addEventListener('pointercancel', onJumpUp);
-  btnJump.addEventListener('pointerleave', onJumpUp);
-  btnGrau.addEventListener('pointerdown', onGrauDown);
-  btnGrau.addEventListener('pointerup', onGrauUp);
-  btnGrau.addEventListener('pointercancel', onGrauUp);
-  btnGrau.addEventListener('pointerleave', onGrauUp);
-  btnFlip.addEventListener('pointerdown', onFlipDown);
-  btnFlip.addEventListener('pointerup', onFlipUp);
-  btnFlip.addEventListener('pointercancel', onFlipUp);
-  btnFlip.addEventListener('pointerleave', onFlipUp);
+  bind(document.getElementById('btnUp'), 'up');
+  bind(document.getElementById('btnDown'), 'down');
+  bind(document.getElementById('btnLeft'), 'left');
+  bind(document.getElementById('btnRight'), 'right');
+  bind(document.getElementById('btnGrau'), 'grau');
 
+  bind(document.getElementById('btnJump'), 'jump', () => {
+    if (gameOver) { reset(); return; }
+    if (!gameStarted) gameStarted = true;
+    jumpWasPressed = true;
+  });
+
+  bind(document.getElementById('btnFlip'), 'flip', () => {
+    if (gameOver) { reset(); return; }
+    if (!gameStarted) gameStarted = true;
+    if (state.onGround) {
+      state.vy = 12;
+      state.onGround = false;
+    }
+  });
+
+  // teclado
   window.addEventListener('keydown', e => {
-    if (e.code === 'Space' && !e.repeat) onJumpDown(e);
-    if (e.code === 'ArrowUp' && !e.repeat) onGrauDown(e);
-    if (e.code === 'KeyF' && !e.repeat) onFlipDown(e);
-    if (gameOver && (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyF')) reset();
+    if (gameOver) return;
+    if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = true;
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = true;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
+    if (e.code === 'Space' && !e.repeat) { input.jump = true; jumpWasPressed = true; }
+    if (e.code === 'KeyG') input.grau = true;
+    if (e.code === 'KeyF' && !e.repeat) { input.flip = true; if (state.onGround) { state.vy = 12; state.onGround = false; } }
   });
   window.addEventListener('keyup', e => {
-    if (e.code === 'Space') onJumpUp(e);
-    if (e.code === 'ArrowUp') onGrauUp(e);
-    if (e.code === 'KeyF') onFlipUp(e);
+    if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = false;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = false;
+    if (e.code === 'Space') input.jump = false;
+    if (e.code === 'KeyG') input.grau = false;
+    if (e.code === 'KeyF') input.flip = false;
   });
 
-  // ---------- Obstáculos e rampas ----------
-  function spawnObstacle() {
-    const r = Math.random();
-    if (r < 0.4) {
-      const w = 26 + Math.random() * 28;
-      obstacles.push({ type: 'rock', x: W + 40, w, h: w * (0.9 + Math.random() * 0.5) });
-    } else if (r < 0.75) {
-      const w = 40 + Math.random() * 40;
-      obstacles.push({ type: 'box', x: W + 40, w, h: w * (0.7 + Math.random() * 0.4) });
-    } else {
-      const w = 70 + Math.random() * 70;
-      obstacles.push({ type: 'rock', x: W + 40, w, h: 18 + Math.random() * 24 });
-    }
-  }
+  restartBtn.addEventListener('click', reset);
 
-  function spawnRamp() {
-    // rampa de voada: bem larga e alta
-    const w = 130 + Math.random() * 70;
-    ramps.push({ x: W + 60, w, h: 90 + Math.random() * 40 });
-  }
+  // ============================================================
+  // FÍSICA
+  // ============================================================
+  const GRAVITY = 32;
+  const JUMP_VEL = 14;
 
-  // ---------- Partículas ----------
-  function spawnDust(x, y, n) {
-    for (let i = 0; i < n; i++) {
-      particles.push({
-        x, y,
-        vx: -60 - Math.random() * 120,
-        vy: -40 - Math.random() * 120,
-        life: 0.4 + Math.random() * 0.4,
-        maxLife: 0.8,
-        size: 2 + Math.random() * 4,
-        color: Math.random() < 0.5 ? '#e0c9a6' : '#b8a087'
-      });
-    }
-  }
-  function spawnSparks(x, y, colorA, colorB) {
-    for (let i = 0; i < 3; i++) {
-      particles.push({
-        x, y,
-        vx: -100 - Math.random() * 200,
-        vy: -30 - Math.random() * 120,
-        life: 0.25 + Math.random() * 0.2,
-        maxLife: 0.45,
-        size: 1.5 + Math.random() * 2,
-        color: Math.random() < 0.5 ? (colorA || '#ffd166') : (colorB || '#ff8c42')
-      });
-    }
-  }
-
-  // ---------- Update ----------
   function update(dt) {
-    for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i];
+    // ----- Partículas -----
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const p = parts[i];
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 600 * dt;
+      p.z += p.vz * dt;
+      p.vy -= 20 * dt;
       p.life -= dt;
-      if (p.life <= 0) particles.splice(i, 1);
+      p.size *= 0.985;
+      if (p.life <= 0) parts.splice(i, 1);
     }
 
     if (gameOver) return;
 
-    speed = 420 + Math.min(score * 1.2, 560);
+    // ----- Start -----
+    if (!gameStarted) {
+      // bike parada até o jogador acelerar ou pular
+      if (input.up || input.jump) gameStarted = true;
+    }
 
-    // ---- Física vertical ----
-    const inAir = !bike.onGround;
-    if (jumpHeld && inAir && bike.vy < 0) {
-      bike.vy += GRAVITY * 0.35 * dt;
+    // ----- Aceleração / freio -----
+    if (gameStarted) {
+      if (input.up) state.speed = Math.min(state.maxSpeed, state.speed + state.accel * dt);
+      else if (input.down) state.speed = Math.max(0, state.speed - state.brake * dt);
+      else state.speed = Math.max(0, state.speed - state.friction * dt);
+    }
+
+    // ----- Movimento lateral -----
+    const STEER_SPEED = 5.5;
+    let targetX = state.targetX;
+    if (input.left) targetX -= STEER_SPEED * dt * (0.6 + state.speed/state.maxSpeed*0.9);
+    if (input.right) targetX += STEER_SPEED * dt * (0.6 + state.speed/state.maxSpeed*0.9);
+    targetX = Math.max(-ROAD_HALF + 0.6, Math.min(ROAD_HALF - 0.6, targetX));
+    state.targetX = targetX;
+    // suaviza
+    state.bikeX += (targetX - state.bikeX) * Math.min(1, dt * 10);
+    // roll (inclinação lateral)
+    const targetRoll = (targetX - state.bikeX) * 1.8;
+    state.roll += (targetRoll - state.roll) * Math.min(1, dt * 8);
+
+    // ----- Avanço -----
+    const dz = state.speed * dt;
+    state.bikeZ += dz;
+    state.distance += dz;
+    worldZ += dz;
+
+    // ----- Pulo -----
+    if (jumpWasPressed) {
+      jumpWasPressed = false;
+      if (state.onGround) {
+        state.vy = JUMP_VEL;
+        state.onGround = false;
+        spawnDust(10);
+      }
+    }
+
+    // ----- Mortal -----
+    if (input.flip && !state.onGround) {
+      state.spinSpeed = 10.5;
     } else {
-      bike.vy += GRAVITY * dt;
+      state.spinSpeed *= 0.94;
+      if (Math.abs(state.spinSpeed) < 0.1) state.spinSpeed = 0;
     }
-    bike.y += bike.vy * dt;
+    state.spin += state.spinSpeed * dt;
 
-    // ---- Mortal (flip) ----
-    if (flipHeld && !bike.onGround) {
-      bike.spinSpeed = FLIP_SPEED;
+    // ----- Grau -----
+    if (input.grau && state.onGround && state.speed > 4) {
+      state.wheelie = Math.min(1, state.wheelie + 3.2 * dt);
+      if (state.wheelie > 0.5 && Math.random() < 0.55) spawnSparks();
     } else {
-      // desacelera se soltar
-      bike.spinSpeed *= 0.94;
-      if (Math.abs(bike.spinSpeed) < 0.1) bike.spinSpeed = 0;
-    }
-    bike.spin += bike.spinSpeed * dt;
-
-    // Se completou uma volta no ar -> pontos de mortal
-    if (!bike.onGround && Math.abs(bike.spin) >= FLIP_MAX - 0.15 && flipScorePending === 0) {
-      flipScorePending = 1;
-      spawnSparks(bike.x, bike.y, '#4ecdc4', '#ffd166');
+      state.wheelie = Math.max(0, state.wheelie - 4.2 * dt);
     }
 
-    // ---- Aterrissagem ----
-    if (bike.y >= groundY) {
-      if (!bike.onGround) {
-        // bônus de tempo no ar
-        score += airTime * 80;
-        // bônus de mortal
-        if (flipScorePending === 1) {
-          score += 500;
-          comboEl.innerHTML = 'MORTAL! +500<span class="flip">GRAU x' + comboMult.toFixed(1) + '</span>';
-          comboEl.classList.add('on');
-          comboTimer = 1.2;
-          flipScorePending = 0;
+    // ----- Física vertical -----
+    if (!state.onGround) {
+      state.vy -= GRAVITY * dt;
+      state.bikeY += state.vy * dt;
+
+      // rastrear pontuação no ar
+      state.airTime += dt;
+
+      // girou 360 no ar?
+      if (Math.abs(state.spin) >= Math.PI*2 - 0.2 && !state.flipPending) {
+        state.flipPending = true;
+        spawnSparks(30);
+      }
+    }
+
+    // ----- Colisão com o chão / rampas / objetos -----
+    let groundLevel = 0;
+    let onRamp = false;
+    let rampPitch = 0;
+    let rampObj = null;
+
+    const REAR_X = state.bikeX;
+    const REAR_Z = state.bikeZ;
+
+    for (const o of objects) {
+      const oz = o.z;
+      const ozBack = oz - o.w * 0.5;
+      const ozFront = oz + o.w * 0.5;
+      const inX = Math.abs(REAR_X - o.x) < o.w * 0.55 + 0.5;
+      const inZ = REAR_Z > ozBack && REAR_Z < ozFront;
+
+      if (o.type === 'ramp' && inX && inZ) {
+        // sobe na rampa: altura cresce de trás pra frente
+        const t = (REAR_Z - ozBack) / (ozFront - ozBack);
+        const rampTop = Math.max(0, t) * o.h;
+        if (rampTop > groundLevel) {
+          groundLevel = rampTop;
+          onRamp = true;
+          rampPitch = -Math.atan2(o.h, o.w) * 1.2;  // nariz pra cima
+          rampObj = o;
         }
-        if (airTime > 0.15) spawnDust(bike.x, groundY, 6);
-        airTime = 0;
       }
-      bike.y = groundY;
-      bike.vy = 0;
-      bike.onGround = true;
-      // zera rotação do mortal ao pousar (alinha com o chão)
-      bike.spin = 0;
-      bike.spinSpeed = 0;
-      flipScorePending = 0;
-    } else {
-      bike.onGround = false;
-      airTime += dt;
     }
 
-    // ---- Grau (wheelie) ----
-    if (grauHeld && bike.onGround) {
-      bike.wheelie = Math.min(MAX_WHEELIE, bike.wheelie + WHEELIE_UP * dt);
-      if (bike.wheelie > 0.5 && Math.random() < 0.5) {
-        spawnSparks(bike.x - bike.wheelRadius * 1.5, groundY - 2);
+    // aplica gravidade/aterrissagem
+    if (state.bikeY <= groundLevel) {
+      if (!state.onGround) {
+        // aterrissou
+        state.score += state.airTime * 90;
+        if (state.flipPending) {
+          state.score += 800;
+          flashCombo('MORTAL! +800');
+          state.flipPending = false;
+        } else {
+          flashCombo('AÉREO +' + Math.floor(state.airTime * 90));
+        }
+        spawnDust(20);
+        state.airTime = 0;
+      }
+      state.bikeY = groundLevel;
+      state.vy = 0;
+      state.onGround = true;
+
+      // pitch alinha com rampa ou zera
+      state.pitch += (rampPitch - state.pitch) * Math.min(1, dt * 8);
+
+      if (onRamp && rampObj && !rampObj.launched && state.speed > 15) {
+        // passou da ponta: lança pra cima
+        const tipZ = rampObj.z + rampObj.w * 0.5;
+        if (state.bikeZ > tipZ - 0.3) {
+          rampObj.launched = true;
+          state.vy = 16 + state.speed * 0.35;
+          state.onGround = false;
+          state.pitch = -0.5;
+          spawnDust(25);
+        }
       }
     } else {
-      bike.wheelie = Math.max(0, bike.wheelie - WHEELIE_DOWN * dt);
+      state.onGround = false;
+      // no ar: nariz segue um pouco o input de grau/mortal
+      state.pitch += (0 - state.pitch) * Math.min(1, dt * 3);
     }
 
-    // ---- Ângulo visual = grau + mortal ----
-    bike.angle = -bike.wheelie + bike.spin;
+    // ----- Colisão com obstáculos (caixas / cones) -----
+    for (const o of objects) {
+      if (o.type === 'ramp') continue;
+      if (o.hit) continue;
+      const ozBack = o.z - o.w * 0.5;
+      const ozFront = o.z + o.w * 0.5;
+      if (state.bikeZ > ozBack - 0.6 && state.bikeZ < ozFront + 0.6) {
+        if (Math.abs(state.bikeX - o.x) < (o.w * 0.55 + 0.55)) {
+          // se está alto o bastante (pulo), passa por cima
+          if (state.bikeY > o.h + 0.2) {
+            o.hit = true;  // passou por cima
+            state.score += 30;
+          } else {
+            // bateu
+            o.hit = true;
+            boom(o);
+            endGame();
+            return;
+          }
+        }
+      }
+    }
 
-    // ---- Pontos por grau ----
-    if (bike.onGround && bike.wheelie > 0.35) {
-      wheelieTime += dt;
-      comboMult = 1 + Math.min(bike.wheelie * 2.5, 2.5);
-      comboTimer = 0.6;
-      score += dt * 40 * bike.wheelie * comboMult;
-      comboEl.innerHTML = 'GRAU x' + comboMult.toFixed(1);
-      comboEl.classList.add('on');
+    // ----- remove objetos antigos e gera novos -----
+    for (let i = objects.length - 1; i >= 0; i--) {
+      if (objects[i].z < state.bikeZ - 40) objects.splice(i, 1);
+    }
+    while (objects.length === 0 || objects[objects.length-1].z < state.bikeZ + 900) {
+      const last = objects.length ? objects[objects.length-1].z : state.bikeZ + 100;
+      const gap = Math.max(22, 55 - state.speed * 0.5) + Math.random() * 25;
+      spawnStuff(last + gap);
+    }
+
+    // ----- Pontuação -----
+    state.score += state.speed * dt * 1.8;
+
+    if (state.onGround && state.wheelie > 0.35) {
+      state.wheelieTime += dt;
+      state.comboMult = 1 + Math.min(state.wheelie * 2.2, 2.2);
+      state.comboTimer = 0.5;
+      state.score += dt * 55 * state.wheelie * state.comboMult;
+      if (!state.flipPending) {
+        comboEl.textContent = 'GRAU x' + state.comboMult.toFixed(1);
+        comboEl.classList.add('on');
+      }
     } else {
-      if (comboTimer > 0 && flipScorePending === 0) {
-        comboTimer -= dt;
-        if (comboTimer <= 0) {
+      if (state.comboTimer > 0 && !state.flipPending) {
+        state.comboTimer -= dt;
+        if (state.comboTimer <= 0) {
           comboEl.classList.remove('on');
-          comboMult = 1;
+          state.comboMult = 1;
         }
-      }
-    }
-
-    score += dt * 12;
-    worldOffset += speed * dt;
-
-    // ---- Spawn ----
-    obstacleTimer -= dt;
-    if (obstacleTimer <= 0) {
-      spawnObstacle();
-      const interval = Math.max(0.85, 1.7 - score * 0.0014);
-      obstacleTimer = interval * (0.75 + Math.random() * 0.6);
-    }
-    rampTimer -= dt;
-    if (rampTimer <= 0) {
-      spawnRamp();
-      rampTimer = 3.5 + Math.random() * 2.5;
-    }
-
-    // ---- Colisão com rampas (sobe pela inclinação) ----
-    const r = bike.wheelRadius;
-    for (let i = ramps.length - 1; i >= 0; i--) {
-      const rp = ramps[i];
-      rp.x -= speed * dt;
-      if (rp.x + rp.w < -100) { ramps.splice(i, 1); continue; }
-
-      // A rampa vai do chão (esquerda) até o topo (direita, mais alta)
-      // Como a bike anda pra direita, ela sobe a rampa.
-      const rearX = bike.x - r * 1.7;
-      const frontX = bike.x + r * 1.7;
-
-      // se a bike está sobre a rampa horizontalmente
-      if (frontX > rp.x && rearX < rp.x + rp.w) {
-        // altura da rampa na posição da bike (interpolação linear)
-        const t = Math.max(0, Math.min(1, (bike.x - rp.x) / rp.w));
-        const rampTopY = groundY - t * rp.h;
-
-        // se a bike está no chão ou abaixo do topo da rampa
-        if (bike.y >= rampTopY - 2) {
-          bike.y = rampTopY;
-          bike.onGround = true;
-          bike.vy = 0;
-        } else if (bike.y < rampTopY) {
-          bike.onGround = false;
-        }
-      }
-
-      // saiu pela ponta direita -> lança pra cima (voada!)
-      if (rearX >= rp.x + rp.w - 2 && bike.onGround === false && bike.vy >= 0) {
-        // impulso extra de voada
-        if (bike.y <= groundY - rp.h * 0.6) {
-          bike.vy = -1150;
-          bike.onGround = false;
-          spawnDust(bike.x, bike.y, 10);
-        }
-      }
-    }
-
-    // ---- Colisão com obstáculos ----
-    const cos = Math.cos(bike.angle);
-    const sin = Math.sin(bike.angle);
-    const rearX = bike.x + (-r * 1.7) * cos;
-    const rearY = bike.y + (-r * 1.7) * sin;
-    const frontX = bike.x + (r * 1.7) * cos;
-    const frontY = bike.y + (r * 1.7) * sin;
-
-    for (let i = obstacles.length - 1; i >= 0; i--) {
-      const o = obstacles[i];
-      o.x -= speed * dt;
-      if (o.x + o.w < -80) { obstacles.splice(i, 1); continue; }
-
-      const top = groundY - o.h;
-      if (circleRect(rearX, rearY, r * 0.85, o.x, top, o.w, o.h) ||
-          circleRect(frontX, frontY, r * 0.85, o.x, top, o.w, o.h)) {
-        gameOver = true;
-        best = Math.max(best, score);
-        localStorage.setItem('bikeBest', Math.floor(best));
-        bestEl.textContent = Math.floor(best);
-        for (let k = 0; k < 25; k++) spawnSparks(bike.x, bike.y - r);
-        return;
-      }
-    }
-
-    for (const c of clouds) {
-      c.x -= (speed * 0.06 + c.sp * 30) * dt;
-      if (c.x < -150) {
-        c.x = W + Math.random() * 300;
-        c.y = Math.random() * (H * 0.42) + 20;
       }
     }
 
     updateHUD();
   }
 
-  function circleRect(cx, cy, cr, rx, ry, rw, rh) {
-    const nx = Math.max(rx, Math.min(cx, rx + rw));
-    const ny = Math.max(ry, Math.min(cy, ry + rh));
-    const dx = cx - nx, dy = cy - ny;
-    return dx * dx + dy * dy < cr * cr;
+  function flashCombo(text) {
+    comboEl.innerHTML = text;
+    comboEl.classList.add('on');
+    state.comboTimer = 1.2;
+    state.comboMult = 1;
   }
 
-  // ---------- Render ----------
+  // ============================================================
+  // PARTÍCULAS
+  // ============================================================
+  function spawnDust(n) {
+    for (let i = 0; i < n; i++) {
+      parts.push({
+        x: state.bikeX + (Math.random()-0.5)*0.6,
+        y: 0.1,
+        z: state.bikeZ - 1 + Math.random()*0.5,
+        vx: (Math.random()-0.5)*3,
+        vy: Math.random()*4 + 1,
+        vz: -2 - Math.random()*3,
+        life: 0.6 + Math.random()*0.5,
+        maxLife: 1.1,
+        size: 0.25 + Math.random()*0.2,
+        color: Math.random() < 0.5 ? '#d4b48a' : '#a08868',
+      });
+    }
+  }
+  function spawnSparks(n) {
+    n = n || 3;
+    for (let i = 0; i < n; i++) {
+      parts.push({
+        x: state.bikeX + (Math.random()-0.5)*0.7,
+        y: 0.3 + Math.random()*0.4,
+        z: state.bikeZ + (Math.random()-0.5)*0.5,
+        vx: (Math.random()-0.5)*8,
+        vy: Math.random()*6 + 2,
+        vz: (Math.random()-0.5)*5,
+        life: 0.4 + Math.random()*0.3,
+        maxLife: 0.7,
+        size: 0.14 + Math.random()*0.1,
+        color: Math.random() < 0.5 ? '#ffd166' : '#ff8c42',
+      });
+    }
+  }
+  function boom(o) {
+    for (let i = 0; i < 40; i++) {
+      parts.push({
+        x: o.x + (Math.random()-0.5)*o.w,
+        y: Math.random()*o.h,
+        z: o.z + (Math.random()-0.5)*o.w,
+        vx: (Math.random()-0.5)*10,
+        vy: Math.random()*8 + 2,
+        vz: (Math.random()-0.5)*10,
+        life: 0.8 + Math.random()*0.5,
+        maxLife: 1.3,
+        size: 0.18 + Math.random()*0.15,
+        color: Math.random() < 0.5 ? '#ff5252' : '#ffd166',
+      });
+    }
+  }
+
+  function endGame() {
+    gameOver = true;
+    best = Math.max(best, state.score);
+    localStorage.setItem('bikeBest3D', Math.floor(best));
+    bestEl.textContent = Math.floor(best);
+    finalScore.textContent = Math.floor(state.score);
+    finalBest.textContent = Math.floor(best);
+    setTimeout(() => overlay.classList.add('on'), 400);
+  }
+
+  // ============================================================
+  // PROJEÇÃO E DESENHO 3D
+  // ============================================================
+  // Projeta um ponto (x, y, z) do mundo para a tela
+  // - x lateral: bikeX = 0 é o centro da estrada
+  // - y altura acima do chão
+  // - z profundidade relativa à bike (0 = bike)
+  function project(x, y, z) {
+    // coordenadas relativas à câmera
+    const cx = x - state.bikeX;
+    const cy = y - CAM.height;
+    const cz = z + CAM.back;
+
+    // se está atrás da câmera, ignora
+    if (cz < 1) return null;
+
+    const scale = CAM.focal / cz;
+    const sx = W / 2 + cx * scale * (W / 8);
+    const sy = horizonY + (-cy) * scale * (W / 8);
+    return { x: sx, y: sy, scale };
+  }
+
   function drawSky() {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
+    const g = ctx.createLinearGradient(0, 0, 0, horizonY + 40);
     g.addColorStop(0, '#1a1a2e');
-    g.addColorStop(0.45, '#2d3561');
-    g.addColorStop(0.75, '#a85a7a');
+    g.addColorStop(0.55, '#3d2f5c');
+    g.addColorStop(0.8, '#a85a7a');
     g.addColorStop(1, '#f4a261');
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, W, horizonY + 40);
 
-    const sx = W * 0.78, sy = H * 0.3;
-    const sr = Math.min(W, H) * 0.08;
-    const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 2.5);
-    sg.addColorStop(0, 'rgba(255, 220, 150, 0.95)');
-    sg.addColorStop(0.4, 'rgba(255, 200, 120, 0.5)');
-    sg.addColorStop(1, 'rgba(255, 200, 120, 0)');
+    // sol
+    const sx = W * 0.72, sy = horizonY - 60;
+    const sr = Math.min(W, H) * 0.09;
+    const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 3);
+    sg.addColorStop(0, 'rgba(255,220,150,0.95)');
+    sg.addColorStop(0.35, 'rgba(255,180,120,0.5)');
+    sg.addColorStop(1, 'rgba(255,180,120,0)');
     ctx.fillStyle = sg;
     ctx.beginPath();
-    ctx.arc(sx, sy, sr * 2.5, 0, Math.PI * 2);
+    ctx.arc(sx, sy, sr * 3, 0, Math.PI*2);
     ctx.fill();
     ctx.fillStyle = '#ffe0a3';
     ctx.beginPath();
-    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.arc(sx, sy, sr, 0, Math.PI*2);
     ctx.fill();
 
-    ctx.fillStyle = 'rgba(30, 25, 55, 0.7)';
-    ctx.beginPath();
-    ctx.moveTo(0, groundY);
-    const mOff = (worldOffset * 0.15) % 400;
-    for (let x = -mOff - 200; x < W + 400; x += 200) {
-      ctx.lineTo(x, groundY - 80 - Math.sin((x + worldOffset * 0.05) * 0.01) * 40);
-      ctx.lineTo(x + 100, groundY - 140);
-      ctx.lineTo(x + 200, groundY - 80);
+    // prédios ao fundo (parallax)
+    for (const b of buildings) {
+      const relZ = b.z - worldZ * 0.15;
+      const rz = ((relZ % 3000) + 3000) % 3000;
+      if (rz > 2800) continue;
+      const depth = 1 - rz / 3000;
+      const bx = W/2 + b.x * W * 0.5 * (0.5 + depth * 0.5);
+      const bw = b.w * W * 0.06 * depth;
+      const bh = b.h * H * 0.18 * depth;
+      const by = horizonY - bh;
+      const shade = 0.08 + b.c * 0.06;
+      ctx.fillStyle = `rgba(20,15,40,${shade})`;
+      ctx.fillRect(bx - bw/2, by, bw, bh);
+      // janelas
+      ctx.fillStyle = `rgba(255,200,120,${0.08 * depth})`;
+      for (let wy = by + 6; wy < horizonY - 4; wy += 10) {
+        for (let wx = bx - bw/2 + 4; wx < bx + bw/2 - 3; wx += 8) {
+          if ((Math.sin(wx*13.7 + wy*7.3) * 0.5 + 0.5) > 0.6) {
+            ctx.fillRect(wx, wy, 3, 4);
+          }
+        }
+      }
     }
-    ctx.lineTo(W, groundY);
-    ctx.closePath();
-    ctx.fill();
 
+    // nuvens
     for (const c of clouds) {
-      ctx.fillStyle = 'rgba(255,255,255,0.10)';
-      const r = 30 * c.s;
+      const relZ = c.z - worldZ * 0.3;
+      const rz = ((relZ % 2000) + 2000) % 2000;
+      if (rz > 1800) continue;
+      const depth = 1 - rz / 2000;
+      const cx = W/2 + c.x * W * 0.7 * (0.5 + depth * 0.5);
+      const cy = horizonY - 30 - c.y * H * 0.4 * depth - 30;
+      const cs = c.s * W * 0.06 * depth;
+      ctx.fillStyle = `rgba(255,255,255,${0.08 * depth})`;
       ctx.beginPath();
-      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-      ctx.arc(c.x + r * 0.9, c.y + r * 0.15, r * 0.75, 0, Math.PI * 2);
-      ctx.arc(c.x - r * 0.9, c.y + r * 0.2, r * 0.65, 0, Math.PI * 2);
+      ctx.arc(cx, cy, cs, 0, Math.PI*2);
+      ctx.arc(cx + cs*0.9, cy + cs*0.15, cs*0.75, 0, Math.PI*2);
+      ctx.arc(cx - cs*0.9, cy + cs*0.2, cs*0.65, 0, Math.PI*2);
       ctx.fill();
     }
   }
 
-  function drawGround() {
-    const g = ctx.createLinearGradient(0, groundY, 0, H);
-    g.addColorStop(0, '#3a2b4a');
-    g.addColorStop(1, '#100a1a');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, groundY, W, H - groundY);
+  function drawRoad() {
+    // chão escuro
+    ctx.fillStyle = '#0a0a14';
+    ctx.fillRect(0, horizonY, W, H - horizonY);
 
-    ctx.strokeStyle = 'rgba(244, 162, 97, 0.9)';
-    ctx.lineWidth = 3;
+    // grade/estrada com linhas de profundidade
+    // desenhamos a estrada como um trapézio, com linhas transversais
+    // A projeção usa: quanto mais longe (z grande), mais perto do horizonte e mais estreito
+
+    const startZ = 2;
+    const endZ = 200;
+    const segLen = 4;
+
+    // faixa central (asfalto)
     ctx.beginPath();
-    ctx.moveTo(0, groundY);
-    ctx.lineTo(W, groundY);
-    ctx.stroke();
-
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.lineWidth = 3;
-    const dashW = 60;
-    const offset = worldOffset % (dashW * 2);
-    for (let x = -offset; x < W; x += dashW * 2) {
+    const p1 = project(-ROAD_HALF, 0, startZ);
+    const p2 = project( ROAD_HALF, 0, startZ);
+    const p3 = project( ROAD_HALF, 0, endZ);
+    const p4 = project(-ROAD_HALF, 0, endZ);
+    if (p1 && p2 && p3 && p4) {
+      ctx.fillStyle = '#1a1a26';
       ctx.beginPath();
-      ctx.moveTo(x, groundY + 16);
-      ctx.lineTo(x + dashW, groundY + 16);
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.lineTo(p3.x, p3.y);
+      ctx.lineTo(p4.x, p4.y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // bordas neon
+    ctx.strokeStyle = '#4ecdc4';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = '#4ecdc4';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    let first = true;
+    for (let z = startZ; z < endZ; z += segLen) {
+      const p = project(-ROAD_HALF, 0, z);
+      if (!p) continue;
+      if (first) { ctx.moveTo(p.x, p.y); first = false; }
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    first = true;
+    for (let z = startZ; z < endZ; z += segLen) {
+      const p = project(ROAD_HALF, 0, z);
+      if (!p) continue;
+      if (first) { ctx.moveTo(p.x, p.y); first = false; }
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // linhas transversais (efeito de velocidade)
+    const dashSpacing = 6;
+    const phase = (worldZ % dashSpacing) / dashSpacing;
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 40; i++) {
+      const z = startZ + (i + phase) * dashSpacing;
+      if (z > endZ) break;
+      const a = project(-ROAD_HALF, 0, z);
+      const b = project( ROAD_HALF, 0, z);
+      if (!a || !b) continue;
+      ctx.globalAlpha = Math.max(0, 1 - z / endZ) * 0.9;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
       ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // faixa central tracejada
+    ctx.strokeStyle = 'rgba(255,209,102,0.7)';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 30; i++) {
+      const z = startZ + (i + phase) * dashSpacing * 1.5;
+      if (z > endZ) break;
+      const a = project(0, 0.01, z);
+      const b = project(0, 0.01, z + dashSpacing * 0.7);
+      if (!a || !b) continue;
+      ctx.globalAlpha = Math.max(0, 1 - z / endZ);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawObject(o) {
+    const relZ = o.z - state.bikeZ;
+    if (relZ < -3 || relZ > 180) return;
+
+    if (o.type === 'ramp') {
+      // rampa: desenha como um prisma triangular
+      const zBack = o.z - o.w * 0.5;
+      const zFront = o.z + o.w * 0.5;
+      const xL = o.x - o.w * 0.5;
+      const xR = o.x + o.w * 0.5;
+
+      // pontos
+      const bl = project(xL, 0, zBack);
+      const br = project(xR, 0, zBack);
+      const tl = project(xL, o.h, zFront);
+      const tr = project(xR, o.h, zFront);
+      const fl = project(xL, 0, zFront);
+      const fr = project(xR, 0, zFront);
+
+      if (!bl || !br || !tl || !tr || !fl || !fr) return;
+
+      // face frontal (a rampa subindo)
+      const g = ctx.createLinearGradient(0, tl.y, 0, fl.y);
+      g.addColorStop(0, '#ffd166');
+      g.addColorStop(1, '#8a6a3a');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(bl.x, bl.y);
+      ctx.lineTo(tl.x, tl.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.closePath();
+      ctx.fill();
+
+      // topo brilhante
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = 4;
+      ctx.shadowColor = '#ffd166';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.moveTo(tl.x, tl.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // lateral
+      ctx.fillStyle = 'rgba(90,64,32,0.85)';
+      ctx.beginPath();
+      ctx.moveTo(tr.x, tr.y);
+      ctx.lineTo(fr.x, fr.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.closePath();
+      ctx.fill();
+
+      // setas indicando a subida
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      for (let i = 1; i < 4; i++) {
+        const t = i / 4;
+        const px = o.x;
+        const py = o.h * t;
+        const pz = o.z - o.w * 0.5 + o.w * t;
+        const pp = project(px, py, pz);
+        if (pp) {
+          ctx.save();
+          ctx.translate(pp.x, pp.y);
+          const ang = Math.atan2(
+            (project(px, py + 0.1, pz).y - pp.y),
+            (project(px, py + 0.1, pz).x - pp.x)
+          );
+          ctx.rotate(-Math.PI/2);
+          ctx.beginPath();
+          ctx.moveTo(0, -6);
+          ctx.lineTo(-5, 4);
+          ctx.lineTo(5, 4);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+    } else if (o.type === 'box') {
+      const zBack = o.z - o.w * 0.5;
+      const xL = o.x - o.w * 0.5;
+      const xR = o.x + o.w * 0.5;
+
+      const bl = project(xL, 0, zBack);
+      const br = project(xR, 0, zBack);
+      const tl = project(xL, o.h, zBack);
+      const tr = project(xR, o.h, zBack);
+
+      if (!bl || !br || !tl || !tr) return;
+
+      // frente
+      ctx.fillStyle = '#8a6a3a';
+      ctx.beginPath();
+      ctx.moveTo(bl.x, bl.y);
+      ctx.lineTo(tl.x, tl.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.closePath();
+      ctx.fill();
+
+      // topo (pseudo 3D puxando pro fundo)
+      const tl2 = project(xL, o.h, o.z + o.w * 0.5);
+      const tr2 = project(xR, o.h, o.z + o.w * 0.5);
+      if (tl2 && tr2) {
+        ctx.fillStyle = '#a88848';
+        ctx.beginPath();
+        ctx.moveTo(tl.x, tl.y);
+        ctx.lineTo(tr.x, tr.y);
+        ctx.lineTo(tr2.x, tr2.y);
+        ctx.lineTo(tl2.x, tl2.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // lateral direita
+        ctx.fillStyle = '#6a4a20';
+        ctx.beginPath();
+        ctx.moveTo(tr.x, tr.y);
+        ctx.lineTo(tr2.x, tr2.y);
+        ctx.lineTo(br.x, br.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // X
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tl.x, tl.y);
+      ctx.lineTo(br.x, br.y);
+      ctx.moveTo(tr.x, tr.y);
+      ctx.lineTo(bl.x, bl.y);
+      ctx.stroke();
+    } else if (o.type === 'cone') {
+      const base = project(o.x, 0, o.z);
+      const top = project(o.x, o.h, o.z);
+      if (!base || !top) return;
+      const w = base.scale * 0.5 * (W / 8);
+      // base elipse
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.ellipse(base.x, base.y, w * 0.55, w * 0.2, 0, 0, Math.PI*2);
+      ctx.fill();
+      // cone
+      ctx.fillStyle = '#ff8c42';
+      ctx.beginPath();
+      ctx.moveTo(top.x, top.y);
+      ctx.lineTo(base.x - w * 0.4, base.y);
+      ctx.lineTo(base.x + w * 0.4, base.y);
+      ctx.closePath();
+      ctx.fill();
+      // listra branca
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      const mid = project(o.x, o.h * 0.55, o.z);
+      if (mid) {
+        const mw = w * 0.32;
+        ctx.beginPath();
+        ctx.moveTo(mid.x - mw, mid.y);
+        ctx.lineTo(mid.x + mw, mid.y);
+        ctx.lineTo(mid.x + mw * 1.2, mid.y + w * 0.12);
+        ctx.lineTo(mid.x - mw * 1.2, mid.y + w * 0.12);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
   }
 
-  function drawRamp(rp) {
-    const topY = groundY - rp.h;
-    // lateral da rampa
-    ctx.fillStyle = '#8a6a3a';
+  function drawBike3D() {
+    // A bike fica numa posição fixa na tela (perto do fundo),
+    // mas projetamos pra bater certinho com o mundo.
+    const bikeProj = project(state.bikeX, state.bikeY, 0);
+    if (!bikeProj) return;
+
+    const scale = bikeProj.scale * (W / 8);
+    const r = 26 * scale / 26 * 1.1; // raio base da roda (ajustado)
+    const px = bikeProj.x;
+    const py = bikeProj.y;
+
+    // sombra no chão (projetada)
+    const shadowProj = project(state.bikeX, 0, 0);
+    if (shadowProj) {
+      const shadowAlpha = Math.max(0.15, 1 - state.bikeY / 6);
+      ctx.fillStyle = `rgba(0,0,0,${0.5 * shadowAlpha})`;
+      ctx.beginPath();
+      ctx.ellipse(shadowProj.x, shadowProj.y, scale * 0.9, scale * 0.25, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // ---- desenha a bike vista de trás ----
+    ctx.save();
+    ctx.translate(px, py);
+    const totalTilt = state.pitch + state.spin;
+    ctx.rotate(totalTilt * 0.6); // rotação visual (aplicada ao desenho)
+    ctx.rotate(state.roll * 0.4);
+    ctx.scale(scale, scale);
+
+    const bikeScale = 1.0;
+
+    // rastro do mortal
+    if (Math.abs(state.spinSpeed) > 4) {
+      ctx.strokeStyle = 'rgba(78,205,196,0.5)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, -50, 70, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    // roda traseira (perspectiva: vista de trás, então só uma roda grande)
+    // Desenhamos a moto como se a câmera estivesse atrás e um pouco acima.
+
+    // Sombra interna / contato
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
-    ctx.moveTo(rp.x, groundY);
-    ctx.lineTo(rp.x + rp.w, topY);
-    ctx.lineTo(rp.x + rp.w, groundY);
-    ctx.closePath();
+    ctx.ellipse(0, 0, 42, 12, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // topo brilhante (pista)
-    ctx.strokeStyle = '#ffd166';
+    // ---- Roda traseira (vista de trás: um círculo achatado no chão) ----
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.ellipse(0, -16, 22, 14, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#4a4a4a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, -16, 22, 14, 0, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.strokeStyle = '#ff5252';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, -16, 14, 9, 0, 0, Math.PI*2);
+    ctx.stroke();
+
+    // ---- Roda dianteira (mais estreita, atrás e acima) ----
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.ellipse(0, -58, 12, 15, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#3a3a3a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, -58, 12, 15, 0, 0, Math.PI*2);
+    ctx.stroke();
+
+    // ---- Quadro da moto ----
+    // Visto de trás, o quadro é uma forma central
+    ctx.strokeStyle = '#ff5252';
     ctx.lineWidth = 6;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(rp.x, groundY);
-    ctx.lineTo(rp.x + rp.w, topY);
+    ctx.moveTo(-14, -30);
+    ctx.lineTo(0, -46);
+    ctx.lineTo(14, -30);
+    ctx.moveTo(0, -46);
+    ctx.lineTo(0, -60);
     ctx.stroke();
 
-    // listras de "voadora"
+    // banco
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.ellipse(0, -34, 14, 7, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // guidão (dois pedaços laterais)
+    ctx.strokeStyle = '#d0d0d0';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-18, -54);
+    ctx.lineTo(-8, -58);
+    ctx.moveTo(18, -54);
+    ctx.lineTo(8, -58);
+    ctx.stroke();
+
+    // escapamento
+    ctx.strokeStyle = '#aaa';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(-16, -18);
+    ctx.lineTo(-22, -22);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(16, -18);
+    ctx.lineTo(22, -22);
+    ctx.stroke();
+
+    // luz traseira brilhando
+    ctx.fillStyle = '#ff3333';
+    ctx.shadowColor = '#ff3333';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.ellipse(0, -42, 5, 3, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // ---- Piloto (visto de trás) ----
+    // corpo
+    ctx.fillStyle = '#4ecdc4';
+    ctx.beginPath();
+    ctx.ellipse(0, -62, 12, 16, 0, 0, Math.PI*2);
+    ctx.fill();
+    // cabeça
+    ctx.fillStyle = '#4ecdc4';
+    ctx.beginPath();
+    ctx.arc(0, -84, 11, 0, Math.PI*2);
+    ctx.fill();
+    // capacete
+    ctx.fillStyle = '#ff5252';
+    ctx.beginPath();
+    ctx.arc(0, -84, 12, Math.PI, 0);
+    ctx.fill();
+    // faixa capacete
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillRect(-12, -86, 24, 3);
+    // braços
+    ctx.strokeStyle = '#4ecdc4';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-10, -64);
+    ctx.lineTo(-18, -54);
+    ctx.moveTo(10, -64);
+    ctx.lineTo(18, -54);
+    ctx.stroke();
+
+    // pneus girando (linhas de rotação)
+    const rot = (worldZ * 3) % (Math.PI * 2);
     ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.lineWidth = 2;
-    for (let i = 1; i < 4; i++) {
-      const t = i / 4;
-      const x1 = rp.x + rp.w * t;
-      const y1 = groundY - rp.h * t;
+    for (let i = 0; i < 3; i++) {
+      const a = rot + i * Math.PI * 2 / 3;
+      // roda traseira
       ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x1 - 12, y1);
+      ctx.moveTo(Math.cos(a) * 4, -16 + Math.sin(a) * 3);
+      ctx.lineTo(Math.cos(a) * 20, -16 + Math.sin(a) * 12);
       ctx.stroke();
     }
 
-    // brilho na ponta
-    ctx.fillStyle = 'rgba(255, 209, 102, 0.5)';
-    ctx.beginPath();
-    ctx.arc(rp.x + rp.w, topY, 6, 0, Math.PI * 2);
-    ctx.fill();
-  }
+    ctx.restore();
 
-  function drawObstacle(o) {
-    const top = groundY - o.h;
-    if (o.type === 'rock') {
-      ctx.fillStyle = '#5a4a6a';
-      ctx.beginPath();
-      ctx.moveTo(o.x, groundY);
-      ctx.lineTo(o.x + o.w * 0.5, top);
-      ctx.lineTo(o.x + o.w, groundY);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.12)';
-      ctx.beginPath();
-      ctx.moveTo(o.x + o.w * 0.5, top);
-      ctx.lineTo(o.x + o.w * 0.75, groundY);
-      ctx.lineTo(o.x + o.w, groundY);
-      ctx.closePath();
-      ctx.fill();
-    } else {
-      ctx.fillStyle = '#8a6a3a';
-      ctx.fillRect(o.x, top, o.w, o.h);
-      ctx.strokeStyle = '#5a4020';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(o.x, top, o.w, o.h);
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-      ctx.beginPath();
-      ctx.moveTo(o.x, top);
-      ctx.lineTo(o.x + o.w, top + o.h);
-      ctx.moveTo(o.x + o.w, top);
-      ctx.lineTo(o.x, top + o.h);
-      ctx.stroke();
+    // ---- rastro de velocidade (linhas vindo em direção à câmera) ----
+    if (state.speed > state.maxSpeed * 0.6) {
+      ctx.strokeStyle = 'rgba(120,200,255,0.35)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 10; i++) {
+        const ang = (Math.PI * 2) * (i / 10) + performance.now() * 0.001;
+        const rad = 70 + Math.random() * 30;
+        const sx = W/2 + Math.cos(ang) * rad;
+        const sy = H * 0.72 + Math.sin(ang) * rad * 0.35;
+        ctx.beginPath();
+        ctx.moveTo(W/2, H * 0.72);
+        ctx.lineTo(sx, sy);
+        ctx.stroke();
+      }
     }
   }
 
-  function drawParticles() {
-    for (const p of particles) {
+  function drawParticles3D() {
+    // ordena por z (mais longe primeiro)
+    parts.sort((a, b) => (b.z - state.bikeZ) - (a.z - state.bikeZ));
+    for (const p of parts) {
+      const pp = project(p.x, p.y, p.z - state.bikeZ);
+      if (!pp) continue;
       const a = Math.max(0, p.life / p.maxLife);
+      const size = Math.max(1, p.size * pp.scale * (W/8));
       ctx.globalAlpha = a;
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size * a, 0, Math.PI * 2);
+      ctx.arc(pp.x, pp.y, size, 0, Math.PI*2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
   }
 
-  function drawBike() {
-    const r = bike.wheelRadius;
-
-    const shadowScale = Math.max(0.15, 1 - (groundY - bike.y) / 350);
-    ctx.fillStyle = `rgba(0,0,0,${0.3 * shadowScale})`;
-    ctx.beginPath();
-    ctx.ellipse(bike.x, groundY + 3, r * 1.9 * shadowScale, r * 0.4 * shadowScale, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // rastro do mortal (arco brilhante quando girando rápido)
-    if (Math.abs(bike.spinSpeed) > 4) {
-      ctx.strokeStyle = 'rgba(78, 205, 196, 0.5)';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(bike.x, bike.y - r, r * 2.6, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    ctx.save();
-    ctx.translate(bike.x, bike.y);
-    ctx.rotate(bike.angle);
-
-    ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = Math.max(3, r * 0.24);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    const rearWX = -r * 1.7, rearWY = 0;
-    const frontWX = r * 1.7, frontWY = 0;
-    const seatX = -r * 0.25, seatY = -r * 1.55;
-    const handleX = r * 1.35, handleY = -r * 1.35;
-    const centerX = r * 0.85, centerY = -r * 0.15;
-
-    ctx.beginPath();
-    ctx.moveTo(rearWX, rearWY);
-    ctx.lineTo(seatX, seatY);
-    ctx.lineTo(handleX, handleY);
-    ctx.moveTo(seatX, seatY);
-    ctx.lineTo(centerX, centerY);
-    ctx.moveTo(centerX, centerY);
-    ctx.lineTo(frontWX, frontWY);
-    ctx.moveTo(centerX, centerY);
-    ctx.lineTo(rearWX, rearWY);
-    ctx.stroke();
-
-    ctx.fillStyle = '#1a1a1a';
-    ctx.beginPath();
-    ctx.ellipse(seatX, seatY - r * 0.05, r * 0.55, r * 0.18, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#d0d0d0';
-    ctx.lineWidth = Math.max(2, r * 0.13);
-    ctx.beginPath();
-    ctx.moveTo(handleX, handleY);
-    ctx.lineTo(handleX + r * 0.2, handleY - r * 0.45);
-    ctx.stroke();
-
-    ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = Math.max(3, r * 0.3);
-    ctx.beginPath();
-    ctx.moveTo(seatX + r * 0.15, seatY - r * 0.35);
-    ctx.lineTo(handleX - r * 0.3, handleY + r * 0.25);
-    ctx.stroke();
-    ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = Math.max(2, r * 0.2);
-    ctx.beginPath();
-    ctx.moveTo(handleX - r * 0.3, handleY + r * 0.25);
-    ctx.lineTo(handleX, handleY + r * 0.05);
-    ctx.stroke();
-    ctx.fillStyle = '#4ecdc4';
-    ctx.beginPath();
-    ctx.arc(handleX - r * 0.35, handleY - r * 0.05, r * 0.42, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#ff5252';
-    ctx.beginPath();
-    ctx.arc(handleX - r * 0.35, handleY - r * 0.15, r * 0.45, Math.PI, 0);
-    ctx.fill();
-
-    function drawWheel(wx, wy, rr) {
-      ctx.fillStyle = '#0a0a0a';
-      ctx.beginPath();
-      ctx.arc(wx, wy, rr, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#555';
-      ctx.lineWidth = Math.max(2, rr * 0.15);
-      ctx.beginPath();
-      ctx.arc(wx, wy, rr * 0.9, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.strokeStyle = '#888';
-      ctx.lineWidth = Math.max(1.5, rr * 0.1);
-      ctx.beginPath();
-      ctx.arc(wx, wy, rr * 0.5, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-      ctx.lineWidth = 1.5;
-      const rot = (worldOffset / rr) % (Math.PI * 2);
-      for (let i = 0; i < 4; i++) {
-        const a = rot + i * Math.PI / 2;
-        ctx.beginPath();
-        ctx.moveTo(wx, wy);
-        ctx.lineTo(wx + Math.cos(a) * rr * 0.85, wy + Math.sin(a) * rr * 0.85);
-        ctx.stroke();
-      }
-    }
-    drawWheel(rearWX, rearWY, r);
-    drawWheel(frontWX, frontWY, r);
-
-    ctx.restore();
-  }
-
-  function drawGameOver() {
-    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  function drawVignette() {
+    const g = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.3, W/2, H/2, Math.max(W,H)*0.75);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, 'rgba(0,0,0,0.65)');
+    ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${Math.min(W * 0.09, 56)}px system-ui, sans-serif`;
-    ctx.fillText('Bateu!', W / 2, H * 0.4);
-
-    ctx.font = `600 ${Math.min(W * 0.055, 30)}px system-ui, sans-serif`;
-    ctx.fillStyle = '#f4a261';
-    ctx.fillText('Pontos: ' + Math.floor(score), W / 2, H * 0.5);
-
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = `500 ${Math.min(W * 0.04, 20)}px system-ui, sans-serif`;
-    ctx.fillText('Toque em qualquer botão para reiniciar', W / 2, H * 0.6);
   }
 
+  // ============================================================
+  // LOOP
+  // ============================================================
   let last = performance.now();
   function loop(now) {
     let dt = (now - last) / 1000;
     last = now;
     if (dt > 0.05) dt = 0.05;
+    if (dt < 0.001) dt = 0.001;
+
+    horizonY = H * 0.42;
 
     update(dt);
 
-    drawSky();
-    drawGround();
-    for (const rp of ramps) drawRamp(rp);
-    for (const o of obstacles) drawObstacle(o);
-    drawParticles();
-    drawBike();
+    // limpa
+    ctx.fillStyle = '#0a0a14';
+    ctx.fillRect(0, 0, W, H);
 
-    if (gameOver) drawGameOver();
+    drawSky();
+    drawRoad();
+
+    // objetos 3D ordenados por profundidade (mais longe primeiro)
+    const sorted = objects.slice().sort((a, b) => (b.z - state.bikeZ) - (a.z - state.bikeZ));
+    for (const o of sorted) drawObject(o);
+
+    drawParticles3D();
+    drawBike3D();
+
+    drawVignette();
 
     requestAnimationFrame(loop);
   }
