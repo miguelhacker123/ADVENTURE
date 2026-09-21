@@ -23,9 +23,7 @@
     pointer-events: none; opacity: 0; transition: opacity .2s; text-align: right;
   }
   #combo.on { opacity: 1; }
-  #combo .flip { display: block; color: #4ecdc4; font-size: 15px; }
 
-  /* ---------- Botões ---------- */
   .btn {
     position: fixed;
     width: 78px; height: 78px;
@@ -48,19 +46,15 @@
     border-color: #fff;
   }
 
-  /* ---- Direção (canto esquerdo) ---- */
   #btnUp    { left: 105px; bottom: 108px; border-color: rgba(120,200,255,0.8); background: rgba(120,200,255,0.14); }
   #btnDown  { left: 105px; bottom: 22px;  border-color: rgba(120,200,255,0.8); background: rgba(120,200,255,0.14); }
   #btnLeft  { left: 22px;  bottom: 65px;  border-color: rgba(120,200,255,0.8); background: rgba(120,200,255,0.14); }
   #btnRight { left: 188px; bottom: 65px;  border-color: rgba(120,200,255,0.8); background: rgba(120,200,255,0.14); }
-
   #btnUp.pressed, #btnDown.pressed, #btnLeft.pressed, #btnRight.pressed {
-    background: rgba(120,200,255,0.55);
-    border-color: #78c8ff;
+    background: rgba(120,200,255,0.55); border-color: #78c8ff;
     box-shadow: 0 0 20px rgba(120,200,255,0.7);
   }
 
-  /* ---- Ação (canto direito) ---- */
   #btnGrau { right: 22px; bottom: 22px; border-color: rgba(255,82,82,0.75); background: rgba(255,82,82,0.15); }
   #btnGrau.pressed { background: rgba(255,82,82,0.55); border-color: #ff5252; box-shadow: 0 0 20px rgba(255,82,82,0.6); }
 
@@ -84,8 +78,7 @@
   #overlay {
     position: fixed; inset: 0; display: none;
     align-items: center; justify-content: center; flex-direction: column;
-    background: rgba(0,0,0,0.65); z-index: 20; color: #fff; text-align: center;
-    padding: 20px;
+    background: rgba(0,0,0,0.7); z-index: 20; color: #fff; text-align: center; padding: 20px;
   }
   #overlay.on { display: flex; }
   #overlay h1 { font-size: 44px; margin-bottom: 8px; color: #ff5252; text-shadow: 0 4px 20px rgba(255,82,82,0.5); }
@@ -109,7 +102,6 @@
 </div>
 <div id="combo"></div>
 
-<!-- Direção (esquerda) -->
 <button class="btn" id="btnUp" aria-label="Acelerar">
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M50 12 L84 54 H66 V88 H34 V54 H16 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
@@ -135,7 +127,6 @@
   </svg>
 </button>
 
-<!-- Ação (direita) -->
 <button class="btn" id="btnGrau" aria-label="Grau">
   <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
     <line x1="6" y1="86" x2="94" y2="86" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
@@ -202,50 +193,73 @@
   resize();
 
   // ============================================================
-  // PROJEÇÃO 3D SIMPLES
-  // Câmera atrás da moto. Mundo em (x, y, z):
-  //   x = lateral (-1 esquerda, +1 direita)
-  //   y = altura (0 = chão)
-  //   z = profundidade (0 = bike, +z = longe)
-  // Projetamos em perspectiva: escala = focal / (focal + z)
+  // PROJEÇÃO 3D CORRIGIDA
+  // Bike no centro. Câmera atrás e acima. z=0 = bike, z grande = longe.
+  // horizonte = altura onde z -> infinito.
   // ============================================================
   const CAM = {
-    height: 70,        // altura da câmera acima do chão
-    back: 220,         // distância atrás da moto
-    focal: 420,        // distância focal (afeta a perspectiva)
-    lookAhead: 60,     // quanto à frente do bike o horizonte fica
+    height: 1.6,     // altura da câmera (em unidades mundo)
+    back: 4.0,       // distância atrás da bike
+    focal: 1.2,      // "focal" -> controla FOV
   };
 
-  let horizonY = 0;
-  let laneWidth = 1;
-  const ROAD_HALF = 3.2;   // meia largura da estrada em unidades do mundo
-  const UNITS_PER_M = 8;   // 1 unidade ≈ 8m (só pra escala visual)
+  const ROAD_HALF = 3.0;      // meia-largura da estrada (unidades)
+  const HORIZON_RATIO = 0.42; // onde o horizonte fica na tela (0..1)
 
-  // estado do mundo
+  // unidade de mundo = quantos pixels na tela? Ajustado por foco
+  // A projeção: dado (x, y, z) relativo ao bike
+  //   z_rel = z (mais longe = maior)
+  //   profundidade da câmera = z_rel + back
+  //   scale = focal / (z_rel + back)
+  //   sx = W/2 + (x - bikeX) * scale * W * k
+  //   sy = horizonY + (CAM.height - y) * scale * H * k
+  // onde k ajusta pra caber bem.
+  let kUnit = 1; // calculado no resize
+
+  function project(x, y, z) {
+    const zRel = z;             // z em unidades do mundo
+    const depth = zRel + CAM.back;
+    if (depth < 0.1) return null;
+    const scale = CAM.focal / depth;
+    const sx = W / 2 + (x - state.bikeX) * scale * kUnit;
+    const sy = horizonY + (CAM.height - (y + state.bikeY)) * scale * kUnit;
+    return { x: sx, y: sy, scale: scale * kUnit };
+  }
+
+  function recalcK() {
+    // kUnit regula a escala em pixels.
+    // Queremos que a estrada (meia largura ROAD_HALF) ocupe ~ metade da tela
+    // na altura da bike (z=0).
+    const depthAtBike = CAM.back;
+    const scaleAtBike = CAM.focal / depthAtBike;
+    // queremos ROAD_HALF * scaleAtBike * kUnit ≈ W * 0.42
+    kUnit = (W * 0.42) / (ROAD_HALF * scaleAtBike);
+    // limita pra caber em telas largas/estreitas
+    kUnit = Math.max(kUnit, H * 0.35 / (CAM.height * scaleAtBike));
+  }
+
+  // ============================================================
+  // ESTADO
+  // ============================================================
   const state = {
-    // bike
-    bikeZ: 0,           // posição z da bike (avança com velocidade)
-    bikeX: 0,           // posição lateral (-3.2 a +3.2)
+    bikeZ: 0,
+    bikeX: 0,
     targetX: 0,
-    bikeY: 0,           // altura (pulo)
+    bikeY: 0,
     vy: 0,
     onGround: true,
-    pitch: 0,           // inclinação (grau / rampa)
-    roll: 0,            // lean lateral
+    pitch: 0,
+    roll: 0,
     wheelie: 0,
-    spin: 0,            // rotação do mortal
+    spin: 0,
     spinSpeed: 0,
-
-    speed: 0,           // m/s
+    speed: 0,
     maxSpeed: 45,
-    accel: 28,
-    brake: 45,
-    friction: 4,
-
-    distance: 0,
+    accel: 22,
+    brake: 40,
+    friction: 3,
     score: 0,
     airTime: 0,
-    wheelieTime: 0,
     comboMult: 1,
     comboTimer: 0,
     flipPending: false,
@@ -254,30 +268,25 @@
   let best = +(localStorage.getItem('bikeBest3D') || 0);
   bestEl.textContent = Math.floor(best);
 
-  // inputs
   const input = { up:false, down:false, left:false, right:false, jump:false, grau:false, flip:false };
   let jumpWasPressed = false;
 
-  // obstáculos e rampas no mundo (z crescente)
   const objects = [];
-  // partículas 3D
   const parts = [];
-  // nuvens
   const clouds = [];
-  for (let i = 0; i < 14; i++) {
-    clouds.push({ x: Math.random()*2-1, y: Math.random()*0.5+0.05, z: Math.random()*2000, s: 0.4+Math.random()*0.7 });
+  for (let i = 0; i < 12; i++) {
+    clouds.push({ x: Math.random()*2-1, y: Math.random()*0.5+0.1, z: Math.random()*400, s: 0.4+Math.random()*0.7 });
   }
-  // prédios (parallax no horizonte)
   const buildings = [];
-  for (let i = 0; i < 40; i++) {
-    buildings.push({ x: Math.random()*3-1.5, z: Math.random()*3000, w: 0.4+Math.random()*0.8, h: 0.3+Math.random()*1.4, c: Math.random() });
+  for (let i = 0; i < 60; i++) {
+    buildings.push({ x: Math.random()*3-1.5, z: Math.random()*600, w: 0.4+Math.random()*0.9, h: 0.3+Math.random()*1.6, c: Math.random() });
   }
 
   let gameOver = false;
   let gameStarted = false;
-  let worldZ = 0; // offset total já percorrido (pra saber o que já passou)
+  let worldZ = 0;
+  let horizonY = 0;
 
-  // ============================================================
   function reset() {
     state.bikeZ = 0;
     state.bikeX = 0;
@@ -291,10 +300,8 @@
     state.spin = 0;
     state.spinSpeed = 0;
     state.speed = 0;
-    state.distance = 0;
     state.score = 0;
     state.airTime = 0;
-    state.wheelieTime = 0;
     state.comboMult = 1;
     state.comboTimer = 0;
     state.flipPending = false;
@@ -303,10 +310,7 @@
     parts.length = 0;
     worldZ = 0;
 
-    // spawna as primeiras coisas
-    for (let z = 100; z < 900; z += 80) {
-      spawnStuff(z);
-    }
+    for (let z = 40; z < 400; z += 30) spawnStuff(z);
 
     gameOver = false;
     gameStarted = false;
@@ -317,16 +321,13 @@
 
   function spawnStuff(z) {
     const r = Math.random();
-    if (r < 0.28) {
-      // rampa
-      const w = 2.4 + Math.random() * 1.2;
-      objects.push({ type: 'ramp', x: (Math.random()*2-1) * (ROAD_HALF - w*0.6), z, w, h: 1.4 + Math.random() * 0.8, hit: false });
+    if (r < 0.22) {
+      const w = 2.4 + Math.random() * 1.4;
+      objects.push({ type: 'ramp', x: (Math.random()*2-1) * (ROAD_HALF - w*0.6), z, w, h: 1.4 + Math.random() * 0.7, hit: false, launched: false });
     } else if (r < 0.72) {
-      // caixa
-      const w = 0.7 + Math.random() * 0.7;
-      objects.push({ type: 'box', x: (Math.random()*2-1) * (ROAD_HALF - w*0.7), z, w, h: 0.8 + Math.random() * 0.7, hit: false });
+      const w = 0.8 + Math.random() * 0.7;
+      objects.push({ type: 'box', x: (Math.random()*2-1) * (ROAD_HALF - w*0.7), z, w, h: 0.8 + Math.random() * 0.6, hit: false });
     } else {
-      // cone
       const w = 0.5;
       objects.push({ type: 'cone', x: (Math.random()*2-1) * (ROAD_HALF - w*0.7), z, w, h: 0.7, hit: false });
     }
@@ -340,15 +341,15 @@
   // ============================================================
   // INPUT
   // ============================================================
-  function bind(btn, key, onDown, onUp) {
+  function bind(btn, key, onDown) {
     btn.addEventListener('pointerdown', e => { e.preventDefault(); btn.classList.add('pressed'); input[key] = true; onDown && onDown(); });
-    const up = e => { e && e.preventDefault(); btn.classList.remove('pressed'); input[key] = false; onUp && onUp(); };
+    const up = e => { e && e.preventDefault(); btn.classList.remove('pressed'); input[key] = false; };
     btn.addEventListener('pointerup', up);
     btn.addEventListener('pointercancel', up);
     btn.addEventListener('pointerleave', up);
   }
 
-  bind(document.getElementById('btnUp'), 'up');
+  bind(document.getElementById('btnUp'), 'up', () => { if (!gameOver) gameStarted = true; });
   bind(document.getElementById('btnDown'), 'down');
   bind(document.getElementById('btnLeft'), 'left');
   bind(document.getElementById('btnRight'), 'right');
@@ -356,29 +357,25 @@
 
   bind(document.getElementById('btnJump'), 'jump', () => {
     if (gameOver) { reset(); return; }
-    if (!gameStarted) gameStarted = true;
+    gameStarted = true;
     jumpWasPressed = true;
   });
 
   bind(document.getElementById('btnFlip'), 'flip', () => {
     if (gameOver) { reset(); return; }
-    if (!gameStarted) gameStarted = true;
-    if (state.onGround) {
-      state.vy = 12;
-      state.onGround = false;
-    }
+    gameStarted = true;
+    if (state.onGround) { state.vy = 12; state.onGround = false; }
   });
 
-  // teclado
   window.addEventListener('keydown', e => {
     if (gameOver) return;
-    if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = true;
+    if (e.code === 'ArrowUp' || e.code === 'KeyW') { input.up = true; gameStarted = true; }
     if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = true;
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
     if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
-    if (e.code === 'Space' && !e.repeat) { input.jump = true; jumpWasPressed = true; }
+    if (e.code === 'Space' && !e.repeat) { input.jump = true; jumpWasPressed = true; gameStarted = true; }
     if (e.code === 'KeyG') input.grau = true;
-    if (e.code === 'KeyF' && !e.repeat) { input.flip = true; if (state.onGround) { state.vy = 12; state.onGround = false; } }
+    if (e.code === 'KeyF' && !e.repeat) { input.flip = true; gameStarted = true; if (state.onGround) { state.vy = 12; state.onGround = false; } }
   });
   window.addEventListener('keyup', e => {
     if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
@@ -395,17 +392,17 @@
   // ============================================================
   // FÍSICA
   // ============================================================
-  const GRAVITY = 32;
-  const JUMP_VEL = 14;
+  const GRAVITY = 22;
+  const JUMP_VEL = 8.5;
+  const STEER_SPEED = 4.5;
 
   function update(dt) {
-    // ----- Partículas -----
     for (let i = parts.length - 1; i >= 0; i--) {
       const p = parts[i];
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.z += p.vz * dt;
-      p.vy -= 20 * dt;
+      p.vy -= 14 * dt;
       p.life -= dt;
       p.size *= 0.985;
       if (p.life <= 0) parts.splice(i, 1);
@@ -413,39 +410,28 @@
 
     if (gameOver) return;
 
-    // ----- Start -----
     if (!gameStarted) {
-      // bike parada até o jogador acelerar ou pular
-      if (input.up || input.jump) gameStarted = true;
-    }
-
-    // ----- Aceleração / freio -----
-    if (gameStarted) {
+      state.speed = Math.max(0, state.speed - 6 * dt);
+    } else {
       if (input.up) state.speed = Math.min(state.maxSpeed, state.speed + state.accel * dt);
       else if (input.down) state.speed = Math.max(0, state.speed - state.brake * dt);
       else state.speed = Math.max(0, state.speed - state.friction * dt);
     }
 
-    // ----- Movimento lateral -----
-    const STEER_SPEED = 5.5;
-    let targetX = state.targetX;
-    if (input.left) targetX -= STEER_SPEED * dt * (0.6 + state.speed/state.maxSpeed*0.9);
-    if (input.right) targetX += STEER_SPEED * dt * (0.6 + state.speed/state.maxSpeed*0.9);
-    targetX = Math.max(-ROAD_HALF + 0.6, Math.min(ROAD_HALF - 0.6, targetX));
-    state.targetX = targetX;
-    // suaviza
-    state.bikeX += (targetX - state.bikeX) * Math.min(1, dt * 10);
-    // roll (inclinação lateral)
-    const targetRoll = (targetX - state.bikeX) * 1.8;
+    let tX = state.targetX;
+    if (input.left) tX -= STEER_SPEED * dt * (0.6 + state.speed/state.maxSpeed*0.9);
+    if (input.right) tX += STEER_SPEED * dt * (0.6 + state.speed/state.maxSpeed*0.9);
+    tX = Math.max(-ROAD_HALF + 0.6, Math.min(ROAD_HALF - 0.6, tX));
+    state.targetX = tX;
+    state.bikeX += (tX - state.bikeX) * Math.min(1, dt * 9);
+
+    const targetRoll = (tX - state.bikeX) * -1.4;
     state.roll += (targetRoll - state.roll) * Math.min(1, dt * 8);
 
-    // ----- Avanço -----
     const dz = state.speed * dt;
     state.bikeZ += dz;
-    state.distance += dz;
     worldZ += dz;
 
-    // ----- Pulo -----
     if (jumpWasPressed) {
       jumpWasPressed = false;
       if (state.onGround) {
@@ -455,77 +441,59 @@
       }
     }
 
-    // ----- Mortal -----
-    if (input.flip && !state.onGround) {
-      state.spinSpeed = 10.5;
-    } else {
-      state.spinSpeed *= 0.94;
-      if (Math.abs(state.spinSpeed) < 0.1) state.spinSpeed = 0;
-    }
+    if (input.flip && !state.onGround) state.spinSpeed = 9.5;
+    else { state.spinSpeed *= 0.94; if (Math.abs(state.spinSpeed) < 0.1) state.spinSpeed = 0; }
     state.spin += state.spinSpeed * dt;
 
-    // ----- Grau -----
-    if (input.grau && state.onGround && state.speed > 4) {
-      state.wheelie = Math.min(1, state.wheelie + 3.2 * dt);
+    if (input.grau && state.onGround && state.speed > 3) {
+      state.wheelie = Math.min(1, state.wheelie + 3.0 * dt);
       if (state.wheelie > 0.5 && Math.random() < 0.55) spawnSparks();
     } else {
-      state.wheelie = Math.max(0, state.wheelie - 4.2 * dt);
+      state.wheelie = Math.max(0, state.wheelie - 4.0 * dt);
     }
 
-    // ----- Física vertical -----
     if (!state.onGround) {
       state.vy -= GRAVITY * dt;
       state.bikeY += state.vy * dt;
-
-      // rastrear pontuação no ar
       state.airTime += dt;
-
-      // girou 360 no ar?
-      if (Math.abs(state.spin) >= Math.PI*2 - 0.2 && !state.flipPending) {
+      if (Math.abs(state.spin) >= Math.PI*2 - 0.25 && !state.flipPending) {
         state.flipPending = true;
         spawnSparks(30);
       }
     }
 
-    // ----- Colisão com o chão / rampas / objetos -----
+    // chão / rampas
     let groundLevel = 0;
-    let onRamp = false;
     let rampPitch = 0;
     let rampObj = null;
-
     const REAR_X = state.bikeX;
     const REAR_Z = state.bikeZ;
 
     for (const o of objects) {
-      const oz = o.z;
-      const ozBack = oz - o.w * 0.5;
-      const ozFront = oz + o.w * 0.5;
+      const ozBack = o.z - o.w * 0.5;
+      const ozFront = o.z + o.w * 0.5;
       const inX = Math.abs(REAR_X - o.x) < o.w * 0.55 + 0.5;
       const inZ = REAR_Z > ozBack && REAR_Z < ozFront;
 
       if (o.type === 'ramp' && inX && inZ) {
-        // sobe na rampa: altura cresce de trás pra frente
         const t = (REAR_Z - ozBack) / (ozFront - ozBack);
         const rampTop = Math.max(0, t) * o.h;
         if (rampTop > groundLevel) {
           groundLevel = rampTop;
-          onRamp = true;
-          rampPitch = -Math.atan2(o.h, o.w) * 1.2;  // nariz pra cima
+          rampPitch = -Math.atan2(o.h, o.w) * 1.1;
           rampObj = o;
         }
       }
     }
 
-    // aplica gravidade/aterrissagem
     if (state.bikeY <= groundLevel) {
       if (!state.onGround) {
-        // aterrissou
         state.score += state.airTime * 90;
         if (state.flipPending) {
           state.score += 800;
           flashCombo('MORTAL! +800');
           state.flipPending = false;
-        } else {
+        } else if (state.airTime > 0.4) {
           flashCombo('AÉREO +' + Math.floor(state.airTime * 90));
         }
         spawnDust(20);
@@ -534,16 +502,13 @@
       state.bikeY = groundLevel;
       state.vy = 0;
       state.onGround = true;
-
-      // pitch alinha com rampa ou zera
       state.pitch += (rampPitch - state.pitch) * Math.min(1, dt * 8);
 
-      if (onRamp && rampObj && !rampObj.launched && state.speed > 15) {
-        // passou da ponta: lança pra cima
+      if (rampObj && !rampObj.launched && state.speed > 12) {
         const tipZ = rampObj.z + rampObj.w * 0.5;
         if (state.bikeZ > tipZ - 0.3) {
           rampObj.launched = true;
-          state.vy = 16 + state.speed * 0.35;
+          state.vy = 11 + state.speed * 0.25;
           state.onGround = false;
           state.pitch = -0.5;
           spawnDust(25);
@@ -551,24 +516,21 @@
       }
     } else {
       state.onGround = false;
-      // no ar: nariz segue um pouco o input de grau/mortal
       state.pitch += (0 - state.pitch) * Math.min(1, dt * 3);
     }
 
-    // ----- Colisão com obstáculos (caixas / cones) -----
+    // colisão objetos
     for (const o of objects) {
       if (o.type === 'ramp') continue;
       if (o.hit) continue;
       const ozBack = o.z - o.w * 0.5;
       const ozFront = o.z + o.w * 0.5;
       if (state.bikeZ > ozBack - 0.6 && state.bikeZ < ozFront + 0.6) {
-        if (Math.abs(state.bikeX - o.x) < (o.w * 0.55 + 0.55)) {
-          // se está alto o bastante (pulo), passa por cima
-          if (state.bikeY > o.h + 0.2) {
-            o.hit = true;  // passou por cima
+        if (Math.abs(state.bikeX - o.x) < (o.w * 0.55 + 0.5)) {
+          if (state.bikeY > o.h + 0.15) {
+            o.hit = true;
             state.score += 30;
           } else {
-            // bateu
             o.hit = true;
             boom(o);
             endGame();
@@ -578,21 +540,19 @@
       }
     }
 
-    // ----- remove objetos antigos e gera novos -----
+    // limpa e gera novos
     for (let i = objects.length - 1; i >= 0; i--) {
-      if (objects[i].z < state.bikeZ - 40) objects.splice(i, 1);
+      if (objects[i].z < state.bikeZ - 15) objects.splice(i, 1);
     }
-    while (objects.length === 0 || objects[objects.length-1].z < state.bikeZ + 900) {
-      const last = objects.length ? objects[objects.length-1].z : state.bikeZ + 100;
-      const gap = Math.max(22, 55 - state.speed * 0.5) + Math.random() * 25;
+    while (objects.length === 0 || objects[objects.length-1].z < state.bikeZ + 250) {
+      const last = objects.length ? objects[objects.length-1].z : state.bikeZ + 40;
+      const gap = Math.max(10, 28 - state.speed * 0.3) + Math.random() * 14;
       spawnStuff(last + gap);
     }
 
-    // ----- Pontuação -----
     state.score += state.speed * dt * 1.8;
 
     if (state.onGround && state.wheelie > 0.35) {
-      state.wheelieTime += dt;
       state.comboMult = 1 + Math.min(state.wheelie * 2.2, 2.2);
       state.comboTimer = 0.5;
       state.score += dt * 55 * state.wheelie * state.comboMult;
@@ -603,10 +563,7 @@
     } else {
       if (state.comboTimer > 0 && !state.flipPending) {
         state.comboTimer -= dt;
-        if (state.comboTimer <= 0) {
-          comboEl.classList.remove('on');
-          state.comboMult = 1;
-        }
+        if (state.comboTimer <= 0) { comboEl.classList.remove('on'); state.comboMult = 1; }
       }
     }
 
@@ -614,7 +571,7 @@
   }
 
   function flashCombo(text) {
-    comboEl.innerHTML = text;
+    comboEl.textContent = text;
     comboEl.classList.add('on');
     state.comboTimer = 1.2;
     state.comboMult = 1;
@@ -627,14 +584,10 @@
     for (let i = 0; i < n; i++) {
       parts.push({
         x: state.bikeX + (Math.random()-0.5)*0.6,
-        y: 0.1,
-        z: state.bikeZ - 1 + Math.random()*0.5,
-        vx: (Math.random()-0.5)*3,
-        vy: Math.random()*4 + 1,
-        vz: -2 - Math.random()*3,
-        life: 0.6 + Math.random()*0.5,
-        maxLife: 1.1,
-        size: 0.25 + Math.random()*0.2,
+        y: 0.1, z: state.bikeZ - 0.5 + Math.random()*0.5,
+        vx: (Math.random()-0.5)*2, vy: Math.random()*3 + 1, vz: -1 - Math.random()*2,
+        life: 0.6 + Math.random()*0.5, maxLife: 1.1,
+        size: 0.2 + Math.random()*0.18,
         color: Math.random() < 0.5 ? '#d4b48a' : '#a08868',
       });
     }
@@ -644,14 +597,10 @@
     for (let i = 0; i < n; i++) {
       parts.push({
         x: state.bikeX + (Math.random()-0.5)*0.7,
-        y: 0.3 + Math.random()*0.4,
-        z: state.bikeZ + (Math.random()-0.5)*0.5,
-        vx: (Math.random()-0.5)*8,
-        vy: Math.random()*6 + 2,
-        vz: (Math.random()-0.5)*5,
-        life: 0.4 + Math.random()*0.3,
-        maxLife: 0.7,
-        size: 0.14 + Math.random()*0.1,
+        y: 0.3 + Math.random()*0.4, z: state.bikeZ + (Math.random()-0.5)*0.4,
+        vx: (Math.random()-0.5)*5, vy: Math.random()*5 + 1.5, vz: (Math.random()-0.5)*3,
+        life: 0.4 + Math.random()*0.3, maxLife: 0.7,
+        size: 0.12 + Math.random()*0.09,
         color: Math.random() < 0.5 ? '#ffd166' : '#ff8c42',
       });
     }
@@ -660,14 +609,10 @@
     for (let i = 0; i < 40; i++) {
       parts.push({
         x: o.x + (Math.random()-0.5)*o.w,
-        y: Math.random()*o.h,
-        z: o.z + (Math.random()-0.5)*o.w,
-        vx: (Math.random()-0.5)*10,
-        vy: Math.random()*8 + 2,
-        vz: (Math.random()-0.5)*10,
-        life: 0.8 + Math.random()*0.5,
-        maxLife: 1.3,
-        size: 0.18 + Math.random()*0.15,
+        y: Math.random()*o.h, z: o.z + (Math.random()-0.5)*o.w,
+        vx: (Math.random()-0.5)*7, vy: Math.random()*6 + 2, vz: (Math.random()-0.5)*7,
+        life: 0.8 + Math.random()*0.5, maxLife: 1.3,
+        size: 0.16 + Math.random()*0.14,
         color: Math.random() < 0.5 ? '#ff5252' : '#ffd166',
       });
     }
@@ -680,75 +625,68 @@
     bestEl.textContent = Math.floor(best);
     finalScore.textContent = Math.floor(state.score);
     finalBest.textContent = Math.floor(best);
-    setTimeout(() => overlay.classList.add('on'), 400);
+    setTimeout(() => overlay.classList.add('on'), 500);
   }
 
   // ============================================================
-  // PROJEÇÃO E DESENHO 3D
+  // DESENHO
   // ============================================================
-  // Projeta um ponto (x, y, z) do mundo para a tela
-  // - x lateral: bikeX = 0 é o centro da estrada
-  // - y altura acima do chão
-  // - z profundidade relativa à bike (0 = bike)
-  function project(x, y, z) {
-    // coordenadas relativas à câmera
-    const cx = x - state.bikeX;
-    const cy = y - CAM.height;
-    const cz = z + CAM.back;
-
-    // se está atrás da câmera, ignora
-    if (cz < 1) return null;
-
-    const scale = CAM.focal / cz;
-    const sx = W / 2 + cx * scale * (W / 8);
-    const sy = horizonY + (-cy) * scale * (W / 8);
-    return { x: sx, y: sy, scale };
-  }
-
   function drawSky() {
-    const g = ctx.createLinearGradient(0, 0, 0, horizonY + 40);
-    g.addColorStop(0, '#1a1a2e');
-    g.addColorStop(0.55, '#3d2f5c');
-    g.addColorStop(0.8, '#a85a7a');
+    // gradiente do céu até o horizonte
+    const g = ctx.createLinearGradient(0, 0, 0, horizonY);
+    g.addColorStop(0, '#0d0d1f');
+    g.addColorStop(0.45, '#2d2451');
+    g.addColorStop(0.75, '#7a3d6e');
     g.addColorStop(1, '#f4a261');
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, horizonY + 40);
+    ctx.fillRect(0, 0, W, horizonY);
 
     // sol
-    const sx = W * 0.72, sy = horizonY - 60;
-    const sr = Math.min(W, H) * 0.09;
-    const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 3);
-    sg.addColorStop(0, 'rgba(255,220,150,0.95)');
-    sg.addColorStop(0.35, 'rgba(255,180,120,0.5)');
-    sg.addColorStop(1, 'rgba(255,180,120,0)');
+    const sx = W * 0.72, sy = horizonY - H * 0.1;
+    const sr = Math.min(W, H) * 0.075;
+    const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 4);
+    sg.addColorStop(0, 'rgba(255,225,160,0.98)');
+    sg.addColorStop(0.25, 'rgba(255,180,110,0.55)');
+    sg.addColorStop(1, 'rgba(255,180,110,0)');
     ctx.fillStyle = sg;
     ctx.beginPath();
-    ctx.arc(sx, sy, sr * 3, 0, Math.PI*2);
+    ctx.arc(sx, sy, sr * 4, 0, Math.PI*2);
     ctx.fill();
-    ctx.fillStyle = '#ffe0a3';
+    ctx.fillStyle = '#ffe8b8';
     ctx.beginPath();
     ctx.arc(sx, sy, sr, 0, Math.PI*2);
     ctx.fill();
 
-    // prédios ao fundo (parallax)
-    for (const b of buildings) {
-      const relZ = b.z - worldZ * 0.15;
-      const rz = ((relZ % 3000) + 3000) % 3000;
-      if (rz > 2800) continue;
-      const depth = 1 - rz / 3000;
-      const bx = W/2 + b.x * W * 0.5 * (0.5 + depth * 0.5);
-      const bw = b.w * W * 0.06 * depth;
-      const bh = b.h * H * 0.18 * depth;
-      const by = horizonY - bh;
-      const shade = 0.08 + b.c * 0.06;
-      ctx.fillStyle = `rgba(20,15,40,${shade})`;
-      ctx.fillRect(bx - bw/2, by, bw, bh);
+    // prédios (parallax no horizonte, sempre no chão = y=0)
+    const sortedB = buildings.slice().sort((a,b) => b.z - a.z);
+    for (const b of sortedB) {
+      // posição no mundo, relativa à bike, em z (mas com muito parallax lento)
+      const relZ = ((b.z - worldZ * 0.12) % 600 + 600) % 600;
+      if (relZ > 580) continue;
+      // projeta em y=0 no plano z = relZ + 40 (força ficar atrás do horizonte próximo)
+      const p = project(b.x * 3, 0, relZ + 40);
+      if (!p) continue;
+      // altura do prédio na tela: usa projeção de um ponto no topo (y = b.h * 3)
+      const pTop = project(b.x * 3, b.h * 3, relZ + 40);
+      if (!pTop) continue;
+      const w = Math.abs(p.scale) * 0.5 * (Math.abs(b.w) * 3);
+      const hpx = p.y - pTop.y;
+      if (hpx < 2 || w < 2) continue;
+
+      const shade = 0.10 + b.c * 0.06;
+      ctx.fillStyle = `rgba(15,10,30,${Math.min(0.95, shade + 0.25)})`;
+      ctx.fillRect(p.x - w/2, pTop.y, w, hpx);
+
       // janelas
-      ctx.fillStyle = `rgba(255,200,120,${0.08 * depth})`;
-      for (let wy = by + 6; wy < horizonY - 4; wy += 10) {
-        for (let wx = bx - bw/2 + 4; wx < bx + bw/2 - 3; wx += 8) {
-          if ((Math.sin(wx*13.7 + wy*7.3) * 0.5 + 0.5) > 0.6) {
-            ctx.fillRect(wx, wy, 3, 4);
+      ctx.fillStyle = `rgba(255,200,120,${0.35})`;
+      const cols = Math.max(1, Math.floor(w / 5));
+      const rows = Math.max(1, Math.floor(hpx / 7));
+      for (let i = 0; i < cols; i++) {
+        for (let j = 0; j < rows; j++) {
+          if ((Math.sin(i*13.7 + j*7.3 + b.z*0.5) * 0.5 + 0.5) > 0.55) {
+            const wx = p.x - w/2 + (i + 0.3) * (w / cols);
+            const wy = pTop.y + (j + 0.3) * (hpx / rows);
+            ctx.fillRect(wx, wy, Math.max(1, w / cols * 0.35), Math.max(1, hpx / rows * 0.35));
           }
         }
       }
@@ -756,139 +694,131 @@
 
     // nuvens
     for (const c of clouds) {
-      const relZ = c.z - worldZ * 0.3;
-      const rz = ((relZ % 2000) + 2000) % 2000;
-      if (rz > 1800) continue;
-      const depth = 1 - rz / 2000;
-      const cx = W/2 + c.x * W * 0.7 * (0.5 + depth * 0.5);
-      const cy = horizonY - 30 - c.y * H * 0.4 * depth - 30;
-      const cs = c.s * W * 0.06 * depth;
-      ctx.fillStyle = `rgba(255,255,255,${0.08 * depth})`;
+      const relZ = ((c.z - worldZ * 0.25) % 400 + 400) % 400;
+      if (relZ > 380) continue;
+      const p = project(c.x * 3, c.y * 4 + 3, relZ + 30);
+      if (!p) continue;
+      const cs = Math.abs(p.scale) * c.s * 0.8;
+      if (cs < 3) continue;
+      ctx.fillStyle = `rgba(255,220,220,${0.18})`;
       ctx.beginPath();
-      ctx.arc(cx, cy, cs, 0, Math.PI*2);
-      ctx.arc(cx + cs*0.9, cy + cs*0.15, cs*0.75, 0, Math.PI*2);
-      ctx.arc(cx - cs*0.9, cy + cs*0.2, cs*0.65, 0, Math.PI*2);
+      ctx.arc(p.x, p.y, cs, 0, Math.PI*2);
+      ctx.arc(p.x + cs*0.9, p.y + cs*0.15, cs*0.75, 0, Math.PI*2);
+      ctx.arc(p.x - cs*0.9, p.y + cs*0.2, cs*0.65, 0, Math.PI*2);
       ctx.fill();
     }
   }
 
-  function drawRoad() {
-    // chão escuro
-    ctx.fillStyle = '#0a0a14';
+  function drawGround() {
+    // chão (tudo abaixo do horizonte)
+    const g = ctx.createLinearGradient(0, horizonY, 0, H);
+    g.addColorStop(0, '#1a1428');
+    g.addColorStop(1, '#05030a');
+    ctx.fillStyle = g;
     ctx.fillRect(0, horizonY, W, H - horizonY);
+  }
 
-    // grade/estrada com linhas de profundidade
-    // desenhamos a estrada como um trapézio, com linhas transversais
-    // A projeção usa: quanto mais longe (z grande), mais perto do horizonte e mais estreito
+  function drawRoad() {
+    // asfalto (trapézio)
+    const p1 = project(-ROAD_HALF, 0, 0);
+    const p2 = project( ROAD_HALF, 0, 0);
+    const p3 = project( ROAD_HALF, 0, 250);
+    const p4 = project(-ROAD_HALF, 0, 250);
+    if (!p1 || !p2 || !p3 || !p4) return;
 
-    const startZ = 2;
-    const endZ = 200;
-    const segLen = 4;
-
-    // faixa central (asfalto)
     ctx.beginPath();
-    const p1 = project(-ROAD_HALF, 0, startZ);
-    const p2 = project( ROAD_HALF, 0, startZ);
-    const p3 = project( ROAD_HALF, 0, endZ);
-    const p4 = project(-ROAD_HALF, 0, endZ);
-    if (p1 && p2 && p3 && p4) {
-      ctx.fillStyle = '#1a1a26';
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.lineTo(p3.x, p3.y);
-      ctx.lineTo(p4.x, p4.y);
-      ctx.closePath();
-      ctx.fill();
-    }
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.lineTo(p4.x, p4.y);
+    ctx.closePath();
+    ctx.fillStyle = '#1e1e2e';
+    ctx.fill();
 
-    // bordas neon
-    ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = 3;
-    ctx.shadowColor = '#4ecdc4';
-    ctx.shadowBlur = 12;
-    ctx.beginPath();
-    let first = true;
-    for (let z = startZ; z < endZ; z += segLen) {
-      const p = project(-ROAD_HALF, 0, z);
-      if (!p) continue;
-      if (first) { ctx.moveTo(p.x, p.y); first = false; }
-      else ctx.lineTo(p.x, p.y);
+    // bordas neon (fade pra longe)
+    function drawEdge(side) {
+      const segs = 30;
+      for (let i = 0; i < segs; i++) {
+        const z1 = (i / segs) * 250;
+        const z2 = ((i + 1) / segs) * 250;
+        const a = project(side * ROAD_HALF, 0, z1);
+        const b = project(side * ROAD_HALF, 0, z2);
+        if (!a || !b) continue;
+        const alpha = Math.max(0, 1 - z1 / 220);
+        ctx.strokeStyle = `rgba(78,205,196,${alpha})`;
+        ctx.lineWidth = 4 * (1 - z1 / 300) + 1;
+        ctx.shadowColor = 'rgba(78,205,196,' + (alpha*0.8) + ')';
+        ctx.shadowBlur = 12 * alpha;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
     }
-    ctx.stroke();
-    ctx.beginPath();
-    first = true;
-    for (let z = startZ; z < endZ; z += segLen) {
-      const p = project(ROAD_HALF, 0, z);
-      if (!p) continue;
-      if (first) { ctx.moveTo(p.x, p.y); first = false; }
-      else ctx.lineTo(p.x, p.y);
-    }
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+    drawEdge(-1);
+    drawEdge(1);
 
-    // linhas transversais (efeito de velocidade)
-    const dashSpacing = 6;
+    // linhas transversais (traços que se movem)
+    const dashSpacing = 4;
     const phase = (worldZ % dashSpacing) / dashSpacing;
-    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 2;
-    for (let i = 0; i < 40; i++) {
-      const z = startZ + (i + phase) * dashSpacing;
-      if (z > endZ) break;
-      const a = project(-ROAD_HALF, 0, z);
-      const b = project( ROAD_HALF, 0, z);
-      if (!a || !b) continue;
-      ctx.globalAlpha = Math.max(0, 1 - z / endZ) * 0.9;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-
-    // faixa central tracejada
-    ctx.strokeStyle = 'rgba(255,209,102,0.7)';
-    ctx.lineWidth = 3;
     for (let i = 0; i < 30; i++) {
-      const z = startZ + (i + phase) * dashSpacing * 1.5;
-      if (z > endZ) break;
-      const a = project(0, 0.01, z);
-      const b = project(0, 0.01, z + dashSpacing * 0.7);
+      const z = (i + phase) * dashSpacing;
+      if (z > 200) break;
+      const a = project(-ROAD_HALF, 0.01, z);
+      const b = project( ROAD_HALF, 0.01, z);
       if (!a || !b) continue;
-      ctx.globalAlpha = Math.max(0, 1 - z / endZ);
+      const alpha = Math.max(0, 1 - z / 200) * 0.9;
+      ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.35})`;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
     }
-    ctx.globalAlpha = 1;
+
+    // faixa central amarela tracejada
+    for (let i = 0; i < 40; i++) {
+      const z = (i + phase) * dashSpacing * 1.4;
+      if (z > 200) break;
+      const a = project(0, 0.02, z);
+      const b = project(0, 0.02, z + dashSpacing * 0.8);
+      if (!a || !b) continue;
+      const alpha = Math.max(0, 1 - z / 200);
+      ctx.strokeStyle = `rgba(255,209,102,${alpha * 0.8})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
   }
 
   function drawObject(o) {
     const relZ = o.z - state.bikeZ;
-    if (relZ < -3 || relZ > 180) return;
+    if (relZ < -2 || relZ > 220) return;
 
     if (o.type === 'ramp') {
-      // rampa: desenha como um prisma triangular
       const zBack = o.z - o.w * 0.5;
       const zFront = o.z + o.w * 0.5;
       const xL = o.x - o.w * 0.5;
       const xR = o.x + o.w * 0.5;
 
-      // pontos
       const bl = project(xL, 0, zBack);
       const br = project(xR, 0, zBack);
-      const tl = project(xL, o.h, zFront);
-      const tr = project(xR, o.h, zFront);
+      const tl = project(xL, o.h, zBack);
+      const tr = project(xR, o.h, zBack);
       const fl = project(xL, 0, zFront);
       const fr = project(xR, 0, zFront);
+      const tlf = project(xL, o.h, zFront);
+      const trf = project(xR, o.h, zFront);
+      if (!bl || !br || !tl || !tr || !fl || !fr || !tlf || !trf) return;
 
-      if (!bl || !br || !tl || !tr || !fl || !fr) return;
-
-      // face frontal (a rampa subindo)
-      const g = ctx.createLinearGradient(0, tl.y, 0, fl.y);
-      g.addColorStop(0, '#ffd166');
-      g.addColorStop(1, '#8a6a3a');
+      // corpo da rampa (superfície inclinada)
+      const g = ctx.createLinearGradient(0, tl.y, 0, bl.y);
+      g.addColorStop(0, '#a8842e');
+      g.addColorStop(1, '#4a3210');
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(bl.x, bl.y);
@@ -900,51 +830,39 @@
 
       // topo brilhante
       ctx.strokeStyle = '#ffd166';
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 5;
       ctx.shadowColor = '#ffd166';
-      ctx.shadowBlur = 15;
+      ctx.shadowBlur = 18;
       ctx.beginPath();
       ctx.moveTo(tl.x, tl.y);
       ctx.lineTo(tr.x, tr.y);
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      // lateral
-      ctx.fillStyle = 'rgba(90,64,32,0.85)';
+      // face lateral direita
+      ctx.fillStyle = 'rgba(50,30,10,0.95)';
       ctx.beginPath();
       ctx.moveTo(tr.x, tr.y);
+      ctx.lineTo(trf.x, trf.y);
       ctx.lineTo(fr.x, fr.y);
       ctx.lineTo(br.x, br.y);
       ctx.closePath();
       ctx.fill();
 
-      // setas indicando a subida
-      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      // listras
+      ctx.strokeStyle = 'rgba(255,209,102,0.5)';
+      ctx.lineWidth = 2;
       for (let i = 1; i < 4; i++) {
         const t = i / 4;
-        const px = o.x;
-        const py = o.h * t;
-        const pz = o.z - o.w * 0.5 + o.w * t;
-        const pp = project(px, py, pz);
-        if (pp) {
-          ctx.save();
-          ctx.translate(pp.x, pp.y);
-          const ang = Math.atan2(
-            (project(px, py + 0.1, pz).y - pp.y),
-            (project(px, py + 0.1, pz).x - pp.x)
-          );
-          ctx.rotate(-Math.PI/2);
-          ctx.beginPath();
-          ctx.moveTo(0, -6);
-          ctx.lineTo(-5, 4);
-          ctx.lineTo(5, 4);
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
+        const pA = project(o.x - o.w*0.4, o.h*t, zBack + o.w*t);
+        const pB = project(o.x + o.w*0.4, o.h*t, zBack + o.w*t);
+        if (pA && pB) {
+          ctx.beginPath(); ctx.moveTo(pA.x, pA.y); ctx.lineTo(pB.x, pB.y); ctx.stroke();
         }
       }
     } else if (o.type === 'box') {
       const zBack = o.z - o.w * 0.5;
+      const zFront = o.z + o.w * 0.5;
       const xL = o.x - o.w * 0.5;
       const xR = o.x + o.w * 0.5;
 
@@ -952,8 +870,21 @@
       const br = project(xR, 0, zBack);
       const tl = project(xL, o.h, zBack);
       const tr = project(xR, o.h, zBack);
+      const fl = project(xL, 0, zFront);
+      const fr = project(xR, 0, zFront);
+      const tlf = project(xL, o.h, zFront);
+      const trf = project(xR, o.h, zFront);
+      if (!bl || !br || !tl || !tr || !fl || !fr || !tlf || !trf) return;
 
-      if (!bl || !br || !tl || !tr) return;
+      // topo
+      ctx.fillStyle = '#a88848';
+      ctx.beginPath();
+      ctx.moveTo(tl.x, tl.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.lineTo(trf.x, trf.y);
+      ctx.lineTo(tlf.x, tlf.y);
+      ctx.closePath();
+      ctx.fill();
 
       // frente
       ctx.fillStyle = '#8a6a3a';
@@ -965,31 +896,18 @@
       ctx.closePath();
       ctx.fill();
 
-      // topo (pseudo 3D puxando pro fundo)
-      const tl2 = project(xL, o.h, o.z + o.w * 0.5);
-      const tr2 = project(xR, o.h, o.z + o.w * 0.5);
-      if (tl2 && tr2) {
-        ctx.fillStyle = '#a88848';
-        ctx.beginPath();
-        ctx.moveTo(tl.x, tl.y);
-        ctx.lineTo(tr.x, tr.y);
-        ctx.lineTo(tr2.x, tr2.y);
-        ctx.lineTo(tl2.x, tl2.y);
-        ctx.closePath();
-        ctx.fill();
+      // lateral direita
+      ctx.fillStyle = '#5a3f1a';
+      ctx.beginPath();
+      ctx.moveTo(br.x, br.y);
+      ctx.lineTo(tr.x, tr.y);
+      ctx.lineTo(trf.x, trf.y);
+      ctx.lineTo(fr.x, fr.y);
+      ctx.closePath();
+      ctx.fill();
 
-        // lateral direita
-        ctx.fillStyle = '#6a4a20';
-        ctx.beginPath();
-        ctx.moveTo(tr.x, tr.y);
-        ctx.lineTo(tr2.x, tr2.y);
-        ctx.lineTo(br.x, br.y);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      // X
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      // X na frente
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(tl.x, tl.y);
@@ -1001,30 +919,33 @@
       const base = project(o.x, 0, o.z);
       const top = project(o.x, o.h, o.z);
       if (!base || !top) return;
-      const w = base.scale * 0.5 * (W / 8);
-      // base elipse
-      ctx.fillStyle = '#1a1a1a';
+      const w = Math.abs(base.scale) * 0.5;
+      // base
+      ctx.fillStyle = '#111';
       ctx.beginPath();
-      ctx.ellipse(base.x, base.y, w * 0.55, w * 0.2, 0, 0, Math.PI*2);
+      ctx.ellipse(base.x, base.y, w * 0.6, w * 0.22, 0, 0, Math.PI*2);
       ctx.fill();
-      // cone
-      ctx.fillStyle = '#ff8c42';
+      // corpo
+      const g = ctx.createLinearGradient(base.x, top.y, base.x, base.y);
+      g.addColorStop(0, '#ffb066');
+      g.addColorStop(1, '#c8501e');
+      ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(top.x, top.y);
-      ctx.lineTo(base.x - w * 0.4, base.y);
-      ctx.lineTo(base.x + w * 0.4, base.y);
+      ctx.lineTo(base.x - w * 0.45, base.y);
+      ctx.lineTo(base.x + w * 0.45, base.y);
       ctx.closePath();
       ctx.fill();
       // listra branca
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
       const mid = project(o.x, o.h * 0.55, o.z);
       if (mid) {
         const mw = w * 0.32;
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.beginPath();
         ctx.moveTo(mid.x - mw, mid.y);
         ctx.lineTo(mid.x + mw, mid.y);
-        ctx.lineTo(mid.x + mw * 1.2, mid.y + w * 0.12);
-        ctx.lineTo(mid.x - mw * 1.2, mid.y + w * 0.12);
+        ctx.lineTo(mid.x + mw * 1.15, mid.y + w * 0.1);
+        ctx.lineTo(mid.x - mw * 1.15, mid.y + w * 0.1);
         ctx.closePath();
         ctx.fill();
       }
@@ -1032,201 +953,235 @@
   }
 
   function drawBike3D() {
-    // A bike fica numa posição fixa na tela (perto do fundo),
-    // mas projetamos pra bater certinho com o mundo.
-    const bikeProj = project(state.bikeX, state.bikeY, 0);
-    if (!bikeProj) return;
+    const bp = project(state.bikeX, state.bikeY + 0.9, -CAM.back * 0.55);
+    // na verdade a bike fica perto da tela: usamos um offset fixo
+    // pra que ela apareça sempre na parte de baixo, vista de trás.
+    const baseX = W / 2 + (state.bikeX - state.bikeX) * 0; // sempre no centro
+    // Porém deslocamos lateral conforme a posição pra dar sensação de movimento:
+    const lateralShift = (state.bikeX - state.targetX) * 0; // deixamos a câmera seguir
+    const px = W / 2 + state.bikeX * 0; // a câmera segue a bike, então centro
+    const py = H * 0.78 - state.bikeY * (H * 0.06);
 
-    const scale = bikeProj.scale * (W / 8);
-    const r = 26 * scale / 26 * 1.1; // raio base da roda (ajustado)
-    const px = bikeProj.x;
-    const py = bikeProj.y;
+    // usa kUnit pra escala
+    const s = kUnit * 0.0085;
 
-    // sombra no chão (projetada)
-    const shadowProj = project(state.bikeX, 0, 0);
-    if (shadowProj) {
-      const shadowAlpha = Math.max(0.15, 1 - state.bikeY / 6);
-      ctx.fillStyle = `rgba(0,0,0,${0.5 * shadowAlpha})`;
-      ctx.beginPath();
-      ctx.ellipse(shadowProj.x, shadowProj.y, scale * 0.9, scale * 0.25, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
+    // sombra
+    const shadowScale = Math.max(0.3, 1 - state.bikeY * 0.15);
+    ctx.fillStyle = `rgba(0,0,0,${0.55 * shadowScale})`;
+    ctx.beginPath();
+    ctx.ellipse(px, py + 46 * s, 60 * s * shadowScale, 14 * s * shadowScale, 0, 0, Math.PI*2);
+    ctx.fill();
 
-    // ---- desenha a bike vista de trás ----
     ctx.save();
     ctx.translate(px, py);
-    const totalTilt = state.pitch + state.spin;
-    ctx.rotate(totalTilt * 0.6); // rotação visual (aplicada ao desenho)
-    ctx.rotate(state.roll * 0.4);
-    ctx.scale(scale, scale);
-
-    const bikeScale = 1.0;
+    const totalTilt = state.pitch * 0.9 + state.spin;
+    ctx.rotate(totalTilt);
+    ctx.rotate(state.roll * 0.5);
+    ctx.scale(s, s);
 
     // rastro do mortal
     if (Math.abs(state.spinSpeed) > 4) {
-      ctx.strokeStyle = 'rgba(78,205,196,0.5)';
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(78,205,196,0.6)';
+      ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.arc(0, -50, 70, 0, Math.PI*2);
+      ctx.arc(0, -50, 130, 0, Math.PI*2);
       ctx.stroke();
     }
 
-    // roda traseira (perspectiva: vista de trás, então só uma roda grande)
-    // Desenhamos a moto como se a câmera estivesse atrás e um pouco acima.
-
-    // Sombra interna / contato
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 42, 12, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    // ---- Roda traseira (vista de trás: um círculo achatado no chão) ----
+    // roda traseira
     ctx.fillStyle = '#0a0a0a';
     ctx.beginPath();
-    ctx.ellipse(0, -16, 22, 14, 0, 0, Math.PI*2);
+    ctx.ellipse(0, 30, 42, 30, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.strokeStyle = '#4a4a4a';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.ellipse(0, -16, 22, 14, 0, 0, Math.PI*2);
+    ctx.ellipse(0, 30, 42, 30, 0, 0, Math.PI*2);
     ctx.stroke();
+    // aro vermelho
     ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.ellipse(0, -16, 14, 9, 0, 0, Math.PI*2);
+    ctx.ellipse(0, 30, 28, 20, 0, 0, Math.PI*2);
     ctx.stroke();
 
-    // ---- Roda dianteira (mais estreita, atrás e acima) ----
+    // roda dianteira (mais alta e estreita)
     ctx.fillStyle = '#0a0a0a';
     ctx.beginPath();
-    ctx.ellipse(0, -58, 12, 15, 0, 0, Math.PI*2);
+    ctx.ellipse(0, -70, 26, 40, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.strokeStyle = '#3a3a3a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, -70, 26, 40, 0, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.strokeStyle = '#ff5252';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.ellipse(0, -58, 12, 15, 0, 0, Math.PI*2);
+    ctx.ellipse(0, -70, 17, 26, 0, 0, Math.PI*2);
     ctx.stroke();
 
-    // ---- Quadro da moto ----
-    // Visto de trás, o quadro é uma forma central
-    ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = 6;
+    // garfo (conecta roda dianteira)
+    ctx.strokeStyle = '#aaa';
+    ctx.lineWidth = 7;
     ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-16, -32);
+    ctx.lineTo(-16, -70);
+    ctx.moveTo(16, -32);
+    ctx.lineTo(16, -70);
+    ctx.stroke();
+
+    // quadro
+    ctx.strokeStyle = '#ff5252';
+    ctx.lineWidth = 12;
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(-14, -30);
-    ctx.lineTo(0, -46);
-    ctx.lineTo(14, -30);
-    ctx.moveTo(0, -46);
-    ctx.lineTo(0, -60);
+    ctx.moveTo(-22, -10);
+    ctx.lineTo(0, -50);
+    ctx.lineTo(22, -10);
+    ctx.moveTo(0, -50);
+    ctx.lineTo(0, -85);
     ctx.stroke();
 
     // banco
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = '#0d0d0d';
     ctx.beginPath();
-    ctx.ellipse(0, -34, 14, 7, 0, 0, Math.PI*2);
+    ctx.ellipse(0, -18, 34, 14, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.beginPath();
+    ctx.ellipse(0, -20, 28, 8, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // guidão (dois pedaços laterais)
+    // guidão
     ctx.strokeStyle = '#d0d0d0';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 6;
     ctx.beginPath();
-    ctx.moveTo(-18, -54);
-    ctx.lineTo(-8, -58);
-    ctx.moveTo(18, -54);
-    ctx.lineTo(8, -58);
+    ctx.moveTo(-46, -78);
+    ctx.lineTo(-14, -86);
+    ctx.moveTo(46, -78);
+    ctx.lineTo(14, -86);
+    ctx.stroke();
+    // grips
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.moveTo(-46, -78);
+    ctx.lineTo(-56, -74);
+    ctx.moveTo(46, -78);
+    ctx.lineTo(56, -74);
     ctx.stroke();
 
-    // escapamento
-    ctx.strokeStyle = '#aaa';
-    ctx.lineWidth = 4;
+    // escapamento (dois lados)
+    ctx.strokeStyle = '#c8c8c8';
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.moveTo(-16, -18);
-    ctx.lineTo(-22, -22);
+    ctx.moveTo(-30, 10);
+    ctx.lineTo(-48, 4);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(16, -18);
-    ctx.lineTo(22, -22);
+    ctx.moveTo(30, 10);
+    ctx.lineTo(48, 4);
     ctx.stroke();
+    // pontas brilhando
+    ctx.fillStyle = '#666';
+    ctx.beginPath(); ctx.arc(-48, 4, 5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(48, 4, 5, 0, Math.PI*2); ctx.fill();
 
-    // luz traseira brilhando
+    // lanterna traseira
     ctx.fillStyle = '#ff3333';
     ctx.shadowColor = '#ff3333';
-    ctx.shadowBlur = 15;
+    ctx.shadowBlur = 25;
     ctx.beginPath();
-    ctx.ellipse(0, -42, 5, 3, 0, 0, Math.PI*2);
+    ctx.ellipse(0, -12, 9, 5, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // ---- Piloto (visto de trás) ----
-    // corpo
-    ctx.fillStyle = '#4ecdc4';
+    // ---- piloto visto de trás ----
+    // pernas
+    ctx.fillStyle = '#2a3f66';
     ctx.beginPath();
-    ctx.ellipse(0, -62, 12, 16, 0, 0, Math.PI*2);
+    ctx.ellipse(-14, -8, 10, 18, 0, 0, Math.PI*2);
     ctx.fill();
-    // cabeça
-    ctx.fillStyle = '#4ecdc4';
     ctx.beginPath();
-    ctx.arc(0, -84, 11, 0, Math.PI*2);
+    ctx.ellipse(14, -8, 10, 18, 0, 0, Math.PI*2);
     ctx.fill();
+
+    // corpo (jaqueta)
+    const gBody = ctx.createLinearGradient(0, -70, 0, -20);
+    gBody.addColorStop(0, '#4ecdc4');
+    gBody.addColorStop(1, '#2a8b85');
+    ctx.fillStyle = gBody;
+    ctx.beginPath();
+    ctx.ellipse(0, -50, 24, 30, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // braços
+    ctx.strokeStyle = '#4ecdc4';
+    ctx.lineWidth = 11;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-22, -55);
+    ctx.lineTo(-44, -74);
+    ctx.moveTo(22, -55);
+    ctx.lineTo(44, -74);
+    ctx.stroke();
+
     // capacete
     ctx.fillStyle = '#ff5252';
     ctx.beginPath();
-    ctx.arc(0, -84, 12, Math.PI, 0);
+    ctx.arc(0, -92, 20, 0, Math.PI*2);
     ctx.fill();
-    // faixa capacete
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillRect(-12, -86, 24, 3);
-    // braços
-    ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = 5;
+    // listras capacete
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fillRect(-20, -95, 40, 4);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
     ctx.beginPath();
-    ctx.moveTo(-10, -64);
-    ctx.lineTo(-18, -54);
-    ctx.moveTo(10, -64);
-    ctx.lineTo(18, -54);
-    ctx.stroke();
+    ctx.ellipse(0, -88, 18, 6, 0, 0, Math.PI);
+    ctx.fill();
 
-    // pneus girando (linhas de rotação)
-    const rot = (worldZ * 3) % (Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 3; i++) {
-      const a = rot + i * Math.PI * 2 / 3;
+    // raios girando nas rodas
+    const rot = (worldZ * 4) % (Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 2.5;
+    for (let i = 0; i < 4; i++) {
+      const a = rot + i * Math.PI / 2;
       // roda traseira
       ctx.beginPath();
-      ctx.moveTo(Math.cos(a) * 4, -16 + Math.sin(a) * 3);
-      ctx.lineTo(Math.cos(a) * 20, -16 + Math.sin(a) * 12);
+      ctx.moveTo(Math.cos(a) * 6, 30 + Math.sin(a) * 5);
+      ctx.lineTo(Math.cos(a) * 36, 30 + Math.sin(a) * 26);
       ctx.stroke();
     }
 
     ctx.restore();
 
-    // ---- rastro de velocidade (linhas vindo em direção à câmera) ----
-    if (state.speed > state.maxSpeed * 0.6) {
-      ctx.strokeStyle = 'rgba(120,200,255,0.35)';
+    // linhas de velocidade
+    if (state.speed > state.maxSpeed * 0.55) {
+      const alpha = (state.speed - state.maxSpeed * 0.55) / (state.maxSpeed * 0.45);
+      ctx.strokeStyle = `rgba(120,200,255,${alpha * 0.55})`;
       ctx.lineWidth = 2;
-      for (let i = 0; i < 10; i++) {
-        const ang = (Math.PI * 2) * (i / 10) + performance.now() * 0.001;
-        const rad = 70 + Math.random() * 30;
-        const sx = W/2 + Math.cos(ang) * rad;
-        const sy = H * 0.72 + Math.sin(ang) * rad * 0.35;
+      for (let i = 0; i < 14; i++) {
+        const side = i % 2 === 0 ? -1 : 1;
+        const off = Math.random();
+        const sx = W/2 + side * (W*0.28 + off * W*0.2);
+        const sy = horizonY + Math.random() * (H - horizonY) * 0.7;
+        const len = 30 + Math.random() * 80;
         ctx.beginPath();
-        ctx.moveTo(W/2, H * 0.72);
-        ctx.lineTo(sx, sy);
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + side * len * 0.3, sy + len);
         ctx.stroke();
       }
     }
   }
 
   function drawParticles3D() {
-    // ordena por z (mais longe primeiro)
-    parts.sort((a, b) => (b.z - state.bikeZ) - (a.z - state.bikeZ));
-    for (const p of parts) {
+    const arr = parts.slice().sort((a, b) => b.z - a.z);
+    for (const p of arr) {
       const pp = project(p.x, p.y, p.z - state.bikeZ);
       if (!pp) continue;
       const a = Math.max(0, p.life / p.maxLife);
-      const size = Math.max(1, p.size * pp.scale * (W/8));
+      const size = Math.max(1.2, p.size * Math.abs(pp.scale) * 0.9);
       ctx.globalAlpha = a;
       ctx.fillStyle = p.color;
       ctx.beginPath();
@@ -1237,11 +1192,22 @@
   }
 
   function drawVignette() {
-    const g = ctx.createRadialGradient(W/2, H/2, Math.min(W,H)*0.3, W/2, H/2, Math.max(W,H)*0.75);
+    const g = ctx.createRadialGradient(W/2, H*0.6, Math.min(W,H)*0.35, W/2, H*0.6, Math.max(W,H)*0.8);
     g.addColorStop(0, 'rgba(0,0,0,0)');
     g.addColorStop(1, 'rgba(0,0,0,0.65)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
+  }
+
+  function drawStartHint() {
+    if (gameStarted || gameOver) return;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = `bold ${Math.min(W*0.06, 36)}px system-ui, sans-serif`;
+    ctx.fillText('Segure ▲ para acelerar', W/2, H * 0.55);
+    ctx.font = `500 ${Math.min(W*0.038, 18)}px system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText('◀ ▶ para desviar · botões à direita para truques', W/2, H * 0.6);
   }
 
   // ============================================================
@@ -1254,25 +1220,25 @@
     if (dt > 0.05) dt = 0.05;
     if (dt < 0.001) dt = 0.001;
 
-    horizonY = H * 0.42;
+    horizonY = H * HORIZON_RATIO;
+    recalcK();
 
     update(dt);
 
-    // limpa
-    ctx.fillStyle = '#0a0a14';
+    ctx.fillStyle = '#05030a';
     ctx.fillRect(0, 0, W, H);
 
     drawSky();
+    drawGround();
     drawRoad();
 
-    // objetos 3D ordenados por profundidade (mais longe primeiro)
-    const sorted = objects.slice().sort((a, b) => (b.z - state.bikeZ) - (a.z - state.bikeZ));
+    const sorted = objects.slice().sort((a, b) => b.z - a.z);
     for (const o of sorted) drawObject(o);
 
     drawParticles3D();
     drawBike3D();
-
     drawVignette();
+    drawStartHint();
 
     requestAnimationFrame(loop);
   }
