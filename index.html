@@ -57,10 +57,8 @@
 
   #btnGrau { right: 22px; bottom: 22px; border-color: rgba(255,82,82,0.75); background: rgba(255,82,82,0.15); }
   #btnGrau.pressed { background: rgba(255,82,82,0.55); border-color: #ff5252; box-shadow: 0 0 20px rgba(255,82,82,0.6); }
-
   #btnJump { right: 110px; bottom: 22px; border-color: rgba(78,205,196,0.75); background: rgba(78,205,196,0.15); }
   #btnJump.pressed { background: rgba(78,205,196,0.55); border-color: #4ecdc4; box-shadow: 0 0 20px rgba(78,205,196,0.6); }
-
   #btnFlip { right: 66px; bottom: 110px; border-color: rgba(255,209,102,0.85); background: rgba(255,209,102,0.15); }
   #btnFlip.pressed { background: rgba(255,209,102,0.6); border-color: #ffd166; box-shadow: 0 0 22px rgba(255,209,102,0.8); }
 
@@ -81,7 +79,7 @@
     background: rgba(0,0,0,0.7); z-index: 20; color: #fff; text-align: center; padding: 20px;
   }
   #overlay.on { display: flex; }
-  #overlay h1 { font-size: 44px; margin-bottom: 8px; color: #ff5252; text-shadow: 0 4px 20px rgba(255,82,82,0.5); }
+  #overlay h1 { font-size: 44px; margin-bottom: 8px; color: #ff5252; }
   #overlay .pts { font-size: 26px; color: #f4a261; font-weight: 700; margin-bottom: 4px; }
   #overlay .best { font-size: 15px; color: #aaa; margin-bottom: 24px; }
   #overlay button {
@@ -179,6 +177,14 @@
   const restartBtn = document.getElementById('restartBtn');
 
   let W = 0, H = 0, DPR = 1;
+  let horizonY = 0;
+  let kUnit = 1;           // pixels por unidade do mundo na profundidade da bike
+  const CAM_BACK = 5.0;    // distância da câmera atrás da bike (unidades)
+  const CAM_H = 2.2;       // altura da câmera acima do chão
+  const FOCAL = 1.0;       // distância focal relativa
+  const ROAD_HALF = 3.2;   // meia-largura da estrada
+  const HORIZON_RATIO = 0.42;
+
   function resize() {
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = window.innerWidth;
@@ -188,81 +194,38 @@
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    horizonY = H * HORIZON_RATIO;
+    // kUnit = pixels por unidade do mundo NA PROFUNDIDADE DA BIKE (depth = CAM_BACK)
+    // queremos que a estrada tenha largura visual confortável.
+    kUnit = H * 0.55 * (CAM_BACK / FOCAL) * (ROAD_HALF / 3.2);
   }
   window.addEventListener('resize', resize);
   resize();
 
-  // ============================================================
-  // PROJEÇÃO 3D CORRIGIDA
-  // Bike no centro. Câmera atrás e acima. z=0 = bike, z grande = longe.
-  // horizonte = altura onde z -> infinito.
-  // ============================================================
-  const CAM = {
-    height: 1.6,     // altura da câmera (em unidades mundo)
-    back: 4.0,       // distância atrás da bike
-    focal: 1.2,      // "focal" -> controla FOV
-  };
-
-  const ROAD_HALF = 3.0;      // meia-largura da estrada (unidades)
-  const HORIZON_RATIO = 0.42; // onde o horizonte fica na tela (0..1)
-
-  // unidade de mundo = quantos pixels na tela? Ajustado por foco
-  // A projeção: dado (x, y, z) relativo ao bike
-  //   z_rel = z (mais longe = maior)
-  //   profundidade da câmera = z_rel + back
-  //   scale = focal / (z_rel + back)
-  //   sx = W/2 + (x - bikeX) * scale * W * k
-  //   sy = horizonY + (CAM.height - y) * scale * H * k
-  // onde k ajusta pra caber bem.
-  let kUnit = 1; // calculado no resize
-
+  // Projeção: ponto do mundo (x, y, z) relativo à bike.
+  // x lateral (0 = centro), y altura (0 = chão), z profundidade (0 = bike, +z = longe)
+  // Câmera fica em (0, CAM_H, -CAM_BACK) relativa à bike.
   function project(x, y, z) {
-    const zRel = z;             // z em unidades do mundo
-    const depth = zRel + CAM.back;
-    if (depth < 0.1) return null;
-    const scale = CAM.focal / depth;
-    const sx = W / 2 + (x - state.bikeX) * scale * kUnit;
-    const sy = horizonY + (CAM.height - (y + state.bikeY)) * scale * kUnit;
-    return { x: sx, y: sy, scale: scale * kUnit };
-  }
-
-  function recalcK() {
-    // kUnit regula a escala em pixels.
-    // Queremos que a estrada (meia largura ROAD_HALF) ocupe ~ metade da tela
-    // na altura da bike (z=0).
-    const depthAtBike = CAM.back;
-    const scaleAtBike = CAM.focal / depthAtBike;
-    // queremos ROAD_HALF * scaleAtBike * kUnit ≈ W * 0.42
-    kUnit = (W * 0.42) / (ROAD_HALF * scaleAtBike);
-    // limita pra caber em telas largas/estreitas
-    kUnit = Math.max(kUnit, H * 0.35 / (CAM.height * scaleAtBike));
+    const depth = z + CAM_BACK;
+    if (depth < 0.4) return null;
+    const scale = kUnit * (CAM_BACK / depth);      // escala em px/unidade nessa profundidade
+    const sx = W / 2 + (x - state.bikeX) * scale;
+    const sy = horizonY + (CAM_H - (y + state.bikeY)) * scale;
+    return { x: sx, y: sy, scale };
   }
 
   // ============================================================
   // ESTADO
   // ============================================================
   const state = {
-    bikeZ: 0,
-    bikeX: 0,
-    targetX: 0,
-    bikeY: 0,
-    vy: 0,
-    onGround: true,
-    pitch: 0,
-    roll: 0,
-    wheelie: 0,
-    spin: 0,
-    spinSpeed: 0,
-    speed: 0,
-    maxSpeed: 45,
-    accel: 22,
-    brake: 40,
-    friction: 3,
-    score: 0,
-    airTime: 0,
-    comboMult: 1,
-    comboTimer: 0,
-    flipPending: false,
+    bikeZ: 0, bikeX: 0, targetX: 0,
+    bikeY: 0, vy: 0, onGround: true,
+    pitch: 0, roll: 0, wheelie: 0,
+    spin: 0, spinSpeed: 0,
+    speed: 0, maxSpeed: 42,
+    accel: 20, brake: 40, friction: 3,
+    score: 0, airTime: 0,
+    comboMult: 1, comboTimer: 0, flipPending: false,
   };
 
   let best = +(localStorage.getItem('bikeBest3D') || 0);
@@ -274,18 +237,17 @@
   const objects = [];
   const parts = [];
   const clouds = [];
-  for (let i = 0; i < 12; i++) {
-    clouds.push({ x: Math.random()*2-1, y: Math.random()*0.5+0.1, z: Math.random()*400, s: 0.4+Math.random()*0.7 });
+  for (let i = 0; i < 14; i++) {
+    clouds.push({ x: Math.random()*20-10, y: 4 + Math.random()*4, z: Math.random()*300, s: 0.6+Math.random()*0.8 });
   }
   const buildings = [];
   for (let i = 0; i < 60; i++) {
-    buildings.push({ x: Math.random()*3-1.5, z: Math.random()*600, w: 0.4+Math.random()*0.9, h: 0.3+Math.random()*1.6, c: Math.random() });
+    buildings.push({ x: Math.random()*20-10, z: Math.random()*400, w: 1+Math.random()*2, h: 2+Math.random()*5, c: Math.random() });
   }
 
   let gameOver = false;
   let gameStarted = false;
   let worldZ = 0;
-  let horizonY = 0;
 
   function reset() {
     state.bikeZ = 0;
@@ -310,7 +272,7 @@
     parts.length = 0;
     worldZ = 0;
 
-    for (let z = 40; z < 400; z += 30) spawnStuff(z);
+    for (let z = 30; z < 400; z += 22) spawnStuff(z);
 
     gameOver = false;
     gameStarted = false;
@@ -321,15 +283,14 @@
 
   function spawnStuff(z) {
     const r = Math.random();
-    if (r < 0.22) {
-      const w = 2.4 + Math.random() * 1.4;
-      objects.push({ type: 'ramp', x: (Math.random()*2-1) * (ROAD_HALF - w*0.6), z, w, h: 1.4 + Math.random() * 0.7, hit: false, launched: false });
+    if (r < 0.20) {
+      const w = 2.4 + Math.random() * 1.2;
+      objects.push({ type: 'ramp', x: (Math.random()*2-1) * (ROAD_HALF - w*0.6), z, w, h: 1.2 + Math.random() * 0.6, hit: false, launched: false });
     } else if (r < 0.72) {
-      const w = 0.8 + Math.random() * 0.7;
+      const w = 0.9 + Math.random() * 0.7;
       objects.push({ type: 'box', x: (Math.random()*2-1) * (ROAD_HALF - w*0.7), z, w, h: 0.8 + Math.random() * 0.6, hit: false });
     } else {
-      const w = 0.5;
-      objects.push({ type: 'cone', x: (Math.random()*2-1) * (ROAD_HALF - w*0.7), z, w, h: 0.7, hit: false });
+      objects.push({ type: 'cone', x: (Math.random()*2-1) * (ROAD_HALF - 0.6), z, w: 0.6, h: 0.75, hit: false });
     }
   }
 
@@ -354,17 +315,15 @@
   bind(document.getElementById('btnLeft'), 'left');
   bind(document.getElementById('btnRight'), 'right');
   bind(document.getElementById('btnGrau'), 'grau');
-
   bind(document.getElementById('btnJump'), 'jump', () => {
     if (gameOver) { reset(); return; }
     gameStarted = true;
     jumpWasPressed = true;
   });
-
   bind(document.getElementById('btnFlip'), 'flip', () => {
     if (gameOver) { reset(); return; }
     gameStarted = true;
-    if (state.onGround) { state.vy = 12; state.onGround = false; }
+    if (state.onGround) { state.vy = 11; state.onGround = false; }
   });
 
   window.addEventListener('keydown', e => {
@@ -375,7 +334,7 @@
     if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
     if (e.code === 'Space' && !e.repeat) { input.jump = true; jumpWasPressed = true; gameStarted = true; }
     if (e.code === 'KeyG') input.grau = true;
-    if (e.code === 'KeyF' && !e.repeat) { input.flip = true; gameStarted = true; if (state.onGround) { state.vy = 12; state.onGround = false; } }
+    if (e.code === 'KeyF' && !e.repeat) { input.flip = true; gameStarted = true; if (state.onGround) { state.vy = 11; state.onGround = false; } }
   });
   window.addEventListener('keyup', e => {
     if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
@@ -399,12 +358,8 @@
   function update(dt) {
     for (let i = parts.length - 1; i >= 0; i--) {
       const p = parts[i];
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.z += p.vz * dt;
-      p.vy -= 14 * dt;
-      p.life -= dt;
-      p.size *= 0.985;
+      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+      p.vy -= 14 * dt; p.life -= dt;
       if (p.life <= 0) parts.splice(i, 1);
     }
 
@@ -424,7 +379,6 @@
     tX = Math.max(-ROAD_HALF + 0.6, Math.min(ROAD_HALF - 0.6, tX));
     state.targetX = tX;
     state.bikeX += (tX - state.bikeX) * Math.min(1, dt * 9);
-
     const targetRoll = (tX - state.bikeX) * -1.4;
     state.roll += (targetRoll - state.roll) * Math.min(1, dt * 8);
 
@@ -462,21 +416,18 @@
       }
     }
 
-    // chão / rampas
+    // colisão com rampas (subir) e chão
     let groundLevel = 0;
     let rampPitch = 0;
     let rampObj = null;
-    const REAR_X = state.bikeX;
-    const REAR_Z = state.bikeZ;
-
     for (const o of objects) {
+      if (o.type !== 'ramp') continue;
       const ozBack = o.z - o.w * 0.5;
       const ozFront = o.z + o.w * 0.5;
-      const inX = Math.abs(REAR_X - o.x) < o.w * 0.55 + 0.5;
-      const inZ = REAR_Z > ozBack && REAR_Z < ozFront;
-
-      if (o.type === 'ramp' && inX && inZ) {
-        const t = (REAR_Z - ozBack) / (ozFront - ozBack);
+      const inX = Math.abs(state.bikeX - o.x) < o.w * 0.55 + 0.5;
+      const inZ = state.bikeZ > ozBack && state.bikeZ < ozFront;
+      if (inX && inZ) {
+        const t = (state.bikeZ - ozBack) / (ozFront - ozBack);
         const rampTop = Math.max(0, t) * o.h;
         if (rampTop > groundLevel) {
           groundLevel = rampTop;
@@ -519,28 +470,20 @@
       state.pitch += (0 - state.pitch) * Math.min(1, dt * 3);
     }
 
-    // colisão objetos
+    // colisão com obstáculos
     for (const o of objects) {
-      if (o.type === 'ramp') continue;
-      if (o.hit) continue;
+      if (o.type === 'ramp' || o.hit) continue;
       const ozBack = o.z - o.w * 0.5;
       const ozFront = o.z + o.w * 0.5;
       if (state.bikeZ > ozBack - 0.6 && state.bikeZ < ozFront + 0.6) {
         if (Math.abs(state.bikeX - o.x) < (o.w * 0.55 + 0.5)) {
-          if (state.bikeY > o.h + 0.15) {
-            o.hit = true;
-            state.score += 30;
-          } else {
-            o.hit = true;
-            boom(o);
-            endGame();
-            return;
-          }
+          if (state.bikeY > o.h + 0.15) { o.hit = true; state.score += 30; }
+          else { o.hit = true; boom(o); endGame(); return; }
         }
       }
     }
 
-    // limpa e gera novos
+    // limpa objetos antigos e gera novos
     for (let i = objects.length - 1; i >= 0; i--) {
       if (objects[i].z < state.bikeZ - 15) objects.splice(i, 1);
     }
@@ -577,9 +520,6 @@
     state.comboMult = 1;
   }
 
-  // ============================================================
-  // PARTÍCULAS
-  // ============================================================
   function spawnDust(n) {
     for (let i = 0; i < n; i++) {
       parts.push({
@@ -632,61 +572,55 @@
   // DESENHO
   // ============================================================
   function drawSky() {
-    // gradiente do céu até o horizonte
     const g = ctx.createLinearGradient(0, 0, 0, horizonY);
     g.addColorStop(0, '#0d0d1f');
-    g.addColorStop(0.45, '#2d2451');
-    g.addColorStop(0.75, '#7a3d6e');
+    g.addColorStop(0.5, '#2a1f4a');
+    g.addColorStop(0.8, '#7a3d6e');
     g.addColorStop(1, '#f4a261');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, horizonY);
 
     // sol
-    const sx = W * 0.72, sy = horizonY - H * 0.1;
-    const sr = Math.min(W, H) * 0.075;
+    const sx = W * 0.72, sy = horizonY - H * 0.08;
+    const sr = Math.min(W, H) * 0.06;
     const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 4);
     sg.addColorStop(0, 'rgba(255,225,160,0.98)');
-    sg.addColorStop(0.25, 'rgba(255,180,110,0.55)');
+    sg.addColorStop(0.3, 'rgba(255,180,110,0.5)');
     sg.addColorStop(1, 'rgba(255,180,110,0)');
     ctx.fillStyle = sg;
-    ctx.beginPath();
-    ctx.arc(sx, sy, sr * 4, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(sx, sy, sr * 4, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = '#ffe8b8';
-    ctx.beginPath();
-    ctx.arc(sx, sy, sr, 0, Math.PI*2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI*2); ctx.fill();
 
-    // prédios (parallax no horizonte, sempre no chão = y=0)
+    // prédios (sempre atrás do horizonte, sem projeção completa)
     const sortedB = buildings.slice().sort((a,b) => b.z - a.z);
     for (const b of sortedB) {
-      // posição no mundo, relativa à bike, em z (mas com muito parallax lento)
-      const relZ = ((b.z - worldZ * 0.12) % 600 + 600) % 600;
-      if (relZ > 580) continue;
-      // projeta em y=0 no plano z = relZ + 40 (força ficar atrás do horizonte próximo)
-      const p = project(b.x * 3, 0, relZ + 40);
+      const relZ = ((b.z - worldZ * 0.15) % 400 + 400) % 400;
+      if (relZ > 390) continue;
+      // projeta ponto do chão (y=0) nesse z
+      const p = project(b.x, 0, relZ);
       if (!p) continue;
-      // altura do prédio na tela: usa projeção de um ponto no topo (y = b.h * 3)
-      const pTop = project(b.x * 3, b.h * 3, relZ + 40);
+      const pTop = project(b.x, b.h, relZ);
       if (!pTop) continue;
-      const w = Math.abs(p.scale) * 0.5 * (Math.abs(b.w) * 3);
+      const w = Math.abs(p.scale) * b.w * 0.8;
       const hpx = p.y - pTop.y;
-      if (hpx < 2 || w < 2) continue;
-
+      if (hpx < 3 || w < 3) continue;
       const shade = 0.10 + b.c * 0.06;
-      ctx.fillStyle = `rgba(15,10,30,${Math.min(0.95, shade + 0.25)})`;
+      ctx.fillStyle = `rgba(15,10,30,${Math.min(0.95, shade + 0.3)})`;
       ctx.fillRect(p.x - w/2, pTop.y, w, hpx);
-
       // janelas
-      ctx.fillStyle = `rgba(255,200,120,${0.35})`;
-      const cols = Math.max(1, Math.floor(w / 5));
-      const rows = Math.max(1, Math.floor(hpx / 7));
+      ctx.fillStyle = `rgba(255,200,120,0.4)`;
+      const cols = Math.max(1, Math.floor(w / 6));
+      const rows = Math.max(1, Math.floor(hpx / 8));
       for (let i = 0; i < cols; i++) {
         for (let j = 0; j < rows; j++) {
           if ((Math.sin(i*13.7 + j*7.3 + b.z*0.5) * 0.5 + 0.5) > 0.55) {
-            const wx = p.x - w/2 + (i + 0.3) * (w / cols);
-            const wy = pTop.y + (j + 0.3) * (hpx / rows);
-            ctx.fillRect(wx, wy, Math.max(1, w / cols * 0.35), Math.max(1, hpx / rows * 0.35));
+            ctx.fillRect(
+              p.x - w/2 + (i + 0.3) * (w / cols),
+              pTop.y + (j + 0.3) * (hpx / rows),
+              Math.max(1, w / cols * 0.35),
+              Math.max(1, hpx / rows * 0.35)
+            );
           }
         }
       }
@@ -694,13 +628,13 @@
 
     // nuvens
     for (const c of clouds) {
-      const relZ = ((c.z - worldZ * 0.25) % 400 + 400) % 400;
-      if (relZ > 380) continue;
-      const p = project(c.x * 3, c.y * 4 + 3, relZ + 30);
+      const relZ = ((c.z - worldZ * 0.28) % 300 + 300) % 300;
+      if (relZ > 280) continue;
+      const p = project(c.x, c.y, relZ);
       if (!p) continue;
-      const cs = Math.abs(p.scale) * c.s * 0.8;
+      const cs = Math.abs(p.scale) * c.s * 0.5;
       if (cs < 3) continue;
-      ctx.fillStyle = `rgba(255,220,220,${0.18})`;
+      ctx.fillStyle = `rgba(255,200,200,0.15)`;
       ctx.beginPath();
       ctx.arc(p.x, p.y, cs, 0, Math.PI*2);
       ctx.arc(p.x + cs*0.9, p.y + cs*0.15, cs*0.75, 0, Math.PI*2);
@@ -710,7 +644,6 @@
   }
 
   function drawGround() {
-    // chão (tudo abaixo do horizonte)
     const g = ctx.createLinearGradient(0, horizonY, 0, H);
     g.addColorStop(0, '#1a1428');
     g.addColorStop(1, '#05030a');
@@ -719,11 +652,13 @@
   }
 
   function drawRoad() {
-    // asfalto (trapézio)
+    const MAXZ = 200;
+
+    // asfalto
     const p1 = project(-ROAD_HALF, 0, 0);
     const p2 = project( ROAD_HALF, 0, 0);
-    const p3 = project( ROAD_HALF, 0, 250);
-    const p4 = project(-ROAD_HALF, 0, 250);
+    const p3 = project( ROAD_HALF, 0, MAXZ);
+    const p4 = project(-ROAD_HALF, 0, MAXZ);
     if (!p1 || !p2 || !p3 || !p4) return;
 
     ctx.beginPath();
@@ -732,61 +667,57 @@
     ctx.lineTo(p3.x, p3.y);
     ctx.lineTo(p4.x, p4.y);
     ctx.closePath();
-    ctx.fillStyle = '#1e1e2e';
+    ctx.fillStyle = '#161622';
     ctx.fill();
 
-    // bordas neon (fade pra longe)
+    // bordas neon
     function drawEdge(side) {
-      const segs = 30;
+      const segs = 40;
       for (let i = 0; i < segs; i++) {
-        const z1 = (i / segs) * 250;
-        const z2 = ((i + 1) / segs) * 250;
-        const a = project(side * ROAD_HALF, 0, z1);
-        const b = project(side * ROAD_HALF, 0, z2);
+        const z1 = (i / segs) * MAXZ;
+        const z2 = ((i + 1) / segs) * MAXZ;
+        const a = project(side * ROAD_HALF, 0.02, z1);
+        const b = project(side * ROAD_HALF, 0.02, z2);
         if (!a || !b) continue;
-        const alpha = Math.max(0, 1 - z1 / 220);
+        const alpha = Math.max(0, 1 - z1 / MAXZ * 0.95);
         ctx.strokeStyle = `rgba(78,205,196,${alpha})`;
-        ctx.lineWidth = 4 * (1 - z1 / 300) + 1;
-        ctx.shadowColor = 'rgba(78,205,196,' + (alpha*0.8) + ')';
-        ctx.shadowBlur = 12 * alpha;
+        ctx.lineWidth = Math.max(1, 4 * alpha);
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
         ctx.stroke();
       }
-      ctx.shadowBlur = 0;
     }
     drawEdge(-1);
     drawEdge(1);
 
-    // linhas transversais (traços que se movem)
+    // linhas transversais
     const dashSpacing = 4;
     const phase = (worldZ % dashSpacing) / dashSpacing;
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 60; i++) {
       const z = (i + phase) * dashSpacing;
-      if (z > 200) break;
+      if (z > MAXZ) break;
       const a = project(-ROAD_HALF, 0.01, z);
       const b = project( ROAD_HALF, 0.01, z);
       if (!a || !b) continue;
-      const alpha = Math.max(0, 1 - z / 200) * 0.9;
-      ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.35})`;
+      const alpha = Math.max(0, 1 - z / MAXZ);
+      ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.18})`;
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
     }
 
-    // faixa central amarela tracejada
-    for (let i = 0; i < 40; i++) {
-      const z = (i + phase) * dashSpacing * 1.4;
-      if (z > 200) break;
+    // faixa central amarela
+    for (let i = 0; i < 80; i++) {
+      const z = (i + phase) * dashSpacing * 1.2;
+      if (z > MAXZ) break;
       const a = project(0, 0.02, z);
-      const b = project(0, 0.02, z + dashSpacing * 0.8);
+      const b = project(0, 0.02, z + dashSpacing * 0.7);
       if (!a || !b) continue;
-      const alpha = Math.max(0, 1 - z / 200);
-      ctx.strokeStyle = `rgba(255,209,102,${alpha * 0.8})`;
+      const alpha = Math.max(0, 1 - z / MAXZ);
+      ctx.strokeStyle = `rgba(255,209,102,${alpha * 0.9})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
@@ -797,7 +728,7 @@
 
   function drawObject(o) {
     const relZ = o.z - state.bikeZ;
-    if (relZ < -2 || relZ > 220) return;
+    if (relZ < -1 || relZ > 200) return;
 
     if (o.type === 'ramp') {
       const zBack = o.z - o.w * 0.5;
@@ -809,16 +740,14 @@
       const br = project(xR, 0, zBack);
       const tl = project(xL, o.h, zBack);
       const tr = project(xR, o.h, zBack);
-      const fl = project(xL, 0, zFront);
-      const fr = project(xR, 0, zFront);
-      const tlf = project(xL, o.h, zFront);
       const trf = project(xR, o.h, zFront);
-      if (!bl || !br || !tl || !tr || !fl || !fr || !tlf || !trf) return;
+      const fr = project(xR, 0, zFront);
+      if (!bl || !br || !tl || !tr || !trf || !fr) return;
 
-      // corpo da rampa (superfície inclinada)
+      // face frontal (a rampa subindo na direção da câmera)
       const g = ctx.createLinearGradient(0, tl.y, 0, bl.y);
-      g.addColorStop(0, '#a8842e');
-      g.addColorStop(1, '#4a3210');
+      g.addColorStop(0, '#ffd166');
+      g.addColorStop(1, '#8a6a2a');
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(bl.x, bl.y);
@@ -830,17 +759,14 @@
 
       // topo brilhante
       ctx.strokeStyle = '#ffd166';
-      ctx.lineWidth = 5;
-      ctx.shadowColor = '#ffd166';
-      ctx.shadowBlur = 18;
+      ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.moveTo(tl.x, tl.y);
       ctx.lineTo(tr.x, tr.y);
       ctx.stroke();
-      ctx.shadowBlur = 0;
 
-      // face lateral direita
-      ctx.fillStyle = 'rgba(50,30,10,0.95)';
+      // lateral direita
+      ctx.fillStyle = 'rgba(60,40,10,0.95)';
       ctx.beginPath();
       ctx.moveTo(tr.x, tr.y);
       ctx.lineTo(trf.x, trf.y);
@@ -848,18 +774,6 @@
       ctx.lineTo(br.x, br.y);
       ctx.closePath();
       ctx.fill();
-
-      // listras
-      ctx.strokeStyle = 'rgba(255,209,102,0.5)';
-      ctx.lineWidth = 2;
-      for (let i = 1; i < 4; i++) {
-        const t = i / 4;
-        const pA = project(o.x - o.w*0.4, o.h*t, zBack + o.w*t);
-        const pB = project(o.x + o.w*0.4, o.h*t, zBack + o.w*t);
-        if (pA && pB) {
-          ctx.beginPath(); ctx.moveTo(pA.x, pA.y); ctx.lineTo(pB.x, pB.y); ctx.stroke();
-        }
-      }
     } else if (o.type === 'box') {
       const zBack = o.z - o.w * 0.5;
       const zFront = o.z + o.w * 0.5;
@@ -870,11 +784,10 @@
       const br = project(xR, 0, zBack);
       const tl = project(xL, o.h, zBack);
       const tr = project(xR, o.h, zBack);
-      const fl = project(xL, 0, zFront);
-      const fr = project(xR, 0, zFront);
       const tlf = project(xL, o.h, zFront);
       const trf = project(xR, o.h, zFront);
-      if (!bl || !br || !tl || !tr || !fl || !fr || !tlf || !trf) return;
+      const fr = project(xR, 0, zFront);
+      if (!bl || !br || !tl || !tr || !tlf || !trf || !fr) return;
 
       // topo
       ctx.fillStyle = '#a88848';
@@ -896,7 +809,7 @@
       ctx.closePath();
       ctx.fill();
 
-      // lateral direita
+      // lateral
       ctx.fillStyle = '#5a3f1a';
       ctx.beginPath();
       ctx.moveTo(br.x, br.y);
@@ -906,7 +819,7 @@
       ctx.closePath();
       ctx.fill();
 
-      // X na frente
+      // X
       ctx.strokeStyle = 'rgba(255,255,255,0.3)';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -923,23 +836,23 @@
       // base
       ctx.fillStyle = '#111';
       ctx.beginPath();
-      ctx.ellipse(base.x, base.y, w * 0.6, w * 0.22, 0, 0, Math.PI*2);
+      ctx.ellipse(base.x, base.y, w * 0.55, w * 0.22, 0, 0, Math.PI*2);
       ctx.fill();
-      // corpo
+      // cone
       const g = ctx.createLinearGradient(base.x, top.y, base.x, base.y);
       g.addColorStop(0, '#ffb066');
       g.addColorStop(1, '#c8501e');
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(top.x, top.y);
-      ctx.lineTo(base.x - w * 0.45, base.y);
-      ctx.lineTo(base.x + w * 0.45, base.y);
+      ctx.lineTo(base.x - w * 0.42, base.y);
+      ctx.lineTo(base.x + w * 0.42, base.y);
       ctx.closePath();
       ctx.fill();
-      // listra branca
+      // listra
       const mid = project(o.x, o.h * 0.55, o.z);
       if (mid) {
-        const mw = w * 0.32;
+        const mw = w * 0.3;
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.beginPath();
         ctx.moveTo(mid.x - mw, mid.y);
@@ -953,27 +866,23 @@
   }
 
   function drawBike3D() {
-    const bp = project(state.bikeX, state.bikeY + 0.9, -CAM.back * 0.55);
-    // na verdade a bike fica perto da tela: usamos um offset fixo
-    // pra que ela apareça sempre na parte de baixo, vista de trás.
-    const baseX = W / 2 + (state.bikeX - state.bikeX) * 0; // sempre no centro
-    // Porém deslocamos lateral conforme a posição pra dar sensação de movimento:
-    const lateralShift = (state.bikeX - state.targetX) * 0; // deixamos a câmera seguir
-    const px = W / 2 + state.bikeX * 0; // a câmera segue a bike, então centro
-    const py = H * 0.78 - state.bikeY * (H * 0.06);
-
-    // usa kUnit pra escala
-    const s = kUnit * 0.0085;
+    // A bike fica sempre na parte de baixo, centralizada lateralmente.
+    // A câmera segue a bike, então o desenho não desloca lateralmente.
+    const px = W / 2;
+    // Altura base: um pouco acima do rodapé
+    const baseY = H * 0.82 - state.bikeY * (H * 0.12);
+    // Escala da moto (px por "unidade de moto"): fixa em relação à tela
+    const s = Math.min(W, H) * 0.0018;
 
     // sombra
-    const shadowScale = Math.max(0.3, 1 - state.bikeY * 0.15);
+    const shadowScale = Math.max(0.3, 1 - state.bikeY * 0.12);
     ctx.fillStyle = `rgba(0,0,0,${0.55 * shadowScale})`;
     ctx.beginPath();
-    ctx.ellipse(px, py + 46 * s, 60 * s * shadowScale, 14 * s * shadowScale, 0, 0, Math.PI*2);
+    ctx.ellipse(px, H * 0.82 + 40 * s, 170 * s * shadowScale, 22 * s * shadowScale, 0, 0, Math.PI*2);
     ctx.fill();
 
     ctx.save();
-    ctx.translate(px, py);
+    ctx.translate(px, baseY);
     const totalTilt = state.pitch * 0.9 + state.spin;
     ctx.rotate(totalTilt);
     ctx.rotate(state.roll * 0.5);
@@ -981,195 +890,196 @@
 
     // rastro do mortal
     if (Math.abs(state.spinSpeed) > 4) {
-      ctx.strokeStyle = 'rgba(78,205,196,0.6)';
-      ctx.lineWidth = 6;
+      ctx.strokeStyle = 'rgba(78,205,196,0.55)';
+      ctx.lineWidth = 10;
       ctx.beginPath();
-      ctx.arc(0, -50, 130, 0, Math.PI*2);
+      ctx.arc(0, -150, 280, 0, Math.PI*2);
       ctx.stroke();
     }
 
-    // roda traseira
+    // ---------- Roda traseira (perto da câmera, grande e achatada) ----------
     ctx.fillStyle = '#0a0a0a';
     ctx.beginPath();
-    ctx.ellipse(0, 30, 42, 30, 0, 0, Math.PI*2);
+    ctx.ellipse(0, 60, 115, 60, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.strokeStyle = '#4a4a4a';
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 6;
     ctx.beginPath();
-    ctx.ellipse(0, 30, 42, 30, 0, 0, Math.PI*2);
+    ctx.ellipse(0, 60, 115, 60, 0, 0, Math.PI*2);
     ctx.stroke();
     // aro vermelho
     ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 4;
     ctx.beginPath();
-    ctx.ellipse(0, 30, 28, 20, 0, 0, Math.PI*2);
+    ctx.ellipse(0, 60, 82, 42, 0, 0, Math.PI*2);
     ctx.stroke();
-
-    // roda dianteira (mais alta e estreita)
-    ctx.fillStyle = '#0a0a0a';
-    ctx.beginPath();
-    ctx.ellipse(0, -70, 26, 40, 0, 0, Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle = '#3a3a3a';
+    // raios girando
+    const rot = (worldZ * 3) % (Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
     ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.ellipse(0, -70, 26, 40, 0, 0, Math.PI*2);
-    ctx.stroke();
-    ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(0, -70, 17, 26, 0, 0, Math.PI*2);
-    ctx.stroke();
+    for (let i = 0; i < 5; i++) {
+      const a = rot + i * (Math.PI*2/5);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * 15, 60 + Math.sin(a) * 8);
+      ctx.lineTo(Math.cos(a) * 95, 60 + Math.sin(a) * 50);
+      ctx.stroke();
+    }
 
-    // garfo (conecta roda dianteira)
-    ctx.strokeStyle = '#aaa';
-    ctx.lineWidth = 7;
+    // ---------- Escapamento (dois lados, saindo perto da roda traseira) ----------
+    ctx.strokeStyle = '#c8c8c8';
+    ctx.lineWidth = 16;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(-16, -32);
-    ctx.lineTo(-16, -70);
-    ctx.moveTo(16, -32);
-    ctx.lineTo(16, -70);
+    ctx.moveTo(-90, 30);
+    ctx.lineTo(-155, 20);
     ctx.stroke();
-
-    // quadro
-    ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = 12;
-    ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(-22, -10);
-    ctx.lineTo(0, -50);
-    ctx.lineTo(22, -10);
-    ctx.moveTo(0, -50);
-    ctx.lineTo(0, -85);
+    ctx.moveTo(90, 30);
+    ctx.lineTo(155, 20);
+    ctx.stroke();
+    ctx.fillStyle = '#3a3a3a';
+    ctx.beginPath(); ctx.arc(-155, 20, 12, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(155, 20, 12, 0, Math.PI*2); ctx.fill();
+
+    // ---------- Quadro (V invertido) ----------
+    ctx.strokeStyle = '#ff5252';
+    ctx.lineWidth = 26;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-60, 0);
+    ctx.lineTo(0, -110);
+    ctx.lineTo(60, 0);
+    ctx.moveTo(0, -110);
+    ctx.lineTo(0, -180);
     ctx.stroke();
 
-    // banco
+    // ---------- Roda dianteira (mais alta, estreita) ----------
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.ellipse(0, -210, 55, 85, 0, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#3a3a3a';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.ellipse(0, -210, 55, 85, 0, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.strokeStyle = '#ff5252';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(0, -210, 36, 55, 0, 0, Math.PI*2);
+    ctx.stroke();
+
+    // garfo
+    ctx.strokeStyle = '#b8b8b8';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(-30, -140);
+    ctx.lineTo(-30, -210);
+    ctx.moveTo(30, -140);
+    ctx.lineTo(30, -210);
+    ctx.stroke();
+
+    // ---------- Banco ----------
     ctx.fillStyle = '#0d0d0d';
     ctx.beginPath();
-    ctx.ellipse(0, -18, 34, 14, 0, 0, Math.PI*2);
+    ctx.ellipse(0, -50, 70, 24, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.08)';
     ctx.beginPath();
-    ctx.ellipse(0, -20, 28, 8, 0, 0, Math.PI*2);
+    ctx.ellipse(0, -55, 60, 14, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // guidão
+    // ---------- Guidão ----------
     ctx.strokeStyle = '#d0d0d0';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 12;
     ctx.beginPath();
-    ctx.moveTo(-46, -78);
-    ctx.lineTo(-14, -86);
-    ctx.moveTo(46, -78);
-    ctx.lineTo(14, -86);
+    ctx.moveTo(-100, -170);
+    ctx.lineTo(-30, -190);
+    ctx.moveTo(100, -170);
+    ctx.lineTo(30, -190);
     ctx.stroke();
     // grips
     ctx.strokeStyle = '#222';
-    ctx.lineWidth = 9;
+    ctx.lineWidth = 20;
     ctx.beginPath();
-    ctx.moveTo(-46, -78);
-    ctx.lineTo(-56, -74);
-    ctx.moveTo(46, -78);
-    ctx.lineTo(56, -74);
+    ctx.moveTo(-100, -170);
+    ctx.lineTo(-125, -162);
+    ctx.moveTo(100, -170);
+    ctx.lineTo(125, -162);
     ctx.stroke();
 
-    // escapamento (dois lados)
-    ctx.strokeStyle = '#c8c8c8';
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    ctx.moveTo(-30, 10);
-    ctx.lineTo(-48, 4);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(30, 10);
-    ctx.lineTo(48, 4);
-    ctx.stroke();
-    // pontas brilhando
-    ctx.fillStyle = '#666';
-    ctx.beginPath(); ctx.arc(-48, 4, 5, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(48, 4, 5, 0, Math.PI*2); ctx.fill();
-
-    // lanterna traseira
+    // ---------- Lanterna traseira ----------
     ctx.fillStyle = '#ff3333';
     ctx.shadowColor = '#ff3333';
-    ctx.shadowBlur = 25;
+    ctx.shadowBlur = 40;
     ctx.beginPath();
-    ctx.ellipse(0, -12, 9, 5, 0, 0, Math.PI*2);
+    ctx.ellipse(0, -30, 22, 10, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // ---- piloto visto de trás ----
+    // ---------- Piloto (visto de trás) ----------
     // pernas
     ctx.fillStyle = '#2a3f66';
     ctx.beginPath();
-    ctx.ellipse(-14, -8, 10, 18, 0, 0, Math.PI*2);
+    ctx.ellipse(-32, -30, 24, 44, 0, 0, Math.PI*2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(14, -8, 10, 18, 0, 0, Math.PI*2);
+    ctx.ellipse(32, -30, 24, 44, 0, 0, Math.PI*2);
     ctx.fill();
 
     // corpo (jaqueta)
-    const gBody = ctx.createLinearGradient(0, -70, 0, -20);
+    const gBody = ctx.createLinearGradient(0, -160, 0, -60);
     gBody.addColorStop(0, '#4ecdc4');
     gBody.addColorStop(1, '#2a8b85');
     ctx.fillStyle = gBody;
     ctx.beginPath();
-    ctx.ellipse(0, -50, 24, 30, 0, 0, Math.PI*2);
+    ctx.ellipse(0, -120, 60, 70, 0, 0, Math.PI*2);
     ctx.fill();
 
     // braços
     ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = 11;
+    ctx.lineWidth = 24;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(-22, -55);
-    ctx.lineTo(-44, -74);
-    ctx.moveTo(22, -55);
-    ctx.lineTo(44, -74);
+    ctx.moveTo(-50, -130);
+    ctx.lineTo(-100, -170);
+    ctx.moveTo(50, -130);
+    ctx.lineTo(100, -170);
     ctx.stroke();
 
     // capacete
     ctx.fillStyle = '#ff5252';
     ctx.beginPath();
-    ctx.arc(0, -92, 20, 0, Math.PI*2);
+    ctx.arc(0, -200, 46, 0, Math.PI*2);
     ctx.fill();
-    // listras capacete
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillRect(-20, -95, 40, 4);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    // listra branca no capacete
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillRect(-46, -207, 92, 9);
+    // viseira (parte de baixo escura)
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.beginPath();
-    ctx.ellipse(0, -88, 18, 6, 0, 0, Math.PI);
+    ctx.ellipse(0, -190, 40, 14, 0, 0, Math.PI);
     ctx.fill();
-
-    // raios girando nas rodas
-    const rot = (worldZ * 4) % (Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-    ctx.lineWidth = 2.5;
-    for (let i = 0; i < 4; i++) {
-      const a = rot + i * Math.PI / 2;
-      // roda traseira
-      ctx.beginPath();
-      ctx.moveTo(Math.cos(a) * 6, 30 + Math.sin(a) * 5);
-      ctx.lineTo(Math.cos(a) * 36, 30 + Math.sin(a) * 26);
-      ctx.stroke();
-    }
 
     ctx.restore();
 
-    // linhas de velocidade
-    if (state.speed > state.maxSpeed * 0.55) {
-      const alpha = (state.speed - state.maxSpeed * 0.55) / (state.maxSpeed * 0.45);
+    // linhas de velocidade (vêm em direção à câmera)
+    if (state.speed > state.maxSpeed * 0.5) {
+      const alpha = (state.speed - state.maxSpeed * 0.5) / (state.maxSpeed * 0.5);
       ctx.strokeStyle = `rgba(120,200,255,${alpha * 0.55})`;
       ctx.lineWidth = 2;
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < 16; i++) {
+        // linhas laterais vindo do horizonte em direção à câmera
         const side = i % 2 === 0 ? -1 : 1;
-        const off = Math.random();
-        const sx = W/2 + side * (W*0.28 + off * W*0.2);
-        const sy = horizonY + Math.random() * (H - horizonY) * 0.7;
-        const len = 30 + Math.random() * 80;
+        const t = Math.random();
+        const startX = W / 2 + side * (W * 0.18);
+        const endX = W / 2 + side * (W * 0.15 + t * W * 0.5);
+        const startY = horizonY + t * (H - horizonY) * 0.55;
+        const endY = horizonY + (t + 0.15) * (H - horizonY);
         ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.lineTo(sx + side * len * 0.3, sy + len);
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
         ctx.stroke();
       }
     }
@@ -1181,7 +1091,7 @@
       const pp = project(p.x, p.y, p.z - state.bikeZ);
       if (!pp) continue;
       const a = Math.max(0, p.life / p.maxLife);
-      const size = Math.max(1.2, p.size * Math.abs(pp.scale) * 0.9);
+      const size = Math.max(1.2, p.size * Math.abs(pp.scale) * 0.5);
       ctx.globalAlpha = a;
       ctx.fillStyle = p.color;
       ctx.beginPath();
@@ -1192,9 +1102,9 @@
   }
 
   function drawVignette() {
-    const g = ctx.createRadialGradient(W/2, H*0.6, Math.min(W,H)*0.35, W/2, H*0.6, Math.max(W,H)*0.8);
+    const g = ctx.createRadialGradient(W/2, H*0.55, Math.min(W,H)*0.35, W/2, H*0.55, Math.max(W,H)*0.8);
     g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,0.65)');
+    g.addColorStop(1, 'rgba(0,0,0,0.6)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
   }
@@ -1202,12 +1112,12 @@
   function drawStartHint() {
     if (gameStarted || gameOver) return;
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.font = `bold ${Math.min(W*0.06, 36)}px system-ui, sans-serif`;
-    ctx.fillText('Segure ▲ para acelerar', W/2, H * 0.55);
-    ctx.font = `500 ${Math.min(W*0.038, 18)}px system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.font = `bold ${Math.min(W*0.06, 34)}px system-ui, sans-serif`;
+    ctx.fillText('Segure ▲ para acelerar', W/2, H * 0.35);
+    ctx.font = `500 ${Math.min(W*0.038, 17)}px system-ui, sans-serif`;
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.fillText('◀ ▶ para desviar · botões à direita para truques', W/2, H * 0.6);
+    ctx.fillText('◀ ▶ desviar · direita: grau, pulo, mortal', W/2, H * 0.4);
   }
 
   // ============================================================
@@ -1219,9 +1129,6 @@
     last = now;
     if (dt > 0.05) dt = 0.05;
     if (dt < 0.001) dt = 0.001;
-
-    horizonY = H * HORIZON_RATIO;
-    recalcK();
 
     update(dt);
 
