@@ -3,21 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Bike Wheelie 2D</title>
+<title>Bike 2D - Pulo e Grau</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: system-ui, sans-serif; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: system-ui, sans-serif; user-select: none; }
   #game { display: block; width: 100%; height: 100%; touch-action: none; }
+
   #hud {
     position: fixed; top: 12px; left: 12px; color: #fff;
     font-size: 18px; font-weight: bold; text-shadow: 0 2px 6px rgba(0,0,0,.6);
-    pointer-events: none; user-select: none; line-height: 1.5;
+    pointer-events: none; line-height: 1.5;
   }
   #hud .best { font-size: 13px; opacity: .8; font-weight: 500; }
-  #hint {
-    position: fixed; bottom: 20px; left: 0; right: 0; text-align: center;
-    color: #fff; opacity: .75; font-size: 14px; pointer-events: none;
-    user-select: none; transition: opacity .6s;
+
+  #combo {
+    position: fixed; top: 12px; right: 12px; color: #ffd166;
+    font-size: 20px; font-weight: 800; text-shadow: 0 2px 8px rgba(0,0,0,.6);
+    pointer-events: none; opacity: 0; transition: opacity .2s;
+  }
+  #combo.on { opacity: 1; }
+
+  /* Botões quadrados */
+  .btn {
+    position: fixed; bottom: 22px;
+    width: 92px; height: 92px;
+    border-radius: 16px;
+    border: 3px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.08);
+    color: #fff; font-weight: 800; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; line-height: 1.1;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    touch-action: none; cursor: pointer;
+    transition: transform .08s, background .12s, border-color .12s;
+    letter-spacing: 0.5px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  }
+  .btn:active, .btn.pressed {
+    transform: scale(0.93);
+    background: rgba(255,255,255,0.25);
+    border-color: #fff;
+  }
+  #btnJump {
+    left: 22px;
+    border-color: rgba(78, 205, 196, 0.7);
+    background: rgba(78, 205, 196, 0.15);
+  }
+  #btnJump:active, #btnJump.pressed {
+    background: rgba(78, 205, 196, 0.45);
+    border-color: #4ecdc4;
+  }
+  #btnGrau {
+    right: 22px;
+    border-color: rgba(255, 82, 82, 0.7);
+    background: rgba(255, 82, 82, 0.15);
+  }
+  #btnGrau:active, #btnGrau.pressed {
+    background: rgba(255, 82, 82, 0.45);
+    border-color: #ff5252;
+  }
+
+  @media (max-height: 520px) {
+    .btn { width: 76px; height: 76px; font-size: 13px; bottom: 14px; }
   }
 </style>
 </head>
@@ -27,15 +75,20 @@
   <div>Pontos: <span id="score">0</span></div>
   <div class="best">Recorde: <span id="best">0</span></div>
 </div>
-<div id="hint">Toque para pular · Segure para empinar</div>
+<div id="combo"></div>
+
+<button class="btn" id="btnJump">PULAR</button>
+<button class="btn" id="btnGrau">GRAU</button>
 
 <script>
 (() => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const scoreEl = document.getElementById('score');
-  const bestEl = document.getElementById('best');
-  const hintEl = document.getElementById('hint');
+  const bestEl  = document.getElementById('best');
+  const comboEl = document.getElementById('combo');
+  const btnJump = document.getElementById('btnJump');
+  const btnGrau = document.getElementById('btnGrau');
 
   let W = 0, H = 0, DPR = 1;
   let groundY = 0;
@@ -49,32 +102,31 @@
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    groundY = H - Math.max(70, H * 0.14);
+    groundY = H - Math.max(80, H * 0.16);
   }
   window.addEventListener('resize', resize);
   resize();
 
   // ---------- Estado ----------
   const bike = {
-    x: 0,
-    y: 0,
-    vy: 0,
-    angle: 0,          // rotação da bike (radianos)
+    x: 0, y: 0, vy: 0,
+    angle: 0,
     onGround: true,
-    wheelie: 0,        // 0..1 progresso do wheelie
-    holding: false,
+    wheelie: 0,      // 0..1 quanto está empinado
     wheelRadius: 0
   };
 
-  const GRAVITY = 2600;        // px/s²
-  const JUMP_VELOCITY = -980;  // impulso do toque
-  const HOLD_GRAVITY = 300;    // gravidade enquanto segura (levita um pouco)
-  const MAX_WHEELIE = 0.75;    // ângulo máximo (rad)
-  const WHEELIE_SPEED = 3.2;   // velocidade de empinada
+  const GRAVITY = 2600;
+  const JUMP_VELOCITY = -1050;
+  const MAX_WHEELIE = 0.85;   // ângulo máx do grau (rad)
+  const WHEELIE_UP = 3.5;     // velocidade pra subir o grau
+  const WHEELIE_DOWN = 4.5;   // velocidade pra descer
+
+  let jumpHeld = false;
+  let grauHeld = false;
 
   const obstacles = [];
   let obstacleTimer = 0;
-  let spawnInterval = 1.6;
 
   let speed = 420;
   let score = 0;
@@ -83,19 +135,27 @@
 
   let worldOffset = 0;
   let gameOver = false;
+
   let airTime = 0;
   let wheelieTime = 0;
+  let comboMult = 1;
+  let comboTimer = 0;
 
+  // partículas (poeira/faíscas)
+  const particles = [];
+
+  // nuvens
   const clouds = [];
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 8; i++) {
     clouds.push({
       x: Math.random() * 2000,
-      y: Math.random() * (H * 0.45) + 20,
+      y: Math.random() * (H * 0.42) + 20,
       s: 0.6 + Math.random() * 0.9,
       sp: 0.15 + Math.random() * 0.25
     });
   }
 
+  // ---------- Reset ----------
   function reset() {
     bike.x = W * 0.22;
     bike.y = groundY;
@@ -103,19 +163,24 @@
     bike.angle = 0;
     bike.onGround = true;
     bike.wheelie = 0;
-    bike.holding = false;
     bike.wheelRadius = Math.max(14, Math.min(W, H) * 0.032);
 
     obstacles.length = 0;
-    obstacleTimer = 1.0;
+    particles.length = 0;
+    obstacleTimer = 1.2;
     speed = 420;
     score = 0;
     airTime = 0;
     wheelieTime = 0;
+    comboMult = 1;
+    comboTimer = 0;
     worldOffset = 0;
     gameOver = false;
-    scoreEl.textContent = '0';
-    hintEl.style.opacity = '.75';
+    jumpHeld = false;
+    grauHeld = false;
+    btnJump.classList.remove('pressed');
+    btnGrau.classList.remove('pressed');
+    comboEl.classList.remove('on');
     updateHUD();
   }
 
@@ -123,53 +188,130 @@
     scoreEl.textContent = Math.floor(score);
   }
 
-  // ---------- Entrada ----------
-  function pointerDown(e) {
-    e.preventDefault();
+  // ---------- Entrada: PULAR ----------
+  function onJumpDown(e) {
+    e && e.preventDefault();
     if (gameOver) { reset(); return; }
-    bike.holding = true;
-    hintEl.style.opacity = '0';
-    if (bike.onGround && bike.wheelie < 0.15) {
-      // toque rápido = pulo
+    jumpHeld = true;
+    btnJump.classList.add('pressed');
+    // só pula se estiver no chão
+    if (bike.onGround) {
       bike.vy = JUMP_VELOCITY;
       bike.onGround = false;
+      spawnDust(bike.x - bike.wheelRadius, groundY, 8);
     }
   }
-  function pointerUp(e) {
-    e.preventDefault();
-    bike.holding = false;
+  function onJumpUp(e) {
+    e && e.preventDefault();
+    jumpHeld = false;
+    btnJump.classList.remove('pressed');
   }
 
-  canvas.addEventListener('pointerdown', pointerDown);
-  window.addEventListener('pointerup', pointerUp);
-  window.addEventListener('pointercancel', pointerUp);
-  // teclado para testar no PC
-  window.addEventListener('keydown', e => { if (e.code === 'Space' && !e.repeat) pointerDown(e); });
-  window.addEventListener('keyup', e => { if (e.code === 'Space') pointerUp(e); });
+  // ---------- Entrada: GRAU ----------
+  function onGrauDown(e) {
+    e && e.preventDefault();
+    if (gameOver) { reset(); return; }
+    grauHeld = true;
+    btnGrau.classList.add('pressed');
+    // se estiver no chão, começa a empinar
+    if (bike.onGround) {
+      spawnDust(bike.x - bike.wheelRadius, groundY, 4);
+    }
+  }
+  function onGrauUp(e) {
+    e && e.preventDefault();
+    grauHeld = false;
+    btnGrau.classList.remove('pressed');
+  }
+
+  // Eventos nos botões
+  btnJump.addEventListener('pointerdown', onJumpDown);
+  btnJump.addEventListener('pointerup', onJumpUp);
+  btnJump.addEventListener('pointercancel', onJumpUp);
+  btnJump.addEventListener('pointerleave', onJumpUp);
+  btnGrau.addEventListener('pointerdown', onGrauDown);
+  btnGrau.addEventListener('pointerup', onGrauUp);
+  btnGrau.addEventListener('pointercancel', onGrauUp);
+  btnGrau.addEventListener('pointerleave', onGrauUp);
+
+  // Teclado (PC): espaço = pular, seta ↑ = grau
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !e.repeat) onJumpDown(e);
+    if (e.code === 'ArrowUp' && !e.repeat) onGrauDown(e);
+    if (gameOver && (e.code === 'Space' || e.code === 'ArrowUp')) reset();
+  });
+  window.addEventListener('keyup', e => {
+    if (e.code === 'Space') onJumpUp(e);
+    if (e.code === 'ArrowUp') onGrauUp(e);
+  });
 
   // ---------- Obstáculos ----------
   function spawnObstacle() {
-    const type = Math.random() < 0.35 ? 'rock' : 'ramp';
-    if (type === 'rock') {
-      const w = 26 + Math.random() * 26;
-      obstacles.push({ type, x: W + 40, w, h: w * (0.8 + Math.random() * 0.6) });
+    const r = Math.random();
+    if (r < 0.35) {
+      // pedra
+      const w = 26 + Math.random() * 28;
+      obstacles.push({ type: 'rock', x: W + 40, w, h: w * (0.9 + Math.random() * 0.5) });
+    } else if (r < 0.7) {
+      // rampa
+      const w = 70 + Math.random() * 70;
+      obstacles.push({ type: 'ramp', x: W + 40, w, h: 26 + Math.random() * 30 });
     } else {
-      const w = 60 + Math.random() * 60;
-      obstacles.push({ type, x: W + 40, w, h: 22 + Math.random() * 26 });
+      // caixa
+      const w = 40 + Math.random() * 40;
+      obstacles.push({ type: 'box', x: W + 40, w, h: w * (0.7 + Math.random() * 0.4) });
+    }
+  }
+
+  // ---------- Partículas ----------
+  function spawnDust(x, y, n) {
+    for (let i = 0; i < n; i++) {
+      particles.push({
+        x, y,
+        vx: -60 - Math.random() * 120,
+        vy: -40 - Math.random() * 120,
+        life: 0.4 + Math.random() * 0.4,
+        maxLife: 0.8,
+        size: 2 + Math.random() * 4,
+        color: Math.random() < 0.5 ? '#e0c9a6' : '#b8a087'
+      });
+    }
+  }
+  function spawnSparks(x, y) {
+    for (let i = 0; i < 3; i++) {
+      particles.push({
+        x, y,
+        vx: -100 - Math.random() * 200,
+        vy: -30 - Math.random() * 120,
+        life: 0.25 + Math.random() * 0.2,
+        maxLife: 0.45,
+        size: 1.5 + Math.random() * 2,
+        color: Math.random() < 0.5 ? '#ffd166' : '#ff8c42'
+      });
     }
   }
 
   // ---------- Update ----------
   function update(dt) {
+    // Partículas sempre atualizam (mesmo em game over, pra sumirem)
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 600 * dt;
+      p.life -= dt;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+
     if (gameOver) return;
 
-    // velocidade aumenta com o tempo
-    speed = 420 + Math.min(score * 1.4, 520);
+    // Velocidade aumenta com o tempo
+    speed = 420 + Math.min(score * 1.2, 560);
 
     // ---- Física vertical ----
-    if (bike.holding && !bike.onGround) {
-      // segurar no ar deixa o pulo mais "flutuante"
-      bike.vy += HOLD_GRAVITY * dt;
+    if (jumpHeld && !bike.onGround && bike.vy < 0) {
+      // segurar o botão de pulo faz o pulo mais longo (levita)
+      bike.vy += GRAVITY * 0.35 * dt;
     } else {
       bike.vy += GRAVITY * dt;
     }
@@ -177,8 +319,10 @@
 
     if (bike.y >= groundY) {
       if (!bike.onGround) {
-        // aterrissou: bônus por tempo no ar
-        score += airTime * 60;
+        // aterrissou
+        score += airTime * 80;
+        // pequena poeira do impacto
+        if (airTime > 0.15) spawnDust(bike.x, groundY, 6);
         airTime = 0;
       }
       bike.y = groundY;
@@ -189,60 +333,81 @@
       airTime += dt;
     }
 
-    // ---- Wheelie (empinar) ----
-    const targetWheelie = (bike.holding && bike.onGround) ? MAX_WHEELIE : 0;
-    if (bike.wheelie < targetWheelie) {
-      bike.wheelie = Math.min(targetWheelie, bike.wheelie + WHEELIE_SPEED * dt);
+    // ---- GRAU (wheelie) ----
+    // sobe só se estiver no chão e segurando GRAU
+    if (grauHeld && bike.onGround) {
+      bike.wheelie = Math.min(MAX_WHEELIE, bike.wheelie + WHEELIE_UP * dt);
+      // faíscas quando está bem empinado
+      if (bike.wheelie > 0.5 && Math.random() < 0.5) {
+        spawnSparks(bike.x - bike.wheelRadius * 1.5, groundY - 2);
+      }
     } else {
-      bike.wheelie = Math.max(targetWheelie, bike.wheelie - WHEELIE_SPEED * 1.8 * dt);
+      bike.wheelie = Math.max(0, bike.wheelie - WHEELIE_DOWN * dt);
     }
-    // ângulo real: empina pra trás (negativo no canvas)
     bike.angle = -bike.wheelie;
 
-    // pontos por empinar
-    if (bike.onGround && bike.wheelie > 0.3) {
+    // Pontos por grau
+    if (bike.onGround && bike.wheelie > 0.35) {
       wheelieTime += dt;
-      score += dt * 25 * bike.wheelie;
+      comboMult = 1 + Math.min(bike.wheelie * 2.5, 2.5);
+      comboTimer = 0.6;
+      score += dt * 40 * bike.wheelie * comboMult;
+
+      comboEl.textContent = 'GRAU x' + comboMult.toFixed(1);
+      comboEl.classList.add('on');
     } else {
-      wheelieTime = 0;
+      if (comboTimer > 0) {
+        comboTimer -= dt;
+        if (comboTimer <= 0) {
+          comboEl.classList.remove('on');
+          comboMult = 1;
+        }
+      }
     }
 
     // pontos por distância
     score += dt * 12;
-
-    // ---- Mundo ----
     worldOffset += speed * dt;
 
     // spawn
     obstacleTimer -= dt;
     if (obstacleTimer <= 0) {
       spawnObstacle();
-      spawnInterval = Math.max(0.75, 1.6 - score * 0.0015);
-      obstacleTimer = spawnInterval * (0.8 + Math.random() * 0.6);
+      const interval = Math.max(0.8, 1.6 - score * 0.0014);
+      obstacleTimer = interval * (0.75 + Math.random() * 0.6);
     }
 
-    // move e colisão
-    const frontWheelX = bike.x + Math.cos(bike.angle) * bike.wheelRadius * 1.7;
-    const frontWheelY = bike.y - bike.wheelRadius - Math.sin(bike.angle) * bike.wheelRadius * 1.7;
+    // ---- Colisão com obstáculos ----
+    // usamos a roda traseira e dianteira
+    const r = bike.wheelRadius;
+    const cos = Math.cos(bike.angle);
+    const sin = Math.sin(bike.angle);
+    // traseira (relativa -1.7r, 0) rotacionada
+    const rearX = bike.x + (-r * 1.7) * cos;
+    const rearY = bike.y + (-r * 1.7) * sin;
+    // dianteira (relativa +1.7r, 0)
+    const frontX = bike.x + (r * 1.7) * cos;
+    const frontY = bike.y + (r * 1.7) * sin;
 
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const o = obstacles[i];
       o.x -= speed * dt;
-      if (o.x + o.w < -60) { obstacles.splice(i, 1); continue; }
+      if (o.x + o.w < -80) { obstacles.splice(i, 1); continue; }
 
-      // colisão com as rodas
-      const hitX = bike.x + bike.wheelRadius * 0.6;
-      if (hitX + bike.wheelRadius > o.x && hitX - bike.wheelRadius < o.x + o.w) {
-        const obstacleTop = groundY - o.h;
-        // roda traseira
-        const rearBottom = bike.y;
-        if (rearBottom > obstacleTop + 4) {
-          gameOver = true;
-          best = Math.max(best, score);
-          localStorage.setItem('bikeBest', Math.floor(best));
-          bestEl.textContent = Math.floor(best);
-          return;
-        }
+      const top = groundY - o.h;
+      const left = o.x;
+      const right = o.x + o.w;
+
+      // colisão tipo círculo-retângulo simplificada
+      if (circleRect(rearX, rearY, r * 0.85, left, top, o.w, o.h) ||
+          circleRect(frontX, frontY, r * 0.85, left, top, o.w, o.h)) {
+        gameOver = true;
+        best = Math.max(best, score);
+        localStorage.setItem('bikeBest', Math.floor(best));
+        bestEl.textContent = Math.floor(best);
+        // explosão de partículas
+        for (let k = 0; k < 25; k++) spawnSparks(bike.x, bike.y - r);
+        return;
       }
     }
 
@@ -251,31 +416,64 @@
       c.x -= (speed * 0.06 + c.sp * 30) * dt;
       if (c.x < -150) {
         c.x = W + Math.random() * 300;
-        c.y = Math.random() * (H * 0.45) + 20;
+        c.y = Math.random() * (H * 0.42) + 20;
       }
     }
 
     updateHUD();
   }
 
+  // colisão círculo-retângulo
+  function circleRect(cx, cy, cr, rx, ry, rw, rh) {
+    const nx = Math.max(rx, Math.min(cx, rx + rw));
+    const ny = Math.max(ry, Math.min(cy, ry + rh));
+    const dx = cx - nx, dy = cy - ny;
+    return dx * dx + dy * dy < cr * cr;
+  }
+
   // ---------- Render ----------
   function drawSky() {
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, '#1a1a2e');
-    g.addColorStop(0.5, '#2d3561');
+    g.addColorStop(0.45, '#2d3561');
+    g.addColorStop(0.75, '#a85a7a');
     g.addColorStop(1, '#f4a261');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
     // sol
-    ctx.fillStyle = 'rgba(255, 220, 150, 0.9)';
+    const sx = W * 0.78, sy = H * 0.3;
+    const sr = Math.min(W, H) * 0.08;
+    const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 2.5);
+    sg.addColorStop(0, 'rgba(255, 220, 150, 0.95)');
+    sg.addColorStop(0.4, 'rgba(255, 200, 120, 0.5)');
+    sg.addColorStop(1, 'rgba(255, 200, 120, 0)');
+    ctx.fillStyle = sg;
     ctx.beginPath();
-    ctx.arc(W * 0.78, H * 0.28, Math.min(W, H) * 0.07, 0, Math.PI * 2);
+    ctx.arc(sx, sy, sr * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffe0a3';
+    ctx.beginPath();
+    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.fill();
+
+    // montanhas ao fundo
+    ctx.fillStyle = 'rgba(30, 25, 55, 0.7)';
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    const mOff = (worldOffset * 0.15) % 400;
+    for (let x = -mOff - 200; x < W + 400; x += 200) {
+      ctx.lineTo(x, groundY - 80 - Math.sin((x + worldOffset * 0.05) * 0.01) * 40);
+      ctx.lineTo(x + 100, groundY - 140);
+      ctx.lineTo(x + 200, groundY - 80);
+    }
+    ctx.lineTo(W, groundY);
+    ctx.closePath();
     ctx.fill();
 
     // nuvens
-    ctx.fillStyle = 'rgba(255,255,255,0.10)';
     for (const c of clouds) {
+      ctx.fillStyle = 'rgba(255,255,255,0.10)';
       const r = 30 * c.s;
       ctx.beginPath();
       ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
@@ -286,30 +484,29 @@
   }
 
   function drawGround() {
-    // chão
     const g = ctx.createLinearGradient(0, groundY, 0, H);
     g.addColorStop(0, '#3a2b4a');
-    g.addColorStop(1, '#151020');
+    g.addColorStop(1, '#100a1a');
     ctx.fillStyle = g;
     ctx.fillRect(0, groundY, W, H - groundY);
 
-    // faixa
-    ctx.strokeStyle = 'rgba(244, 162, 97, 0.8)';
+    // faixa neon
+    ctx.strokeStyle = 'rgba(244, 162, 97, 0.9)';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(0, groundY);
     ctx.lineTo(W, groundY);
     ctx.stroke();
 
-    // marcas de velocidade no chão
+    // marcas
     ctx.strokeStyle = 'rgba(255,255,255,0.12)';
     ctx.lineWidth = 3;
     const dashW = 60;
     const offset = worldOffset % (dashW * 2);
     for (let x = -offset; x < W; x += dashW * 2) {
       ctx.beginPath();
-      ctx.moveTo(x, groundY + 14);
-      ctx.lineTo(x + dashW, groundY + 14);
+      ctx.moveTo(x, groundY + 16);
+      ctx.lineTo(x + dashW, groundY + 16);
       ctx.stroke();
     }
   }
@@ -324,15 +521,14 @@
       ctx.lineTo(o.x + o.w, groundY);
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
       ctx.beginPath();
       ctx.moveTo(o.x + o.w * 0.5, top);
       ctx.lineTo(o.x + o.w * 0.75, groundY);
       ctx.lineTo(o.x + o.w, groundY);
       ctx.closePath();
       ctx.fill();
-    } else {
-      // rampa
+    } else if (o.type === 'ramp') {
       ctx.fillStyle = '#7a5a3a';
       ctx.beginPath();
       ctx.moveTo(o.x, groundY);
@@ -340,107 +536,171 @@
       ctx.lineTo(o.x + o.w + 14, groundY);
       ctx.closePath();
       ctx.fill();
-      ctx.fillStyle = 'rgba(244, 162, 97, 0.25)';
+      ctx.fillStyle = 'rgba(244, 162, 97, 0.3)';
       ctx.beginPath();
       ctx.moveTo(o.x + o.w, top);
       ctx.lineTo(o.x + o.w + 14, groundY);
       ctx.lineTo(o.x + o.w, groundY);
       ctx.closePath();
       ctx.fill();
+    } else {
+      // caixa
+      ctx.fillStyle = '#8a6a3a';
+      ctx.fillRect(o.x, top, o.w, o.h);
+      ctx.strokeStyle = '#5a4020';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(o.x, top, o.w, o.h);
+      // X na caixa
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath();
+      ctx.moveTo(o.x, top);
+      ctx.lineTo(o.x + o.w, top + o.h);
+      ctx.moveTo(o.x + o.w, top);
+      ctx.lineTo(o.x, top + o.h);
+      ctx.stroke();
     }
+  }
+
+  function drawParticles() {
+    for (const p of particles) {
+      const a = Math.max(0, p.life / p.maxLife);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * a, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
   }
 
   function drawBike() {
     const r = bike.wheelRadius;
 
+    // sombra no chão
+    const shadowScale = Math.max(0.15, 1 - (groundY - bike.y) / 350);
+    ctx.fillStyle = `rgba(0,0,0,${0.3 * shadowScale})`;
+    ctx.beginPath();
+    ctx.ellipse(bike.x, groundY + 3, r * 1.9 * shadowScale, r * 0.4 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.save();
     ctx.translate(bike.x, bike.y);
     ctx.rotate(bike.angle);
 
-    // sombra
-    ctx.save();
-    ctx.rotate(-bike.angle);
-    const shadowScale = Math.max(0.2, 1 - (groundY - bike.y) / 300);
-    ctx.fillStyle = `rgba(0,0,0,${0.25 * shadowScale})`;
-    ctx.beginPath();
-    ctx.ellipse(0, groundY - bike.y + 2, r * 1.8, r * 0.35, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // quadro
+    // ---- quadro ----
     ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = Math.max(3, r * 0.22);
+    ctx.lineWidth = Math.max(3, r * 0.24);
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    const rearWX = -r * 1.7, rearWY = 0;
+    const frontWX = r * 1.7, frontWY = 0;
+    const seatX = -r * 0.25, seatY = -r * 1.55;
+    const handleX = r * 1.35, handleY = -r * 1.35;
+    const centerX = r * 0.85, centerY = -r * 0.15;
+
     ctx.beginPath();
-    ctx.moveTo(-r * 1.7, 0);      // roda traseira
-    ctx.lineTo(-r * 0.2, -r * 1.5); // selim
-    ctx.lineTo(r * 1.4, -r * 1.3);  // guidão
-    ctx.moveTo(-r * 0.2, -r * 1.5);
-    ctx.lineTo(r * 0.9, -r * 0.1);  // tubo central
-    ctx.moveTo(r * 0.9, -r * 0.1);
-    ctx.lineTo(r * 1.7, 0);         // roda dianteira
+    ctx.moveTo(rearWX, rearWY);
+    ctx.lineTo(seatX, seatY);
+    ctx.lineTo(handleX, handleY);
+    ctx.moveTo(seatX, seatY);
+    ctx.lineTo(centerX, centerY);
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(frontWX, frontWY);
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(rearWX, rearWY);
     ctx.stroke();
 
     // banco
-    ctx.fillStyle = '#222';
+    ctx.fillStyle = '#1a1a1a';
     ctx.beginPath();
-    ctx.ellipse(-r * 0.25, -r * 1.6, r * 0.5, r * 0.18, 0, 0, Math.PI * 2);
+    ctx.ellipse(seatX, seatY - r * 0.05, r * 0.55, r * 0.18, 0, 0, Math.PI * 2);
     ctx.fill();
 
     // guidão
-    ctx.strokeStyle = '#ddd';
-    ctx.lineWidth = Math.max(2, r * 0.12);
+    ctx.strokeStyle = '#d0d0d0';
+    ctx.lineWidth = Math.max(2, r * 0.13);
     ctx.beginPath();
-    ctx.moveTo(r * 1.4, -r * 1.3);
-    ctx.lineTo(r * 1.6, -r * 1.7);
+    ctx.moveTo(handleX, handleY);
+    ctx.lineTo(handleX + r * 0.2, handleY - r * 0.45);
     ctx.stroke();
 
-    // ciclista
+    // ---- ciclista ----
+    // corpo
+    ctx.strokeStyle = '#4ecdc4';
+    ctx.lineWidth = Math.max(3, r * 0.3);
+    ctx.beginPath();
+    ctx.moveTo(seatX + r * 0.15, seatY - r * 0.35);
+    ctx.lineTo(handleX - r * 0.3, handleY + r * 0.25);
+    ctx.stroke();
+    // braços
+    ctx.strokeStyle = '#4ecdc4';
+    ctx.lineWidth = Math.max(2, r * 0.2);
+    ctx.beginPath();
+    ctx.moveTo(handleX - r * 0.3, handleY + r * 0.25);
+    ctx.lineTo(handleX, handleY + r * 0.05);
+    ctx.stroke();
+    // cabeça
     ctx.fillStyle = '#4ecdc4';
     ctx.beginPath();
-    ctx.arc(r * 0.15, -r * 2.0, r * 0.42, 0, Math.PI * 2); // cabeça
+    ctx.arc(handleX - r * 0.35, handleY - r * 0.05, r * 0.42, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = Math.max(3, r * 0.28);
+    // capacete
+    ctx.fillStyle = '#ff5252';
     ctx.beginPath();
-    ctx.moveTo(r * 0.1, -r * 1.55);
-    ctx.lineTo(r * 0.6, -r * 1.1); // corpo
-    ctx.moveTo(r * 0.15, -r * 1.4);
-    ctx.lineTo(r * 1.2, -r * 1.35); // braço
-    ctx.stroke();
+    ctx.arc(handleX - r * 0.35, handleY - r * 0.15, r * 0.45, Math.PI, 0);
+    ctx.fill();
 
-    // rodas
-    ctx.fillStyle = '#111';
-    [-r * 1.7, r * 1.7].forEach(wx => {
+    // ---- rodas ----
+    function drawWheel(wx, wy, rr) {
+      ctx.fillStyle = '#0a0a0a';
       ctx.beginPath();
-      ctx.arc(wx, 0, r, 0, Math.PI * 2);
+      ctx.arc(wx, wy, rr, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#666';
-      ctx.lineWidth = Math.max(2, r * 0.15);
+      ctx.strokeStyle = '#555';
+      ctx.lineWidth = Math.max(2, rr * 0.15);
       ctx.beginPath();
-      ctx.arc(wx, 0, r * 0.55, 0, Math.PI * 2);
+      ctx.arc(wx, wy, rr * 0.9, 0, Math.PI * 2);
       ctx.stroke();
-    });
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = Math.max(1.5, rr * 0.1);
+      ctx.beginPath();
+      ctx.arc(wx, wy, rr * 0.5, 0, Math.PI * 2);
+      ctx.stroke();
+      // raios (giram com o mundo)
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 1.5;
+      const rot = (worldOffset / rr) % (Math.PI * 2);
+      for (let i = 0; i < 4; i++) {
+        const a = rot + i * Math.PI / 2;
+        ctx.beginPath();
+        ctx.moveTo(wx, wy);
+        ctx.lineTo(wx + Math.cos(a) * rr * 0.85, wy + Math.sin(a) * rr * 0.85);
+        ctx.stroke();
+      }
+    }
+    drawWheel(rearWX, rearWY, r);
+    drawWheel(frontWX, frontWY, r);
 
     ctx.restore();
   }
 
   function drawGameOver() {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
     ctx.fillRect(0, 0, W, H);
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#fff';
     ctx.font = `bold ${Math.min(W * 0.09, 56)}px system-ui, sans-serif`;
-    ctx.fillText('Bateu!', W / 2, H * 0.42);
+    ctx.fillText('Bateu!', W / 2, H * 0.4);
 
-    ctx.font = `600 ${Math.min(W * 0.05, 28)}px system-ui, sans-serif`;
+    ctx.font = `600 ${Math.min(W * 0.055, 30)}px system-ui, sans-serif`;
     ctx.fillStyle = '#f4a261';
-    ctx.fillText('Pontos: ' + Math.floor(score), W / 2, H * 0.52);
+    ctx.fillText('Pontos: ' + Math.floor(score), W / 2, H * 0.5);
 
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.font = `500 ${Math.min(W * 0.04, 20)}px system-ui, sans-serif`;
-    ctx.fillText('Toque para reiniciar', W / 2, H * 0.62);
+    ctx.fillText('Toque em PULAR para reiniciar', W / 2, H * 0.6);
   }
 
   // ---------- Loop ----------
@@ -448,13 +708,14 @@
   function loop(now) {
     let dt = (now - last) / 1000;
     last = now;
-    if (dt > 0.05) dt = 0.05; // clamp
+    if (dt > 0.05) dt = 0.05;
 
     update(dt);
 
     drawSky();
     drawGround();
     for (const o of obstacles) drawObstacle(o);
+    drawParticles();
     drawBike();
 
     if (gameOver) drawGameOver();
