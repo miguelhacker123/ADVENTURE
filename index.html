@@ -26,20 +26,18 @@
   /* Botões quadrados */
   .btn {
     position: fixed; bottom: 22px;
-    width: 92px; height: 92px;
-    border-radius: 16px;
+    width: 96px; height: 96px;
+    border-radius: 18px;
     border: 3px solid rgba(255,255,255,0.35);
     background: rgba(255,255,255,0.08);
-    color: #fff; font-weight: 800; font-size: 15px;
     display: flex; align-items: center; justify-content: center;
-    text-align: center; line-height: 1.1;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     touch-action: none; cursor: pointer;
     transition: transform .08s, background .12s, border-color .12s;
-    letter-spacing: 0.5px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.35);
   }
+  .btn svg { width: 60%; height: 60%; display: block; }
   .btn:active, .btn.pressed {
     transform: scale(0.93);
     background: rgba(255,255,255,0.25);
@@ -47,25 +45,25 @@
   }
   #btnJump {
     left: 22px;
-    border-color: rgba(78, 205, 196, 0.7);
+    border-color: rgba(78, 205, 196, 0.75);
     background: rgba(78, 205, 196, 0.15);
   }
   #btnJump:active, #btnJump.pressed {
-    background: rgba(78, 205, 196, 0.45);
+    background: rgba(78, 205, 196, 0.5);
     border-color: #4ecdc4;
   }
   #btnGrau {
     right: 22px;
-    border-color: rgba(255, 82, 82, 0.7);
+    border-color: rgba(255, 82, 82, 0.75);
     background: rgba(255, 82, 82, 0.15);
   }
   #btnGrau:active, #btnGrau.pressed {
-    background: rgba(255, 82, 82, 0.45);
+    background: rgba(255, 82, 82, 0.5);
     border-color: #ff5252;
   }
 
   @media (max-height: 520px) {
-    .btn { width: 76px; height: 76px; font-size: 13px; bottom: 14px; }
+    .btn { width: 78px; height: 78px; bottom: 14px; border-radius: 14px; }
   }
 </style>
 </head>
@@ -77,8 +75,45 @@
 </div>
 <div id="combo"></div>
 
-<button class="btn" id="btnJump">PULAR</button>
-<button class="btn" id="btnGrau">GRAU</button>
+<!-- Botão PULAR: seta pra cima -->
+<button class="btn" id="btnJump" aria-label="Pular">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- contorno da seta -->
+    <path d="M50 14 L82 52 H66 V86 H34 V52 H18 Z"
+          fill="#4ecdc4" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>
+    <!-- brilho interno -->
+    <path d="M50 26 L70 50 H60 V78 H40 V50 H30 Z"
+          fill="rgba(255,255,255,0.35)"/>
+  </svg>
+</button>
+
+<!-- Botão GRAU: bike empinada -->
+<button class="btn" id="btnGrau" aria-label="Grau">
+  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- chão -->
+    <line x1="6" y1="86" x2="94" y2="86" stroke="rgba(255,255,255,0.45)" stroke-width="3" stroke-linecap="round"/>
+    <!-- roda traseira -->
+    <circle cx="26" cy="72" r="14" fill="none" stroke="#ff5252" stroke-width="5"/>
+    <circle cx="26" cy="72" r="3" fill="#ff5252"/>
+    <!-- roda dianteira (levantada no grau) -->
+    <circle cx="72" cy="30" r="12" fill="none" stroke="#ff5252" stroke-width="5"/>
+    <circle cx="72" cy="30" r="3" fill="#ff5252"/>
+    <!-- quadro -->
+    <path d="M26 72 L44 58 L60 44 L72 30"
+          stroke="#ff5252" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- banco -->
+    <line x1="40" y1="62" x2="50" y2="54"
+          stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+    <!-- guidão -->
+    <line x1="60" y1="44" x2="68" y2="38"
+          stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+    <!-- ciclista (cabeça) -->
+    <circle cx="52" cy="42" r="7" fill="#4ecdc4" stroke="#ffffff" stroke-width="3"/>
+    <!-- ciclista (corpo/braço) -->
+    <path d="M48 58 L54 48 L64 42"
+          stroke="#4ecdc4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 
 <script>
 (() => {
@@ -112,15 +147,15 @@
     x: 0, y: 0, vy: 0,
     angle: 0,
     onGround: true,
-    wheelie: 0,      // 0..1 quanto está empinado
+    wheelie: 0,
     wheelRadius: 0
   };
 
   const GRAVITY = 2600;
   const JUMP_VELOCITY = -1050;
-  const MAX_WHEELIE = 0.85;   // ângulo máx do grau (rad)
-  const WHEELIE_UP = 3.5;     // velocidade pra subir o grau
-  const WHEELIE_DOWN = 4.5;   // velocidade pra descer
+  const MAX_WHEELIE = 0.85;
+  const WHEELIE_UP = 3.5;
+  const WHEELIE_DOWN = 4.5;
 
   let jumpHeld = false;
   let grauHeld = false;
@@ -141,10 +176,8 @@
   let comboMult = 1;
   let comboTimer = 0;
 
-  // partículas (poeira/faíscas)
   const particles = [];
 
-  // nuvens
   const clouds = [];
   for (let i = 0; i < 8; i++) {
     clouds.push({
@@ -155,7 +188,6 @@
     });
   }
 
-  // ---------- Reset ----------
   function reset() {
     bike.x = W * 0.22;
     bike.y = groundY;
@@ -188,13 +220,12 @@
     scoreEl.textContent = Math.floor(score);
   }
 
-  // ---------- Entrada: PULAR ----------
+  // ---------- Entrada ----------
   function onJumpDown(e) {
     e && e.preventDefault();
     if (gameOver) { reset(); return; }
     jumpHeld = true;
     btnJump.classList.add('pressed');
-    // só pula se estiver no chão
     if (bike.onGround) {
       bike.vy = JUMP_VELOCITY;
       bike.onGround = false;
@@ -206,17 +237,12 @@
     jumpHeld = false;
     btnJump.classList.remove('pressed');
   }
-
-  // ---------- Entrada: GRAU ----------
   function onGrauDown(e) {
     e && e.preventDefault();
     if (gameOver) { reset(); return; }
     grauHeld = true;
     btnGrau.classList.add('pressed');
-    // se estiver no chão, começa a empinar
-    if (bike.onGround) {
-      spawnDust(bike.x - bike.wheelRadius, groundY, 4);
-    }
+    if (bike.onGround) spawnDust(bike.x - bike.wheelRadius, groundY, 4);
   }
   function onGrauUp(e) {
     e && e.preventDefault();
@@ -224,7 +250,6 @@
     btnGrau.classList.remove('pressed');
   }
 
-  // Eventos nos botões
   btnJump.addEventListener('pointerdown', onJumpDown);
   btnJump.addEventListener('pointerup', onJumpUp);
   btnJump.addEventListener('pointercancel', onJumpUp);
@@ -234,7 +259,6 @@
   btnGrau.addEventListener('pointercancel', onGrauUp);
   btnGrau.addEventListener('pointerleave', onGrauUp);
 
-  // Teclado (PC): espaço = pular, seta ↑ = grau
   window.addEventListener('keydown', e => {
     if (e.code === 'Space' && !e.repeat) onJumpDown(e);
     if (e.code === 'ArrowUp' && !e.repeat) onGrauDown(e);
@@ -249,15 +273,12 @@
   function spawnObstacle() {
     const r = Math.random();
     if (r < 0.35) {
-      // pedra
       const w = 26 + Math.random() * 28;
       obstacles.push({ type: 'rock', x: W + 40, w, h: w * (0.9 + Math.random() * 0.5) });
     } else if (r < 0.7) {
-      // rampa
       const w = 70 + Math.random() * 70;
       obstacles.push({ type: 'ramp', x: W + 40, w, h: 26 + Math.random() * 30 });
     } else {
-      // caixa
       const w = 40 + Math.random() * 40;
       obstacles.push({ type: 'box', x: W + 40, w, h: w * (0.7 + Math.random() * 0.4) });
     }
@@ -293,7 +314,6 @@
 
   // ---------- Update ----------
   function update(dt) {
-    // Partículas sempre atualizam (mesmo em game over, pra sumirem)
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.x += p.vx * dt;
@@ -305,12 +325,9 @@
 
     if (gameOver) return;
 
-    // Velocidade aumenta com o tempo
     speed = 420 + Math.min(score * 1.2, 560);
 
-    // ---- Física vertical ----
     if (jumpHeld && !bike.onGround && bike.vy < 0) {
-      // segurar o botão de pulo faz o pulo mais longo (levita)
       bike.vy += GRAVITY * 0.35 * dt;
     } else {
       bike.vy += GRAVITY * dt;
@@ -319,9 +336,7 @@
 
     if (bike.y >= groundY) {
       if (!bike.onGround) {
-        // aterrissou
         score += airTime * 80;
-        // pequena poeira do impacto
         if (airTime > 0.15) spawnDust(bike.x, groundY, 6);
         airTime = 0;
       }
@@ -333,11 +348,8 @@
       airTime += dt;
     }
 
-    // ---- GRAU (wheelie) ----
-    // sobe só se estiver no chão e segurando GRAU
     if (grauHeld && bike.onGround) {
       bike.wheelie = Math.min(MAX_WHEELIE, bike.wheelie + WHEELIE_UP * dt);
-      // faíscas quando está bem empinado
       if (bike.wheelie > 0.5 && Math.random() < 0.5) {
         spawnSparks(bike.x - bike.wheelRadius * 1.5, groundY - 2);
       }
@@ -346,13 +358,11 @@
     }
     bike.angle = -bike.wheelie;
 
-    // Pontos por grau
     if (bike.onGround && bike.wheelie > 0.35) {
       wheelieTime += dt;
       comboMult = 1 + Math.min(bike.wheelie * 2.5, 2.5);
       comboTimer = 0.6;
       score += dt * 40 * bike.wheelie * comboMult;
-
       comboEl.textContent = 'GRAU x' + comboMult.toFixed(1);
       comboEl.classList.add('on');
     } else {
@@ -365,11 +375,9 @@
       }
     }
 
-    // pontos por distância
     score += dt * 12;
     worldOffset += speed * dt;
 
-    // spawn
     obstacleTimer -= dt;
     if (obstacleTimer <= 0) {
       spawnObstacle();
@@ -377,15 +385,11 @@
       obstacleTimer = interval * (0.75 + Math.random() * 0.6);
     }
 
-    // ---- Colisão com obstáculos ----
-    // usamos a roda traseira e dianteira
     const r = bike.wheelRadius;
     const cos = Math.cos(bike.angle);
     const sin = Math.sin(bike.angle);
-    // traseira (relativa -1.7r, 0) rotacionada
     const rearX = bike.x + (-r * 1.7) * cos;
     const rearY = bike.y + (-r * 1.7) * sin;
-    // dianteira (relativa +1.7r, 0)
     const frontX = bike.x + (r * 1.7) * cos;
     const frontY = bike.y + (r * 1.7) * sin;
 
@@ -395,23 +399,17 @@
       if (o.x + o.w < -80) { obstacles.splice(i, 1); continue; }
 
       const top = groundY - o.h;
-      const left = o.x;
-      const right = o.x + o.w;
-
-      // colisão tipo círculo-retângulo simplificada
-      if (circleRect(rearX, rearY, r * 0.85, left, top, o.w, o.h) ||
-          circleRect(frontX, frontY, r * 0.85, left, top, o.w, o.h)) {
+      if (circleRect(rearX, rearY, r * 0.85, o.x, top, o.w, o.h) ||
+          circleRect(frontX, frontY, r * 0.85, o.x, top, o.w, o.h)) {
         gameOver = true;
         best = Math.max(best, score);
         localStorage.setItem('bikeBest', Math.floor(best));
         bestEl.textContent = Math.floor(best);
-        // explosão de partículas
         for (let k = 0; k < 25; k++) spawnSparks(bike.x, bike.y - r);
         return;
       }
     }
 
-    // nuvens
     for (const c of clouds) {
       c.x -= (speed * 0.06 + c.sp * 30) * dt;
       if (c.x < -150) {
@@ -423,7 +421,6 @@
     updateHUD();
   }
 
-  // colisão círculo-retângulo
   function circleRect(cx, cy, cr, rx, ry, rw, rh) {
     const nx = Math.max(rx, Math.min(cx, rx + rw));
     const ny = Math.max(ry, Math.min(cy, ry + rh));
@@ -441,7 +438,6 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
-    // sol
     const sx = W * 0.78, sy = H * 0.3;
     const sr = Math.min(W, H) * 0.08;
     const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 2.5);
@@ -457,7 +453,6 @@
     ctx.arc(sx, sy, sr, 0, Math.PI * 2);
     ctx.fill();
 
-    // montanhas ao fundo
     ctx.fillStyle = 'rgba(30, 25, 55, 0.7)';
     ctx.beginPath();
     ctx.moveTo(0, groundY);
@@ -471,7 +466,6 @@
     ctx.closePath();
     ctx.fill();
 
-    // nuvens
     for (const c of clouds) {
       ctx.fillStyle = 'rgba(255,255,255,0.10)';
       const r = 30 * c.s;
@@ -490,7 +484,6 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, groundY, W, H - groundY);
 
-    // faixa neon
     ctx.strokeStyle = 'rgba(244, 162, 97, 0.9)';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -498,7 +491,6 @@
     ctx.lineTo(W, groundY);
     ctx.stroke();
 
-    // marcas
     ctx.strokeStyle = 'rgba(255,255,255,0.12)';
     ctx.lineWidth = 3;
     const dashW = 60;
@@ -544,13 +536,11 @@
       ctx.closePath();
       ctx.fill();
     } else {
-      // caixa
       ctx.fillStyle = '#8a6a3a';
       ctx.fillRect(o.x, top, o.w, o.h);
       ctx.strokeStyle = '#5a4020';
       ctx.lineWidth = 3;
       ctx.strokeRect(o.x, top, o.w, o.h);
-      // X na caixa
       ctx.strokeStyle = 'rgba(255,255,255,0.25)';
       ctx.beginPath();
       ctx.moveTo(o.x, top);
@@ -576,7 +566,6 @@
   function drawBike() {
     const r = bike.wheelRadius;
 
-    // sombra no chão
     const shadowScale = Math.max(0.15, 1 - (groundY - bike.y) / 350);
     ctx.fillStyle = `rgba(0,0,0,${0.3 * shadowScale})`;
     ctx.beginPath();
@@ -587,7 +576,6 @@
     ctx.translate(bike.x, bike.y);
     ctx.rotate(bike.angle);
 
-    // ---- quadro ----
     ctx.strokeStyle = '#ff5252';
     ctx.lineWidth = Math.max(3, r * 0.24);
     ctx.lineCap = 'round';
@@ -611,13 +599,11 @@
     ctx.lineTo(rearWX, rearWY);
     ctx.stroke();
 
-    // banco
     ctx.fillStyle = '#1a1a1a';
     ctx.beginPath();
     ctx.ellipse(seatX, seatY - r * 0.05, r * 0.55, r * 0.18, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // guidão
     ctx.strokeStyle = '#d0d0d0';
     ctx.lineWidth = Math.max(2, r * 0.13);
     ctx.beginPath();
@@ -625,33 +611,27 @@
     ctx.lineTo(handleX + r * 0.2, handleY - r * 0.45);
     ctx.stroke();
 
-    // ---- ciclista ----
-    // corpo
     ctx.strokeStyle = '#4ecdc4';
     ctx.lineWidth = Math.max(3, r * 0.3);
     ctx.beginPath();
     ctx.moveTo(seatX + r * 0.15, seatY - r * 0.35);
     ctx.lineTo(handleX - r * 0.3, handleY + r * 0.25);
     ctx.stroke();
-    // braços
     ctx.strokeStyle = '#4ecdc4';
     ctx.lineWidth = Math.max(2, r * 0.2);
     ctx.beginPath();
     ctx.moveTo(handleX - r * 0.3, handleY + r * 0.25);
     ctx.lineTo(handleX, handleY + r * 0.05);
     ctx.stroke();
-    // cabeça
     ctx.fillStyle = '#4ecdc4';
     ctx.beginPath();
     ctx.arc(handleX - r * 0.35, handleY - r * 0.05, r * 0.42, 0, Math.PI * 2);
     ctx.fill();
-    // capacete
     ctx.fillStyle = '#ff5252';
     ctx.beginPath();
     ctx.arc(handleX - r * 0.35, handleY - r * 0.15, r * 0.45, Math.PI, 0);
     ctx.fill();
 
-    // ---- rodas ----
     function drawWheel(wx, wy, rr) {
       ctx.fillStyle = '#0a0a0a';
       ctx.beginPath();
@@ -667,7 +647,6 @@
       ctx.beginPath();
       ctx.arc(wx, wy, rr * 0.5, 0, Math.PI * 2);
       ctx.stroke();
-      // raios (giram com o mundo)
       ctx.strokeStyle = 'rgba(255,255,255,0.4)';
       ctx.lineWidth = 1.5;
       const rot = (worldOffset / rr) % (Math.PI * 2);
@@ -700,10 +679,9 @@
 
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.font = `500 ${Math.min(W * 0.04, 20)}px system-ui, sans-serif`;
-    ctx.fillText('Toque em PULAR para reiniciar', W / 2, H * 0.6);
+    ctx.fillText('Toque para reiniciar', W / 2, H * 0.6);
   }
 
-  // ---------- Loop ----------
   let last = performance.now();
   function loop(now) {
     let dt = (now - last) / 1000;
