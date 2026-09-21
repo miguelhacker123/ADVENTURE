@@ -1,1452 +1,470 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ADVENTURES</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #05070a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            max-width: 1200px;
-            max-height: 675px;
-            background: #000;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
-            overflow: hidden;
-            border-radius: 12px;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        /* --- UI OVERLAYS --- */
-        .hud-element {
-            position: absolute;
-            z-index: 10;
-            font-weight: bold;
-        }
-
-        #lang-selector {
-            top: 15px;
-            left: 15px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .lang-btn {
-            background: rgba(15, 23, 42, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #e2e8f0;
-            padding: 6px 14px;
-            cursor: pointer;
-            font-weight: 700;
-            border-radius: 8px;
-            transition: all 0.2s;
-            backdrop-filter: blur(8px);
-        }
-
-        .lang-btn.active {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: #fff;
-            border-color: #34d399;
-            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
-        }
-
-        /* HUD NO CANTO DIREITO (ABAIXO DO PAUSE) */
-        #hud-counters-right {
-            top: 60px;
-            right: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 8px;
-        }
-
-        .hud-badge {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(15, 23, 42, 0.85);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 17px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-        }
-
-        .coin-badge { color: #facc15; border-color: rgba(250, 204, 21, 0.4); }
-        .apple-badge { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
-
-        .canvas-icon-hud {
-            width: 24px;
-            height: 24px;
-        }
-
-        #level-hud {
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #f8fafc;
-            font-size: 20px;
-            letter-spacing: 3px;
-            background: rgba(15, 23, 42, 0.85);
-            padding: 8px 24px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-        }
-
-        /* BARRA DE VIDA DO BOSS */
-        #boss-hp-container {
-            position: absolute;
-            top: 65px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 320px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 2px solid #ef4444;
-            border-radius: 12px;
-            padding: 6px 12px;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            z-index: 10;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
-        }
-
-        #boss-hp-label {
-            color: #fca5a5;
-            font-size: 13px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-        }
-
-        #boss-hp-bar-outer {
-            width: 100%;
-            height: 14px;
-            background: #1e293b;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        #boss-hp-bar-inner {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
-            transition: width 0.2s ease;
-        }
-
-        #btn-pause {
-            top: 15px;
-            right: 15px;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            border: 1px solid #fca5a5;
-            color: #fff;
-            padding: 7px 18px;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            z-index: 12;
-            transition: 0.2s;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
-        #btn-pause:hover { transform: translateY(-2px); filter: brightness(1.1); }
-
-        /* --- MENUS ELEGANTES & MODERNOS --- */
-        .menu-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-            gap: 18px;
-        }
-
-        .title {
-            font-size: 58px;
-            font-weight: 900;
-            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0 4px 10px rgba(34, 197, 94, 0.3));
-            letter-spacing: 4px;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .btn-moss {
-            width: 250px;
-            padding: 16px 0;
-            font-size: 18px;
-            font-weight: 800;
-            color: #ffffff;
-            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
-            border: 1px solid #4ade80;
-            border-radius: 12px;
-            cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            transition: all 0.2s ease;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-        }
-
-        .btn-moss:hover {
-            transform: translateY(-3px);
-            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
-            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
-        }
-
-        #levels-menu { display: none; }
-
-        .levels-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            max-width: 80%;
-            max-height: 60%;
-            overflow-y: auto;
-            padding: 20px;
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .level-btn {
-            width: 60px;
-            height: 60px;
-            background: #334155;
-            border: 1px solid #475569;
-            color: #94a3b8;
-            font-size: 18px;
-            font-weight: 700;
-            border-radius: 12px;
-            cursor: not-allowed;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: 0.2s;
-        }
-
-        .level-btn.unlocked {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border-color: #22c55e;
-            color: #fff;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .btn-back {
-            margin-top: 10px;
-            width: 160px;
-            padding: 12px;
-            font-size: 15px;
-        }
-
-        #pause-menu { display: none; }
-
-        /* --- CONTROLES TOUCH --- */
-        #touch-controls {
-            position: absolute;
-            bottom: 25px;
-            left: 0;
-            width: 100%;
-            height: 180px;
-            z-index: 15;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 25px;
-            pointer-events: none;
-        }
-
-        .touch-group-left {
-            display: flex;
-            gap: 15px;
-            pointer-events: auto;
-            align-self: flex-end;
-        }
-
-        .touch-group-right {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            align-items: flex-end;
-            pointer-events: auto;
-            align-self: flex-end;
-        }
-
-        .basket-btn {
-            width: 70px;
-            height: 70px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            font-size: 26px;
-            font-weight: bold;
-            backdrop-filter: blur(8px);
-            touch-action: manipulation;
-        }
-
-        .square-jump-btn {
-            width: 75px;
-            height: 65px;
-            background: rgba(34, 197, 94, 0.4);
-            border: 1px solid rgba(74, 222, 128, 0.6);
-            border-radius: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            font-size: 14px;
-            font-weight: bold;
-            backdrop-filter: blur(8px);
-            touch-action: manipulation;
-        }
-
-        /* BOTÃO DA BAZUCA (ACIMA DO BOTÃO DE PULAR) */
-        .bazooka-btn {
-            width: 75px;
-            height: 65px;
-            background: linear-gradient(135deg, rgba(249, 115, 22, 0.8) 0%, rgba(34, 197, 94, 0.8) 100%);
-            border: 2px solid #ea580c;
-            border-radius: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-            font-size: 12px;
-            font-weight: 900;
-            backdrop-filter: blur(8px);
-            touch-action: manipulation;
-            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bike Wheelie 2D</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: system-ui, sans-serif; }
+  #game { display: block; width: 100%; height: 100%; touch-action: none; }
+  #hud {
+    position: fixed; top: 12px; left: 12px; color: #fff;
+    font-size: 18px; font-weight: bold; text-shadow: 0 2px 6px rgba(0,0,0,.6);
+    pointer-events: none; user-select: none; line-height: 1.5;
+  }
+  #hud .best { font-size: 13px; opacity: .8; font-weight: 500; }
+  #hint {
+    position: fixed; bottom: 20px; left: 0; right: 0; text-align: center;
+    color: #fff; opacity: .75; font-size: 14px; pointer-events: none;
+    user-select: none; transition: opacity .6s;
+  }
+</style>
 </head>
 <body>
-
-<div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-
-    <!-- SELEÇÃO DE IDIOMAS -->
-    <div id="lang-selector" class="hud-element">
-        <button class="lang-btn active" onclick="setLanguage('pt')">PT</button>
-        <button class="lang-btn" onclick="setLanguage('en')">EN</button>
-    </div>
-
-    <!-- HUD DE MOEDAS E MAÇÃS (CANTO DIREITO ABAIXO DO PAUSE) -->
-    <div id="hud-counters-right" class="hud-element">
-        <div class="hud-badge coin-badge">
-            <canvas id="coin-icon-hud" class="canvas-icon-hud" width="24" height="24"></canvas>
-            <span id="coin-count">0</span>
-        </div>
-        <div class="hud-badge apple-badge">
-            <canvas id="apple-icon-hud" class="canvas-icon-hud" width="24" height="24"></canvas>
-            <span id="apple-count">0</span>
-        </div>
-    </div>
-
-    <!-- HUD FASE ATUAL -->
-    <div id="level-hud" class="hud-element">
-        <span id="level-text">FASE 1</span>
-    </div>
-
-    <!-- BARRA DE VIDA DO BOSS -->
-    <div id="boss-hp-container">
-        <span id="boss-hp-label">ROBÔ SLUG BOSS</span>
-        <div id="boss-hp-bar-outer">
-            <div id="boss-hp-bar-inner"></div>
-        </div>
-    </div>
-
-    <!-- BOTÃO PAUSE -->
-    <button id="btn-pause" class="hud-element" onclick="togglePause()">|| PAUSE</button>
-
-    <!-- MENU INICIAL -->
-    <div id="main-menu" class="menu-screen">
-        <h1 class="title">ADVENTURES</h1>
-        <button id="btn-play" class="btn-moss" onclick="startGame()">PLAY</button>
-        <button id="btn-fases" class="btn-moss" onclick="showLevels()">FASES</button>
-    </div>
-
-    <!-- MENU SELEÇÃO DE FASES -->
-    <div id="levels-menu" class="menu-screen">
-        <h1 class="title" id="select-level-title">FASES</h1>
-        <div class="levels-grid" id="levels-grid"></div>
-        <button id="btn-back" class="btn-moss btn-back" onclick="hideLevels()">VOLTAR</button>
-    </div>
-
-    <!-- MENU PAUSE -->
-    <div id="pause-menu" class="menu-screen">
-        <h1 class="title" id="pause-title">PAUSADO</h1>
-        <button id="btn-resume" class="btn-moss" onclick="togglePause()">CONTINUAR</button>
-        <button id="btn-reset" class="btn-moss" onclick="resetCurrentMatch()">REINICIAR</button>
-        <button id="btn-quit" class="btn-moss" onclick="quitToMenu()">MENU</button>
-    </div>
-
-    <!-- CONTROLES TOUCH -->
-    <div id="touch-controls">
-        <div class="touch-group-left">
-            <div class="basket-btn" id="btn-left">&lt;</div>
-            <div class="basket-btn" id="btn-right">&gt;</div>
-        </div>
-        <div class="touch-group-right">
-            <!-- BOTÃO DA BAZUCA LOCALIZADO EXATAMENTE ACIMA DO BOTÃO PULAR -->
-            <div class="bazooka-btn" id="btn-bazooka">BAZUCA</div>
-            <div class="square-jump-btn" id="btn-jump">PULAR</div>
-        </div>
-    </div>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div>Pontos: <span id="score">0</span></div>
+  <div class="best">Recorde: <span id="best">0</span></div>
 </div>
+<div id="hint">Toque para pular · Segure para empinar</div>
 
 <script>
-/* --- TEXTOS E IDIOMAS --- */
-const i18n = {
-    pt: {
-        play: "PLAY",
-        fases: "FASES",
-        selectLevel: "SELECIONE A FASE",
-        back: "VOLTAR",
-        level: "FASE",
-        jump: "PULAR",
-        win: "FASE CONCLUÍDA!",
-        gameover: "VOCÊ MORREU!",
-        paused: "PAUSADO",
-        resume: "CONTINUAR",
-        reset: "REINICIAR",
-        quit: "MENU"
-    },
-    en: {
-        play: "PLAY",
-        fases: "LEVELS",
-        selectLevel: "SELECT LEVEL",
-        back: "BACK",
-        level: "LEVEL",
-        jump: "JUMP",
-        win: "LEVEL COMPLETE!",
-        gameover: "YOU DIED!",
-        paused: "PAUSED",
-        resume: "RESUME",
-        reset: "RESTART",
-        quit: "MENU"
-    }
-};
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const hintEl = document.getElementById('hint');
 
-let currentLang = 'pt';
+  let W = 0, H = 0, DPR = 1;
+  let groundY = 0;
 
-function setLanguage(lang) {
-    currentLang = lang;
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-    if(lang === 'pt') document.querySelectorAll('.lang-btn')[0].classList.add('active');
-    else document.querySelectorAll('.lang-btn')[1].classList.add('active');
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    groundY = H - Math.max(70, H * 0.14);
+  }
+  window.addEventListener('resize', resize);
+  resize();
 
-    document.getElementById('btn-play').innerText = i18n[lang].play;
-    document.getElementById('btn-fases').innerText = i18n[lang].fases;
-    document.getElementById('select-level-title').innerText = i18n[lang].selectLevel;
-    document.getElementById('btn-back').innerText = i18n[lang].back;
-    document.getElementById('btn-jump').innerText = i18n[lang].jump;
-    document.getElementById('pause-title').innerText = i18n[lang].paused;
-    document.getElementById('btn-resume').innerText = i18n[lang].resume;
-    document.getElementById('btn-reset').innerText = i18n[lang].reset;
-    document.getElementById('btn-quit').innerText = i18n[lang].quit;
-    updateLevelHUD();
-}
-
-/* --- MOEDAS E MAÇÃS (SALVAMENTO) --- */
-let totalCoins = parseInt(localStorage.getItem('adventures_coins')) || 0;
-let totalApples = parseInt(localStorage.getItem('adventures_apples')) || 0;
-let unlockedLevel = parseInt(localStorage.getItem('adventures_level')) || 1;
-let currentLevel = 1;
-
-function updateHUDCounters() {
-    document.getElementById('coin-count').innerText = totalCoins;
-    document.getElementById('apple-count').innerText = totalApples;
-    localStorage.setItem('adventures_coins', totalCoins);
-    localStorage.setItem('adventures_apples', totalApples);
-}
-
-function saveProgress() {
-    localStorage.setItem('adventures_coins', totalCoins);
-    localStorage.setItem('adventures_apples', totalApples);
-    if (currentLevel >= unlockedLevel && unlockedLevel < 20) {
-        unlockedLevel = currentLevel + 1;
-        localStorage.setItem('adventures_level', unlockedLevel);
-    }
-}
-
-/* --- CANVAS & ENGINE --- */
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-canvas.width = 1200;
-canvas.height = 675;
-
-let isPlaying = false;
-let isPaused = false;
-let keys = { left: false, right: false, up: false };
-
-// JOGADOR
-const player = {
-    x: 80,
-    y: 300,
-    width: 38,
-    height: 56,
-    vx: 0,
+  // ---------- Estado ----------
+  const bike = {
+    x: 0,
+    y: 0,
     vy: 0,
-    speed: 5.5,
-    jumpForce: -13.5,
-    gravity: 0.6,
-    grounded: false,
-    facing: 'right',
-    animFrame: 0,
-    hasBazookaEquipped: false // Bazuca no inventário / equipada
-};
+    angle: 0,          // rotação da bike (radianos)
+    onGround: true,
+    wheelie: 0,        // 0..1 progresso do wheelie
+    holding: false,
+    wheelRadius: 0
+  };
 
-let platforms = [];
-let obstacles = [];
-let coins = [];
-let enemies = [];
-let apples = []; 
-let particles = [];
-let mountains = [];
-let bullets = []; // Disparos da Bazuca (Bolas de Musgo)
-let bossProjectiles = []; // Projéteis do Boss
-let boss = null;
-let flag = null;
-let globalTime = 0;
+  const GRAVITY = 2600;        // px/s²
+  const JUMP_VELOCITY = -980;  // impulso do toque
+  const HOLD_GRAVITY = 300;    // gravidade enquanto segura (levita um pouco)
+  const MAX_WHEELIE = 0.75;    // ângulo máximo (rad)
+  const WHEELIE_SPEED = 3.2;   // velocidade de empinada
 
-/* --- GERADOR DE FASES --- */
-function generateLevel(lvl) {
-    platforms = [];
-    obstacles = [];
-    coins = [];
-    enemies = [];
-    apples = [];
-    particles = [];
-    mountains = [];
-    bullets = [];
-    bossProjectiles = [];
+  const obstacles = [];
+  let obstacleTimer = 0;
+  let spawnInterval = 1.6;
 
-    platforms.push({ x: 0, y: 500, w: 280, h: 175, type: 'grass' });
+  let speed = 420;
+  let score = 0;
+  let best = +(localStorage.getItem('bikeBest') || 0);
+  bestEl.textContent = Math.floor(best);
 
-    let currentX = 280;
-    const levelLength = 20 + lvl * 4;
+  let worldOffset = 0;
+  let gameOver = false;
+  let airTime = 0;
+  let wheelieTime = 0;
 
-    let mountainX = -300;
-    for (let m = 0; m < levelLength / 2; m++) {
-        let mW = 600 + Math.random() * 400;
-        let mH = 280 + Math.random() * 160;
-        mountains.push({
-            x: mountainX,
-            y: 580 - mH,
-            w: mW,
-            h: mH,
-            color: m % 2 === 0 ? '#1e293b' : '#0f172a'
-        });
-        mountainX += mW - 150;
-    }
-
-    const slugColors = ['#9333ea', '#dc2626', '#2563eb'];
-
-    for (let i = 0; i < levelLength; i++) {
-        let gap = 80 + Math.random() * 70 + (lvl * 2);
-        currentX += gap;
-
-        let platWidth = Math.max(160, 280 - lvl * 4 + Math.random() * 60);
-        let platY = 380 + Math.random() * 130;
-
-        platforms.push({ x: currentX, y: platY, w: platWidth, h: 675 - platY, type: 'grass' });
-
-        // MAÇÃS
-        if (i > 0 && Math.random() < 0.4) {
-            apples.push({
-                x: currentX + platWidth / 2 - 12,
-                baseY: platY - 45,
-                y: platY - 45,
-                w: 24,
-                h: 24,
-                eaten: false,
-                floatOffset: Math.random() * Math.PI * 2
-            });
-        }
-
-        // OBSTÁCULOS
-        if (Math.random() > 0.45) {
-            let obsType = Math.random() > 0.5 ? 'stone' : 'trunk';
-            let obsW = obsType === 'stone' ? 38 : 52;
-            let obsH = obsType === 'stone' ? 32 : 30;
-            
-            obstacles.push({
-                x: currentX + platWidth / 2 - obsW / 2,
-                y: platY - obsH,
-                w: obsW,
-                h: obsH,
-                type: obsType
-            });
-        }
-
-        // LESMAS
-        if (i > 0 && Math.random() > 0.3) {
-            let randomColor = slugColors[Math.floor(Math.random() * slugColors.length)];
-            enemies.push({
-                x: currentX + 20,
-                y: platY - 24,
-                w: 38,
-                h: 24,
-                vx: 1.3,
-                hp: 2,
-                platMin: currentX,
-                platMax: currentX + platWidth,
-                animTimer: 0,
-                color: randomColor
-            });
-        }
-
-        // TRONCO FLUTUANTE
-        if (gap > 110 && Math.random() > 0.3) {
-            let logX = currentX - gap / 2 - 30;
-            let logY = 500;
-            platforms.push({ x: logX, y: logY, w: 70, h: 22, type: 'floating_wood' });
-        }
-
-        // MOEDAS
-        let coinsInPlat = 1 + Math.floor(Math.random() * 3);
-        for (let c = 0; c < coinsInPlat; c++) {
-            coins.push({
-                x: currentX + 25 + (c * 35),
-                y: platY - 50 - (Math.random() * 30),
-                w: 24,
-                h: 24,
-                collected: false
-            });
-        }
-
-        currentX += platWidth;
-    }
-
-    // ARENA DO BOSS
-    currentX += 80;
-    let arenaWidth = 800;
-    platforms.push({ x: currentX, y: 460, w: arenaWidth, h: 220, type: 'grass' });
-
-    // CRIAR BOSS ROBÔ
-    let maxHp = 10 + lvl * 5;
-    boss = {
-        x: currentX + arenaWidth - 180,
-        y: 460 - 130,
-        w: 110,
-        h: 130,
-        vx: -1.5,
-        maxHp: maxHp,
-        hp: maxHp,
-        active: false,
-        arenaX: currentX,
-        arenaMaxX: currentX + arenaWidth,
-        shootTimer: 0
-    };
-
-    flag = { x: currentX + arenaWidth - 80, y: 360, w: 20, h: 100 };
-
-    document.getElementById('boss-hp-container').style.display = 'none';
-
-    player.x = 80;
-    player.y = 400;
-    player.vx = 0;
-    player.vy = 0;
-    player.hasBazookaEquipped = false;
-}
-
-/* --- FUNÇÃO DE USAR / ATIRAR BAZUCA --- */
-function useBazooka() {
-    if (!isPlaying || isPaused) return;
-
-    // Se ainda não tirou a bazuca do inventário, equipa ela primeiro
-    if (!player.hasBazookaEquipped) {
-        player.hasBazookaEquipped = true;
-        spawnSmoke(player.x + 19, player.y + 20, '#f97316');
-        return;
-    }
-
-    // Se já estiver com a bazuca equipada, atira a Bola de Musgo!
-    let bulletSpeed = player.facing === 'right' ? 11 : -11;
-    bullets.push({
-        x: player.facing === 'right' ? player.x + player.width : player.x - 22,
-        y: player.y + 18,
-        w: 22,
-        h: 22,
-        vx: bulletSpeed,
-        vy: -0.5
+  const clouds = [];
+  for (let i = 0; i < 7; i++) {
+    clouds.push({
+      x: Math.random() * 2000,
+      y: Math.random() * (H * 0.45) + 20,
+      s: 0.6 + Math.random() * 0.9,
+      sp: 0.15 + Math.random() * 0.25
     });
+  }
 
-    // Partículas do disparo
-    spawnSmoke(player.x + (player.facing === 'right' ? player.width : 0), player.y + 20, '#22c55e');
-}
+  function reset() {
+    bike.x = W * 0.22;
+    bike.y = groundY;
+    bike.vy = 0;
+    bike.angle = 0;
+    bike.onGround = true;
+    bike.wheelie = 0;
+    bike.holding = false;
+    bike.wheelRadius = Math.max(14, Math.min(W, H) * 0.032);
 
-function spawnSmoke(x, y, color = '#cbd5e1') {
-    for (let i = 0; i < 12; i++) {
-        particles.push({
-            x: x + Math.random() * 20 - 10,
-            y: y + Math.random() * 10,
-            vx: (Math.random() - 0.5) * 3,
-            vy: -Math.random() * 2 - 1,
-            size: 5 + Math.random() * 6,
-            alpha: 1,
-            color: color
-        });
+    obstacles.length = 0;
+    obstacleTimer = 1.0;
+    speed = 420;
+    score = 0;
+    airTime = 0;
+    wheelieTime = 0;
+    worldOffset = 0;
+    gameOver = false;
+    scoreEl.textContent = '0';
+    hintEl.style.opacity = '.75';
+    updateHUD();
+  }
+
+  function updateHUD() {
+    scoreEl.textContent = Math.floor(score);
+  }
+
+  // ---------- Entrada ----------
+  function pointerDown(e) {
+    e.preventDefault();
+    if (gameOver) { reset(); return; }
+    bike.holding = true;
+    hintEl.style.opacity = '0';
+    if (bike.onGround && bike.wheelie < 0.15) {
+      // toque rápido = pulo
+      bike.vy = JUMP_VELOCITY;
+      bike.onGround = false;
     }
-}
+  }
+  function pointerUp(e) {
+    e.preventDefault();
+    bike.holding = false;
+  }
 
-let cameraX = 0;
+  canvas.addEventListener('pointerdown', pointerDown);
+  window.addEventListener('pointerup', pointerUp);
+  window.addEventListener('pointercancel', pointerUp);
+  // teclado para testar no PC
+  window.addEventListener('keydown', e => { if (e.code === 'Space' && !e.repeat) pointerDown(e); });
+  window.addEventListener('keyup', e => { if (e.code === 'Space') pointerUp(e); });
 
-function update() {
-    if (!isPlaying || isPaused) return;
-
-    globalTime += 0.05;
-
-    // Movimento do Jogador
-    if (keys.right) {
-        player.vx = player.speed;
-        player.facing = 'right';
-        player.animFrame += 0.25;
-    } else if (keys.left) {
-        player.vx = -player.speed;
-        player.facing = 'left';
-        player.animFrame += 0.25;
+  // ---------- Obstáculos ----------
+  function spawnObstacle() {
+    const type = Math.random() < 0.35 ? 'rock' : 'ramp';
+    if (type === 'rock') {
+      const w = 26 + Math.random() * 26;
+      obstacles.push({ type, x: W + 40, w, h: w * (0.8 + Math.random() * 0.6) });
     } else {
-        player.vx = 0;
-        player.animFrame = 0;
+      const w = 60 + Math.random() * 60;
+      obstacles.push({ type, x: W + 40, w, h: 22 + Math.random() * 26 });
+    }
+  }
+
+  // ---------- Update ----------
+  function update(dt) {
+    if (gameOver) return;
+
+    // velocidade aumenta com o tempo
+    speed = 420 + Math.min(score * 1.4, 520);
+
+    // ---- Física vertical ----
+    if (bike.holding && !bike.onGround) {
+      // segurar no ar deixa o pulo mais "flutuante"
+      bike.vy += HOLD_GRAVITY * dt;
+    } else {
+      bike.vy += GRAVITY * dt;
+    }
+    bike.y += bike.vy * dt;
+
+    if (bike.y >= groundY) {
+      if (!bike.onGround) {
+        // aterrissou: bônus por tempo no ar
+        score += airTime * 60;
+        airTime = 0;
+      }
+      bike.y = groundY;
+      bike.vy = 0;
+      bike.onGround = true;
+    } else {
+      bike.onGround = false;
+      airTime += dt;
     }
 
-    if (keys.up && player.grounded) {
-        player.vy = player.jumpForce;
-        player.grounded = false;
+    // ---- Wheelie (empinar) ----
+    const targetWheelie = (bike.holding && bike.onGround) ? MAX_WHEELIE : 0;
+    if (bike.wheelie < targetWheelie) {
+      bike.wheelie = Math.min(targetWheelie, bike.wheelie + WHEELIE_SPEED * dt);
+    } else {
+      bike.wheelie = Math.max(targetWheelie, bike.wheelie - WHEELIE_SPEED * 1.8 * dt);
+    }
+    // ângulo real: empina pra trás (negativo no canvas)
+    bike.angle = -bike.wheelie;
+
+    // pontos por empinar
+    if (bike.onGround && bike.wheelie > 0.3) {
+      wheelieTime += dt;
+      score += dt * 25 * bike.wheelie;
+    } else {
+      wheelieTime = 0;
     }
 
-    player.vy += player.gravity;
-    player.x += player.vx;
-    player.y += player.vy;
+    // pontos por distância
+    score += dt * 12;
 
-    // Colisão com Plataformas
-    player.grounded = false;
-    for (let p of platforms) {
-        if (
-            player.x < p.x + p.w &&
-            player.x + player.width > p.x &&
-            player.y + player.height > p.y &&
-            player.y + player.height < p.y + p.h + player.vy + 4 &&
-            player.vy >= 0
-        ) {
-            player.grounded = true;
-            player.vy = 0;
-            player.y = p.y - player.height;
-        }
+    // ---- Mundo ----
+    worldOffset += speed * dt;
+
+    // spawn
+    obstacleTimer -= dt;
+    if (obstacleTimer <= 0) {
+      spawnObstacle();
+      spawnInterval = Math.max(0.75, 1.6 - score * 0.0015);
+      obstacleTimer = spawnInterval * (0.8 + Math.random() * 0.6);
     }
 
-    // MAÇÃS
-    for (let apple of apples) {
-        if (!apple.eaten) {
-            apple.y = apple.baseY + Math.sin(globalTime * 2.5 + apple.floatOffset) * 6;
+    // move e colisão
+    const frontWheelX = bike.x + Math.cos(bike.angle) * bike.wheelRadius * 1.7;
+    const frontWheelY = bike.y - bike.wheelRadius - Math.sin(bike.angle) * bike.wheelRadius * 1.7;
 
-            if (
-                player.x < apple.x + apple.w &&
-                player.x + player.width > apple.x &&
-                player.y < apple.y + apple.h &&
-                player.y + player.height > apple.y
-            ) {
-                apple.eaten = true;
-                totalApples += 1;
-                updateHUDCounters();
-                spawnSmoke(apple.x + 12, apple.y + 12, '#f87171');
-            }
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      const o = obstacles[i];
+      o.x -= speed * dt;
+      if (o.x + o.w < -60) { obstacles.splice(i, 1); continue; }
+
+      // colisão com as rodas
+      const hitX = bike.x + bike.wheelRadius * 0.6;
+      if (hitX + bike.wheelRadius > o.x && hitX - bike.wheelRadius < o.x + o.w) {
+        const obstacleTop = groundY - o.h;
+        // roda traseira
+        const rearBottom = bike.y;
+        if (rearBottom > obstacleTop + 4) {
+          gameOver = true;
+          best = Math.max(best, score);
+          localStorage.setItem('bikeBest', Math.floor(best));
+          bestEl.textContent = Math.floor(best);
+          return;
         }
+      }
     }
 
-    // ATUALIZAR PROJÉTEIS DE MUSGO (BAZUCA)
-    for (let i = bullets.length - 1; i >= 0; i--) {
-        let b = bullets[i];
-        b.x += b.vx;
-        b.y += b.vy;
-
-        // Fumaça de Musgo
-        if (Math.random() < 0.4) {
-            particles.push({
-                x: b.x + 11,
-                y: b.y + 11,
-                vx: (Math.random() - 0.5) * 1,
-                vy: (Math.random() - 0.5) * 1,
-                size: 4 + Math.random() * 4,
-                alpha: 0.8,
-                color: '#4ade80'
-            });
-        }
-
-        // Colisão Tiro com Lesmas
-        for (let j = enemies.length - 1; j >= 0; j--) {
-            let e = enemies[j];
-            if (b.x < e.x + e.w && b.x + b.w > e.x && b.y < e.y + e.h && b.y + b.h > e.y) {
-                spawnSmoke(e.x + e.w / 2, e.y + e.h / 2, '#4ade80');
-                coins.push({ x: e.x + 5, y: e.y - 10, w: 24, h: 24, collected: false });
-                enemies.splice(j, 1);
-                bullets.splice(i, 1);
-                break;
-            }
-        }
-
-        // Colisão Tiro com Boss
-        if (boss && boss.active && boss.hp > 0) {
-            if (b.x < boss.x + boss.w && b.x + b.w > boss.x && b.y < boss.y + boss.h && b.y + b.h > boss.y) {
-                boss.hp -= 2.5;
-                spawnSmoke(b.x, b.y, '#f97316');
-                bullets.splice(i, 1);
-
-                if (boss.hp <= 0) {
-                    boss.hp = 0;
-                    spawnSmoke(boss.x + boss.w / 2, boss.y + boss.h / 2, '#ef4444');
-                }
-                updateBossHPUI();
-            }
-        }
-
-        if (bullets[i] && (b.x < cameraX - 100 || b.x > cameraX + canvas.width + 100)) {
-            bullets.splice(i, 1);
-        }
+    // nuvens
+    for (const c of clouds) {
+      c.x -= (speed * 0.06 + c.sp * 30) * dt;
+      if (c.x < -150) {
+        c.x = W + Math.random() * 300;
+        c.y = Math.random() * (H * 0.45) + 20;
+      }
     }
 
-    // ATUALIZAR BOSS ROBÔ COM LESMA
-    if (boss) {
-        // Ativar Boss se jogador chegar na arena
-        if (!boss.active && player.x > boss.arenaX + 50) {
-            boss.active = true;
-            document.getElementById('boss-hp-container').style.display = 'flex';
-            updateBossHPUI();
-        }
+    updateHUD();
+  }
 
-        if (boss.active && boss.hp > 0) {
-            boss.x += boss.vx;
-            if (boss.x <= boss.arenaX + 40 || boss.x + boss.w >= boss.arenaMaxX - 40) {
-                boss.vx *= -1;
-            }
+  // ---------- Render ----------
+  function drawSky() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#1a1a2e');
+    g.addColorStop(0.5, '#2d3561');
+    g.addColorStop(1, '#f4a261');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
 
-            // Tiro de Broca do Boss
-            boss.shootTimer += 0.05;
-            if (boss.shootTimer >= 3.5) {
-                boss.shootTimer = 0;
-                let bDir = player.x < boss.x ? -6 : 6;
-                bossProjectiles.push({
-                    x: boss.x + boss.w / 2,
-                    y: boss.y + 60,
-                    w: 20,
-                    h: 12,
-                    vx: bDir
-                });
-            }
+    // sol
+    ctx.fillStyle = 'rgba(255, 220, 150, 0.9)';
+    ctx.beginPath();
+    ctx.arc(W * 0.78, H * 0.28, Math.min(W, H) * 0.07, 0, Math.PI * 2);
+    ctx.fill();
 
-            // Colisão Jogador vs Boss
-            if (
-                player.x < boss.x + boss.w &&
-                player.x + player.width > boss.x &&
-                player.y < boss.y + boss.h &&
-                player.y + player.height > boss.y
-            ) {
-                if (player.vy > 0 && player.y + player.height - player.vy <= boss.y + 25) {
-                    player.vy = -12;
-                    boss.hp -= 1.5;
-                    spawnSmoke(boss.x + boss.w / 2, boss.y + 15, '#ef4444');
-                    updateBossHPUI();
-                } else {
-                    alert(i18n[currentLang].gameover);
-                    generateLevel(currentLevel);
-                    return;
-                }
-            }
-        }
+    // nuvens
+    ctx.fillStyle = 'rgba(255,255,255,0.10)';
+    for (const c of clouds) {
+      const r = 30 * c.s;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+      ctx.arc(c.x + r * 0.9, c.y + r * 0.15, r * 0.75, 0, Math.PI * 2);
+      ctx.arc(c.x - r * 0.9, c.y + r * 0.2, r * 0.65, 0, Math.PI * 2);
+      ctx.fill();
     }
+  }
 
-    // Projéteis do Boss
-    for (let i = bossProjectiles.length - 1; i >= 0; i--) {
-        let bp = bossProjectiles[i];
-        bp.x += bp.vx;
+  function drawGround() {
+    // chão
+    const g = ctx.createLinearGradient(0, groundY, 0, H);
+    g.addColorStop(0, '#3a2b4a');
+    g.addColorStop(1, '#151020');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, groundY, W, H - groundY);
 
-        if (
-            player.x < bp.x + bp.w &&
-            player.x + player.width > bp.x &&
-            player.y < bp.y + bp.h &&
-            player.y + player.height > bp.y
-        ) {
-            alert(i18n[currentLang].gameover);
-            generateLevel(currentLevel);
-            return;
-        }
+    // faixa
+    ctx.strokeStyle = 'rgba(244, 162, 97, 0.8)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    ctx.lineTo(W, groundY);
+    ctx.stroke();
 
-        if (bp.x < cameraX - 100 || bp.x > cameraX + canvas.width + 100) {
-            bossProjectiles.splice(i, 1);
-        }
+    // marcas de velocidade no chão
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 3;
+    const dashW = 60;
+    const offset = worldOffset % (dashW * 2);
+    for (let x = -offset; x < W; x += dashW * 2) {
+      ctx.beginPath();
+      ctx.moveTo(x, groundY + 14);
+      ctx.lineTo(x + dashW, groundY + 14);
+      ctx.stroke();
     }
+  }
 
-    // Obstáculos
-    for (let obs of obstacles) {
-        if (
-            player.x < obs.x + obs.w &&
-            player.x + player.width > obs.x &&
-            player.y < obs.y + obs.h &&
-            player.y + player.height > obs.y
-        ) {
-            if (player.vx > 0 && player.x + player.width - player.vx <= obs.x) {
-                player.x = obs.x - player.width;
-            } else if (player.vx < 0 && player.x - player.vx >= obs.x + obs.w) {
-                player.x = obs.x + obs.w;
-            } else if (player.vy > 0 && player.y + player.height - player.vy <= obs.y) {
-                player.grounded = true;
-                player.vy = 0;
-                player.y = obs.y - player.height;
-            }
-        }
+  function drawObstacle(o) {
+    const top = groundY - o.h;
+    if (o.type === 'rock') {
+      ctx.fillStyle = '#5a4a6a';
+      ctx.beginPath();
+      ctx.moveTo(o.x, groundY);
+      ctx.lineTo(o.x + o.w * 0.5, top);
+      ctx.lineTo(o.x + o.w, groundY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.beginPath();
+      ctx.moveTo(o.x + o.w * 0.5, top);
+      ctx.lineTo(o.x + o.w * 0.75, groundY);
+      ctx.lineTo(o.x + o.w, groundY);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      // rampa
+      ctx.fillStyle = '#7a5a3a';
+      ctx.beginPath();
+      ctx.moveTo(o.x, groundY);
+      ctx.lineTo(o.x + o.w, top);
+      ctx.lineTo(o.x + o.w + 14, groundY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(244, 162, 97, 0.25)';
+      ctx.beginPath();
+      ctx.moveTo(o.x + o.w, top);
+      ctx.lineTo(o.x + o.w + 14, groundY);
+      ctx.lineTo(o.x + o.w, groundY);
+      ctx.closePath();
+      ctx.fill();
     }
+  }
 
-    // LESMAS
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        let e = enemies[i];
-        e.x += e.vx;
-        e.animTimer += 0.15;
-
-        if (e.x <= e.platMin || e.x + e.w >= e.platMax) {
-            e.vx *= -1;
-        }
-
-        if (
-            player.x < e.x + e.w &&
-            player.x + player.width > e.x &&
-            player.y < e.y + e.h &&
-            player.y + player.height > e.y
-        ) {
-            if (player.vy > 0 && player.y + player.height - player.vy <= e.y + 12) {
-                player.vy = -9;
-                e.hp -= 1;
-
-                if (e.hp === 1) {
-                    e.h = 16;
-                    e.y += 8;
-                } else if (e.hp <= 0) {
-                    spawnSmoke(e.x + e.w / 2, e.y + e.h / 2);
-                    coins.push({ x: e.x + 5, y: e.y - 10, w: 24, h: 24, collected: false });
-                    enemies.splice(i, 1);
-                    continue;
-                }
-            } else {
-                alert(i18n[currentLang].gameover);
-                generateLevel(currentLevel);
-                return;
-            }
-        }
-    }
-
-    // Partículas
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.size += 0.1;
-        p.alpha -= 0.04;
-        if (p.alpha <= 0) particles.splice(i, 1);
-    }
-
-    // Coleta Moedas
-    for (let coin of coins) {
-        if (!coin.collected &&
-            player.x < coin.x + coin.w &&
-            player.x + player.width > coin.x &&
-            player.y < coin.y + coin.h &&
-            player.y + player.height > coin.y) {
-            coin.collected = true;
-            totalCoins += 10;
-            updateHUDCounters();
-        }
-    }
-
-    // Câmera
-    cameraX = player.x - 200;
-    if (cameraX < 0) cameraX = 0;
-
-    // Queda
-    if (player.y > canvas.height) {
-        alert(i18n[currentLang].gameover);
-        generateLevel(currentLevel);
-    }
-
-    // Vitória (Só se derrotar o Boss)
-    if (flag && player.x > flag.x) {
-        if (boss && boss.hp > 0) {
-            player.x = flag.x - 10; // Bloqueia passar sem matar o Boss
-        } else {
-            saveProgress();
-            alert(i18n[currentLang].win);
-            if (currentLevel < 20) {
-                currentLevel++;
-                updateLevelHUD();
-                generateLevel(currentLevel);
-            } else {
-                showMainMenu();
-            }
-        }
-    }
-}
-
-function updateBossHPUI() {
-    if (!boss) return;
-    let pct = Math.max(0, (boss.hp / boss.maxHp) * 100);
-    document.getElementById('boss-hp-bar-inner').style.width = pct + '%';
-}
-
-/* --- RENDERIZADORES DE ITENS REALISTAS --- */
-function drawRealisticCoin(targetCtx, x, y, size) {
-    let radius = size / 2;
-    let cx = x + radius;
-    let cy = y + radius;
-
-    let gradOuter = targetCtx.createLinearGradient(x, y, x + size, y + size);
-    gradOuter.addColorStop(0, '#fef08a');
-    gradOuter.addColorStop(0.5, '#eab308');
-    gradOuter.addColorStop(1, '#854d0e');
-
-    targetCtx.fillStyle = gradOuter;
-    targetCtx.beginPath();
-    targetCtx.arc(cx, cy, radius, 0, Math.PI * 2);
-    targetCtx.fill();
-
-    let gradInner = targetCtx.createLinearGradient(x, y, x + size, y + size);
-    gradInner.addColorStop(0, '#facc15');
-    gradInner.addColorStop(1, '#ca8a04');
-
-    targetCtx.fillStyle = gradInner;
-    targetCtx.beginPath();
-    targetCtx.arc(cx, cy, radius * 0.75, 0, Math.PI * 2);
-    targetCtx.fill();
-
-    targetCtx.fillStyle = '#fef08a';
-    targetCtx.font = `bold ${Math.floor(size * 0.65)}px sans-serif`;
-    targetCtx.textAlign = 'center';
-    targetCtx.textBaseline = 'middle';
-    targetCtx.fillText('$', cx, cy);
-}
-
-function drawRealisticApple(targetCtx, x, y, size) {
-    let radius = size / 2;
-    let cx = x + radius;
-    let cy = y + radius;
-
-    let grad = targetCtx.createRadialGradient(cx - radius*0.3, cy - radius*0.3, radius*0.1, cx, cy, radius);
-    grad.addColorStop(0, '#fca5a5');
-    grad.addColorStop(0.4, '#ef4444');
-    grad.addColorStop(1, '#991b1b');
-
-    targetCtx.fillStyle = grad;
-    targetCtx.beginPath();
-    targetCtx.arc(cx - radius*0.22, cy, radius * 0.78, 0, Math.PI * 2);
-    targetCtx.arc(cx + radius*0.22, cy, radius * 0.78, 0, Math.PI * 2);
-    targetCtx.fill();
-
-    targetCtx.strokeStyle = '#78350f';
-    targetCtx.lineWidth = Math.max(2, size * 0.08);
-    targetCtx.beginPath();
-    targetCtx.moveTo(cx, cy - radius * 0.5);
-    targetCtx.quadraticCurveTo(cx + 4, cy - radius * 1.1, cx + 2, cy - radius * 1.2);
-    targetCtx.stroke();
-
-    targetCtx.fillStyle = '#22c55e';
-    targetCtx.beginPath();
-    targetCtx.ellipse(cx + 5, cy - radius * 0.9, radius * 0.35, radius * 0.18, Math.PI / 4, 0, Math.PI * 2);
-    targetCtx.fill();
-}
-
-/* --- RENDERIZAÇÃO DO JOGO --- */
-function render() {
-    let skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    skyGradient.addColorStop(0, '#0f172a');
-    skyGradient.addColorStop(0.5, '#1e293b');
-    skyGradient.addColorStop(1, '#334155');
-    ctx.fillStyle = skyGradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    for (let m of mountains) {
-        let mParallaxX = m.x - (cameraX * 0.25);
-        let gradM = ctx.createLinearGradient(mParallaxX, m.y, mParallaxX, m.y + m.h);
-        gradM.addColorStop(0, '#334155');
-        gradM.addColorStop(1, '#0f172a');
-
-        ctx.fillStyle = gradM;
-        ctx.beginPath();
-        ctx.moveTo(mParallaxX, m.y + m.h);
-        ctx.lineTo(mParallaxX + m.w / 2, m.y);
-        ctx.lineTo(mParallaxX + m.w, m.y + m.h);
-        ctx.fill();
-    }
+  function drawBike() {
+    const r = bike.wheelRadius;
 
     ctx.save();
-    ctx.translate(-cameraX, 0);
+    ctx.translate(bike.x, bike.y);
+    ctx.rotate(bike.angle);
 
-    // Rio Realista
-    let waterGrad = ctx.createLinearGradient(0, 580, 0, 675);
-    waterGrad.addColorStop(0, '#0284c7');
-    waterGrad.addColorStop(1, '#0369a1');
-    ctx.fillStyle = waterGrad;
-    ctx.fillRect(cameraX, 580, canvas.width, 100);
+    // sombra
+    ctx.save();
+    ctx.rotate(-bike.angle);
+    const shadowScale = Math.max(0.2, 1 - (groundY - bike.y) / 300);
+    ctx.fillStyle = `rgba(0,0,0,${0.25 * shadowScale})`;
+    ctx.beginPath();
+    ctx.ellipse(0, groundY - bike.y + 2, r * 1.8, r * 0.35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
-    // PLATAFORMAS REALISTAS
-    for (let p of platforms) {
-        if (p.type === 'grass') {
-            let dirtGrad = ctx.createLinearGradient(p.x, p.y + 18, p.x, p.y + p.h);
-            dirtGrad.addColorStop(0, '#78350f');
-            dirtGrad.addColorStop(0.3, '#451a03');
-            dirtGrad.addColorStop(1, '#1c100b');
-            ctx.fillStyle = dirtGrad;
-            ctx.fillRect(p.x, p.y + 18, p.w, p.h - 18);
+    // quadro
+    ctx.strokeStyle = '#ff5252';
+    ctx.lineWidth = Math.max(3, r * 0.22);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-r * 1.7, 0);      // roda traseira
+    ctx.lineTo(-r * 0.2, -r * 1.5); // selim
+    ctx.lineTo(r * 1.4, -r * 1.3);  // guidão
+    ctx.moveTo(-r * 0.2, -r * 1.5);
+    ctx.lineTo(r * 0.9, -r * 0.1);  // tubo central
+    ctx.moveTo(r * 0.9, -r * 0.1);
+    ctx.lineTo(r * 1.7, 0);         // roda dianteira
+    ctx.stroke();
 
-            let grassGrad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + 20);
-            grassGrad.addColorStop(0, '#4ade80');
-            grassGrad.addColorStop(0.6, '#16a34a');
-            grassGrad.addColorStop(1, '#15803d');
-            ctx.fillStyle = grassGrad;
-            ctx.fillRect(p.x, p.y, p.w, 18);
-        } else if (p.type === 'floating_wood') {
-            let woodGrad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
-            woodGrad.addColorStop(0, '#a16207');
-            woodGrad.addColorStop(1, '#451a03');
-            ctx.fillStyle = woodGrad;
-            ctx.fillRect(p.x, p.y, p.w, p.h);
-        }
-    }
+    // banco
+    ctx.fillStyle = '#222';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.25, -r * 1.6, r * 0.5, r * 0.18, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // MAÇÃS
-    for (let apple of apples) {
-        if (!apple.eaten) drawRealisticApple(ctx, apple.x, apple.y, apple.w);
-    }
+    // guidão
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = Math.max(2, r * 0.12);
+    ctx.beginPath();
+    ctx.moveTo(r * 1.4, -r * 1.3);
+    ctx.lineTo(r * 1.6, -r * 1.7);
+    ctx.stroke();
 
-    // OBSTÁCULOS
-    for (let obs of obstacles) {
-        if (obs.type === 'stone') {
-            ctx.fillStyle = '#64748b';
-            ctx.beginPath();
-            ctx.roundRect(obs.x, obs.y, obs.w, obs.h, 6);
-            ctx.fill();
-        } else {
-            ctx.fillStyle = '#78350f';
-            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-        }
-    }
+    // ciclista
+    ctx.fillStyle = '#4ecdc4';
+    ctx.beginPath();
+    ctx.arc(r * 0.15, -r * 2.0, r * 0.42, 0, Math.PI * 2); // cabeça
+    ctx.fill();
+    ctx.strokeStyle = '#4ecdc4';
+    ctx.lineWidth = Math.max(3, r * 0.28);
+    ctx.beginPath();
+    ctx.moveTo(r * 0.1, -r * 1.55);
+    ctx.lineTo(r * 0.6, -r * 1.1); // corpo
+    ctx.moveTo(r * 0.15, -r * 1.4);
+    ctx.lineTo(r * 1.2, -r * 1.35); // braço
+    ctx.stroke();
 
-    // LESMAS
-    for (let e of enemies) {
-        let bounce = Math.sin(e.animTimer * 5) * 2;
-        ctx.fillStyle = e.color;
-        ctx.beginPath();
-        ctx.roundRect(e.x, e.y + bounce, e.w, e.h - bounce, [10, 10, 0, 0]);
-        ctx.fill();
-    }
-
-    // DISPAROS DE MUSGO (BAZUCA)
-    for (let b of bullets) {
-        let mossGrad = ctx.createRadialGradient(b.x + 11, b.y + 11, 2, b.x + 11, b.y + 11, 11);
-        mossGrad.addColorStop(0, '#86efac');
-        mossGrad.addColorStop(0.5, '#22c55e');
-        mossGrad.addColorStop(1, '#14532d');
-        ctx.fillStyle = mossGrad;
-        ctx.beginPath();
-        ctx.arc(b.x + 11, b.y + 11, 11, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // BOSS ROBÔ COM CÂMARA DE VIDRO E LESMA VERMELHA
-    if (boss && boss.hp > 0) {
-        let bx = boss.x;
-        let by = boss.y;
-
-        // Corpo do Robô (Preto e Cinza Metálico)
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(bx + 15, by + 50, boss.w - 30, 50);
-
-        // Ombreiras & Detalhes Vermelhos
-        ctx.fillStyle = '#dc2626';
-        ctx.fillRect(bx + 5, by + 45, 20, 25);
-        ctx.fillRect(bx + boss.w - 25, by + 45, 20, 25);
-
-        // Pernas Mecânicas (Cinza Escuro)
-        ctx.fillStyle = '#475569';
-        ctx.fillRect(bx + 20, by + 100, 18, 30);
-        ctx.fillRect(bx + boss.w - 38, by + 100, 18, 30);
-
-        // Pés do Robô
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(bx + 12, by + 120, 28, 10);
-        ctx.fillRect(bx + boss.w - 40, by + 120, 28, 10);
-
-        // CABEÇA / CÚPULA DE VIDRO
-        ctx.fillStyle = 'rgba(186, 230, 253, 0.35)';
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(bx + boss.w / 2, by + 30, 28, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        // LESMA VERMELHA BEM FODA DENTRO DO VIDRO (PILOTO)
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.ellipse(bx + boss.w / 2, by + 32, 16, 12, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Olhos Malvados da Lesma
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(bx + boss.w / 2 - 8, by + 26, 5, 5);
-        ctx.fillRect(bx + boss.w / 2 + 3, by + 26, 5, 5);
-        ctx.fillStyle = '#000';
-        ctx.fillRect(bx + boss.w / 2 - 6, by + 28, 2, 2);
-        ctx.fillRect(bx + boss.w / 2 + 5, by + 28, 2, 2);
-    }
-
-    // Projéteis do Boss (Brocas)
-    for (let bp of bossProjectiles) {
-        ctx.fillStyle = '#f97316';
-        ctx.fillRect(bp.x, bp.y, bp.w, bp.h);
-    }
-
-    // MOEDAS
-    for (let coin of coins) {
-        if (!coin.collected) drawRealisticCoin(ctx, coin.x, coin.y, coin.w);
-    }
-
-    // PARTÍCULAS
-    for (let p of particles) {
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, p.alpha);
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-        ctx.restore();
-    }
-
-    // BANDEIRA
-    if (flag) {
-        ctx.fillStyle = '#cbd5e1';
-        ctx.fillRect(flag.x, flag.y, 6, flag.h);
-        ctx.fillStyle = '#22c55e';
-        ctx.beginPath();
-        ctx.moveTo(flag.x + 6, flag.y);
-        ctx.lineTo(flag.x + 50, flag.y + 20);
-        ctx.lineTo(flag.x + 6, flag.y + 40);
-        ctx.fill();
-    }
-
-    // DESENHAR PERSONAGEM
-    let px = player.x;
-    let py = player.y;
-    let legAnim = Math.sin(player.animFrame * 2) * 6;
-
-    // Cabelo Marrom Castanho
-    ctx.fillStyle = '#512b11';
-    ctx.fillRect(px + 4, py, 30, 16);
-
-    // Rosto
-    ctx.fillStyle = '#ffdbac';
-    ctx.fillRect(px + 6, py + 12, 26, 12);
-
-    // Olhos
-    ctx.fillStyle = '#0f172a';
-    let eyeX = player.facing === 'right' ? px + 22 : px + 8;
-    ctx.fillRect(eyeX, py + 16, 4, 4);
-
-    // Camisa Vermelha
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(px + 4, py + 24, 30, 20);
-
-    // BAZUCA LARANJA COM VERDE NAS MÃOS
-    if (player.hasBazookaEquipped) {
-        let bazX = player.facing === 'right' ? px + 18 : px - 22;
-        let bazY = py + 22;
-
-        // Corpo da Bazuca (Laranja)
-        ctx.fillStyle = '#f97316';
-        ctx.fillRect(bazX, bazY, 32, 12);
-
-        // Detalhes em Verde
-        ctx.fillStyle = '#22c55e';
-        ctx.fillRect(bazX + 8, bazY - 2, 8, 16);
-        ctx.fillRect(bazX + 22, bazY, 6, 12);
-
-        // Bocal da Bazuca
-        ctx.fillStyle = '#ea580c';
-        ctx.fillRect(player.facing === 'right' ? bazX + 30 : bazX - 4, bazY - 2, 6, 16);
-    }
-
-    // Calça e Sapatos
-    ctx.fillStyle = '#2563eb';
-    ctx.fillRect(px + 6 - legAnim / 2, py + 44, 10, 10);
-    ctx.fillRect(px + 22 + legAnim / 2, py + 44, 10, 10);
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(px + 4 - legAnim / 2, py + 53, 12, 3);
-    ctx.fillRect(px + 22 + legAnim / 2, py + 53, 12, 3);
+    // rodas
+    ctx.fillStyle = '#111';
+    [-r * 1.7, r * 1.7].forEach(wx => {
+      ctx.beginPath();
+      ctx.arc(wx, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = Math.max(2, r * 0.15);
+      ctx.beginPath();
+      ctx.arc(wx, 0, r * 0.55, 0, Math.PI * 2);
+      ctx.stroke();
+    });
 
     ctx.restore();
-}
+  }
 
-function renderHUDIcons() {
-    const coinCanvas = document.getElementById('coin-icon-hud');
-    const coinCtx = coinCanvas.getContext('2d');
-    coinCtx.clearRect(0, 0, 24, 24);
-    drawRealisticCoin(coinCtx, 0, 0, 24);
+  function drawGameOver() {
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(0, 0, W, H);
 
-    const appleCanvas = document.getElementById('apple-icon-hud');
-    const appleCtx = appleCanvas.getContext('2d');
-    appleCtx.clearRect(0, 0, 24, 24);
-    drawRealisticApple(appleCtx, 0, 0, 24);
-}
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.min(W * 0.09, 56)}px system-ui, sans-serif`;
+    ctx.fillText('Bateu!', W / 2, H * 0.42);
 
-function gameLoop() {
-    update();
-    render();
-    requestAnimationFrame(gameLoop);
-}
+    ctx.font = `600 ${Math.min(W * 0.05, 28)}px system-ui, sans-serif`;
+    ctx.fillStyle = '#f4a261';
+    ctx.fillText('Pontos: ' + Math.floor(score), W / 2, H * 0.52);
 
-/* --- PAUSE E MENUS --- */
-function togglePause() {
-    if (!isPlaying) return;
-    isPaused = !isPaused;
-    document.getElementById('pause-menu').style.display = isPaused ? 'flex' : 'none';
-}
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = `500 ${Math.min(W * 0.04, 20)}px system-ui, sans-serif`;
+    ctx.fillText('Toque para reiniciar', W / 2, H * 0.62);
+  }
 
-function resetCurrentMatch() {
-    isPaused = false;
-    document.getElementById('pause-menu').style.display = 'none';
-    generateLevel(currentLevel);
-}
+  // ---------- Loop ----------
+  let last = performance.now();
+  function loop(now) {
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt > 0.05) dt = 0.05; // clamp
 
-function quitToMenu() {
-    isPaused = false;
-    document.getElementById('pause-menu').style.display = 'none';
-    showMainMenu();
-}
+    update(dt);
 
-function updateLevelHUD() {
-    document.getElementById('level-text').innerText = `${i18n[currentLang].level} ${currentLevel}`;
-}
+    drawSky();
+    drawGround();
+    for (const o of obstacles) drawObstacle(o);
+    drawBike();
 
-function startGame() {
-    document.getElementById('main-menu').style.display = 'none';
-    isPlaying = true;
-    isPaused = false;
-    generateLevel(currentLevel);
-}
+    if (gameOver) drawGameOver();
 
-function showLevels() {
-    document.getElementById('main-menu').style.display = 'none';
-    const grid = document.getElementById('levels-grid');
-    grid.innerHTML = '';
+    requestAnimationFrame(loop);
+  }
 
-    for (let i = 1; i <= 20; i++) {
-        const btn = document.createElement('button');
-        btn.className = `level-btn ${i <= unlockedLevel ? 'unlocked' : ''}`;
-        btn.innerText = i;
-        if (i <= unlockedLevel) {
-            btn.onclick = () => {
-                currentLevel = i;
-                updateLevelHUD();
-                document.getElementById('levels-menu').style.display = 'none';
-                startGame();
-            };
-        }
-        grid.appendChild(btn);
-    }
-
-    document.getElementById('levels-menu').style.display = 'flex';
-}
-
-function hideLevels() {
-    document.getElementById('levels-menu').style.display = 'none';
-    document.getElementById('main-menu').style.display = 'flex';
-}
-
-function showMainMenu() {
-    isPlaying = false;
-    isPaused = false;
-    document.getElementById('main-menu').style.display = 'flex';
-}
-
-/* --- EVENTOS DE CONTROLE --- */
-window.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
-    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
-    if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') keys.up = true;
-    if (e.key === 'f' || e.key === 'F' || e.key === 'Shift') useBazooka();
-    if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') togglePause();
-});
-
-window.addEventListener('keyup', e => {
-    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
-    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
-    if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') keys.up = false;
-});
-
-function bindTouch(id, actionFn) {
-    const el = document.getElementById(id);
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); actionFn(true); });
-    el.addEventListener('touchend', (e) => { e.preventDefault(); actionFn(false); });
-    el.addEventListener('mousedown', () => { actionFn(true); });
-    el.addEventListener('mouseup', () => { actionFn(false); });
-}
-
-bindTouch('btn-left', (val) => keys.left = val);
-bindTouch('btn-right', (val) => keys.right = val);
-bindTouch('btn-jump', (val) => keys.up = val);
-
-// BOTÃO DA BAZUCA (SÓ ATIRA AO CLICAR)
-document.getElementById('btn-bazooka').addEventListener('click', (e) => {
-    e.preventDefault();
-    useBazooka();
-});
-document.getElementById('btn-bazooka').addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    useBazooka();
-});
-
-renderHUDIcons();
-updateHUDCounters();
-setLanguage('pt');
-requestAnimationFrame(gameLoop);
-
+  reset();
+  requestAnimationFrame(loop);
+})();
 </script>
 </body>
 </html>
