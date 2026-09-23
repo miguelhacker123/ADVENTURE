@@ -2,1091 +2,961 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Bike Runner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MangaReader — Naruto Clássico</title>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+JP:wght@400;700;900&family=Anton&display=swap" rel="stylesheet">
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { width:100%; height:100%; overflow:hidden; background:#05030a; font-family: system-ui, sans-serif; user-select:none; }
-  #game { display:block; width:100%; height:100%; touch-action:none; }
+  /* ═══════════════════════════════════════════
+     RESET & BASE
+  ═══════════════════════════════════════════ */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  #hud {
-    position:fixed; top:12px; left:12px; color:#fff;
-    font-size:16px; font-weight:700; text-shadow:0 2px 6px rgba(0,0,0,.9);
-    pointer-events:none; line-height:1.45;
-  }
-  #hud .best { font-size:11px; opacity:.8; font-weight:500; }
-  #hud .spd  { font-size:11px; color:#4ecdc4; font-weight:700; }
-
-  #combo {
-    position:fixed; top:12px; right:12px; color:#ffd166;
-    font-size:20px; font-weight:800; text-shadow:0 2px 8px rgba(0,0,0,.9);
-    pointer-events:none; opacity:0; transition:opacity .2s; text-align:right;
-  }
-  #combo.on { opacity:1; }
-
-  .btn {
-    position:fixed;
-    width:78px; height:78px;
-    border-radius:16px;
-    border:3px solid rgba(255,255,255,0.35);
-    background:rgba(255,255,255,0.08);
-    display:flex; align-items:center; justify-content:center;
-    backdrop-filter:blur(8px);
-    -webkit-backdrop-filter:blur(8px);
-    touch-action:none; cursor:pointer;
-    transition:transform .08s, background .12s, border-color .12s, box-shadow .12s;
-    box-shadow:0 6px 18px rgba(0,0,0,0.45);
-    padding:0; z-index:10;
-  }
-  .btn svg { width:62%; height:62%; display:block; }
-  .btn:active, .btn.pressed { transform:scale(0.93); background:rgba(255,255,255,0.3); border-color:#fff; }
-
-  #btnUp    { left:105px; bottom:108px; border-color:rgba(120,200,255,0.8); background:rgba(120,200,255,0.14); }
-  #btnDown  { left:105px; bottom:22px;  border-color:rgba(120,200,255,0.8); background:rgba(120,200,255,0.14); }
-  #btnLeft  { left:22px;  bottom:65px;  border-color:rgba(120,200,255,0.8); background:rgba(120,200,255,0.14); }
-  #btnRight { left:188px; bottom:65px;  border-color:rgba(120,200,255,0.8); background:rgba(120,200,255,0.14); }
-  #btnUp.pressed, #btnDown.pressed, #btnLeft.pressed, #btnRight.pressed {
-    background:rgba(120,200,255,0.55); border-color:#78c8ff;
-    box-shadow:0 0 20px rgba(120,200,255,0.7);
+  :root {
+    --preto: #0a0a0a;
+    --branco: #ffffff;
+    --cinza-1: #1a1a1a;
+    --cinza-2: #2a2a2a;
+    --cinza-3: #666;
+    --cinza-4: #b0b0b0;
+    --cinza-5: #e5e5e5;
+    --tinta: #000;
   }
 
-  #btnGrau { right:22px; bottom:22px; border-color:rgba(255,82,82,0.75); background:rgba(255,82,82,0.15); }
-  #btnGrau.pressed { background:rgba(255,82,82,0.55); border-color:#ff5252; box-shadow:0 0 20px rgba(255,82,82,0.6); }
-  #btnJump { right:110px; bottom:22px; border-color:rgba(78,205,196,0.75); background:rgba(78,205,196,0.15); }
-  #btnJump.pressed { background:rgba(78,205,196,0.55); border-color:#4ecdc4; box-shadow:0 0 20px rgba(78,205,196,0.6); }
-  #btnFlip { right:66px; bottom:110px; border-color:rgba(255,209,102,0.85); background:rgba(255,209,102,0.15); }
-  #btnFlip.pressed { background:rgba(255,209,102,0.6); border-color:#ffd166; box-shadow:0 0 22px rgba(255,209,102,0.8); }
-
-  @media (max-height:540px) {
-    .btn { width:64px; height:64px; border-radius:13px; }
-    #btnUp    { left:84px;  bottom:88px; }
-    #btnDown  { left:84px;  bottom:16px; }
-    #btnLeft  { left:16px;  bottom:52px; }
-    #btnRight { left:152px; bottom:52px; }
-    #btnGrau  { right:16px; bottom:16px; }
-    #btnJump  { right:88px; bottom:16px; }
-    #btnFlip  { right:52px; bottom:88px; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--preto);
+    color: var(--branco);
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 90%, rgba(255,255,255,0.03) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
-  #overlay {
-    position:fixed; inset:0; display:none;
-    align-items:center; justify-content:center; flex-direction:column;
-    background:rgba(0,0,0,0.75); z-index:20; color:#fff; text-align:center; padding:20px;
+  /* ═══════════════════════════════════════════
+     HEADER
+  ═══════════════════════════════════════════ */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10,10,10,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 3px solid var(--branco);
+    padding: 14px 24px;
   }
-  #overlay.on { display:flex; }
-  #overlay h1 { font-size:44px; margin-bottom:8px; color:#ff5252; }
-  #overlay .pts { font-size:26px; color:#f4a261; font-weight:700; margin-bottom:4px; }
-  #overlay .best { font-size:15px; color:#aaa; margin-bottom:24px; }
-  #overlay button {
-    padding:14px 32px; font-size:17px; font-weight:800;
-    border-radius:14px; border:3px solid #4ecdc4;
-    background:rgba(78,205,196,0.2); color:#fff; cursor:pointer;
-    font-family:inherit;
+
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
   }
-  #overlay button:active { background:rgba(78,205,196,0.5); }
+
+  .logo {
+    font-family: 'Bangers', cursive;
+    font-size: 34px;
+    letter-spacing: 3px;
+    color: var(--branco);
+    text-shadow: 3px 3px 0 #000, 5px 5px 0 rgba(255,255,255,0.15);
+    cursor: pointer;
+    transform: skew(-4deg);
+    transition: transform .2s;
+  }
+  .logo:hover { transform: skew(-4deg) scale(1.05); }
+  .logo span { color: #888; }
+
+  nav {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .nav-btn {
+    background: transparent;
+    border: 2px solid transparent;
+    color: var(--cinza-4);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all .2s;
+    border-radius: 2px;
+  }
+  .nav-btn:hover, .nav-btn.active {
+    color: var(--branco);
+    border-color: var(--branco);
+    background: rgba(255,255,255,0.08);
+  }
+
+  /* BOTÃO DE IDIOMA */
+  .lang-toggle {
+    display: flex;
+    border: 2px solid var(--branco);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-left: 8px;
+  }
+  .lang-btn {
+    background: transparent;
+    border: none;
+    color: var(--branco);
+    font-family: 'Anton', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .lang-btn.active {
+    background: var(--branco);
+    color: var(--preto);
+  }
+
+  /* ═══════════════════════════════════════════
+     VIEWS
+  ═══════════════════════════════════════════ */
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn .4s ease; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ═══════════════════════════════════════════
+     HERO / HOME
+  ═══════════════════════════════════════════ */
+  .hero {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 60px 24px 40px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items: center;
+  }
+
+  .hero-img-wrap {
+    position: relative;
+    aspect-ratio: 3/4;
+    overflow: hidden;
+    border: 4px solid var(--branco);
+    box-shadow: 12px 12px 0 rgba(255,255,255,0.15);
+    transform: rotate(-2deg);
+    transition: transform .4s;
+  }
+  .hero-img-wrap:hover { transform: rotate(-2deg) scale(1.02); }
+  .hero-img-wrap::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.9));
+  }
+  .hero-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: grayscale(100%) contrast(1.15);
+  }
+
+  .hero-badge {
+    position: absolute;
+    top: 16px; left: 16px;
+    background: var(--branco);
+    color: var(--preto);
+    font-family: 'Anton', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 6px 12px;
+    z-index: 2;
+    transform: skew(-6deg);
+  }
+
+  .hero-content .tag {
+    display: inline-block;
+    background: var(--branco);
+    color: var(--preto);
+    font-family: 'Anton', sans-serif;
+    font-size: 12px;
+    letter-spacing: 3px;
+    padding: 5px 12px;
+    margin-bottom: 18px;
+    transform: skew(-6deg);
+  }
+
+  .hero-content h1 {
+    font-family: 'Bangers', cursive;
+    font-size: clamp(48px, 7vw, 92px);
+    line-height: 0.95;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+    text-shadow: 4px 4px 0 #333, 8px 8px 0 rgba(255,255,255,0.08);
+  }
+
+  .hero-content h2 {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(20px, 2.5vw, 30px);
+    color: var(--cinza-4);
+    letter-spacing: 6px;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+  }
+
+  .hero-content p {
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--cinza-4);
+    margin-bottom: 30px;
+    max-width: 520px;
+  }
+
+  .btn-primary {
+    background: var(--branco);
+    color: var(--preto);
+    border: 3px solid var(--branco);
+    font-family: 'Anton', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    padding: 14px 32px;
+    cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+    transform: skew(-4deg);
+    box-shadow: 6px 6px 0 rgba(255,255,255,0.2);
+  }
+  .btn-primary:hover {
+    background: var(--preto);
+    color: var(--branco);
+    transform: skew(-4deg) translate(-2px,-2px);
+    box-shadow: 8px 8px 0 rgba(255,255,255,0.3);
+  }
+
+  /* ═══════════════════════════════════════════
+     SEÇÕES
+  ═══════════════════════════════════════════ */
+  .section {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 50px 24px;
+  }
+
+  .section-title {
+    font-family: 'Bangers', cursive;
+    font-size: 42px;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .section-title::before {
+    content: '';
+    width: 8px;
+    height: 36px;
+    background: var(--branco);
+    transform: skew(-15deg);
+  }
+  .section-sub {
+    color: var(--cinza-3);
+    font-size: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 30px;
+    padding-left: 24px;
+  }
+
+  /* TEMPORADAS */
+  .seasons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+  }
+
+  .season-card {
+    background: var(--cinza-1);
+    border: 2px solid var(--cinza-2);
+    padding: 24px 20px;
+    cursor: pointer;
+    transition: all .25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .season-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 3px;
+    background: var(--branco);
+    transition: left .4s;
+  }
+  .season-card:hover::before { left: 0; }
+  .season-card:hover {
+    border-color: var(--branco);
+    transform: translateY(-4px);
+  }
+  .season-card.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .season-card.locked:hover { transform: none; border-color: var(--cinza-2); }
+
+  .season-num {
+    font-family: 'Anton', sans-serif;
+    font-size: 48px;
+    color: var(--branco);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .season-card.locked .season-num { color: var(--cinza-3); }
+  .season-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cinza-3);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .season-name {
+    font-family: 'Bangers', cursive;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--branco);
+  }
+  .season-status {
+    margin-top: 12px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--cinza-3);
+  }
+  .season-card.active .season-status { color: var(--branco); }
+
+  /* CAPÍTULOS */
+  .chapters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 30px;
+  }
+
+  .back-btn {
+    background: transparent;
+    border: 2px solid var(--cinza-3);
+    color: var(--cinza-4);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 8px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all .2s;
+  }
+  .back-btn:hover { border-color: var(--branco); color: var(--branco); }
+
+  .chapters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .chapter-card {
+    background: var(--branco);
+    color: var(--preto);
+    cursor: pointer;
+    transition: all .25s;
+    display: flex;
+    overflow: hidden;
+    border: 3px solid var(--branco);
+    position: relative;
+  }
+  .chapter-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 8px 8px 0 rgba(255,255,255,0.25);
+  }
+
+  .chapter-thumb {
+    width: 90px;
+    flex-shrink: 0;
+    background: var(--cinza-1);
+    overflow: hidden;
+    position: relative;
+  }
+  .chapter-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: grayscale(100%) contrast(1.2);
+  }
+
+  .chapter-info {
+    padding: 14px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .chapter-num {
+    font-family: 'Anton', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--cinza-3);
+    margin-bottom: 4px;
+  }
+  .chapter-title {
+    font-family: 'Bangers', cursive;
+    font-size: 20px;
+    letter-spacing: 0.5px;
+    line-height: 1.1;
+    color: var(--preto);
+    margin-bottom: 6px;
+  }
+  .chapter-pages {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--cinza-3);
+    text-transform: uppercase;
+  }
+
+  /* ═══════════════════════════════════════════
+     LEITOR
+  ═══════════════════════════════════════════ */
+  .reader-top {
+    position: sticky;
+    top: 78px;
+    z-index: 50;
+    background: rgba(10,10,10,0.97);
+    border-bottom: 2px solid var(--cinza-2);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .reader-title {
+    font-family: 'Bangers', cursive;
+    font-size: 22px;
+    letter-spacing: 2px;
+  }
+  .reader-title small {
+    display: block;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--cinza-3);
+    font-weight: 400;
+  }
+
+  .reader-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .ctrl-btn {
+    background: transparent;
+    border: 2px solid var(--cinza-3);
+    color: var(--branco);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 8px 14px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all .2s;
+  }
+  .ctrl-btn:hover { border-color: var(--branco); background: rgba(255,255,255,0.1); }
+  .ctrl-btn.active { background: var(--branco); color: var(--preto); border-color: var(--branco); }
+  .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .page-indicator {
+    font-family: 'Anton', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    padding: 0 12px;
+    color: var(--cinza-4);
+  }
+
+  .reader-body {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 30px 20px 100px;
+  }
+
+  .manga-page {
+    background: var(--branco);
+    margin-bottom: 20px;
+    border: 3px solid var(--branco);
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    animation: fadeIn .35s ease;
+  }
+  .manga-page img {
+    width: 100%;
+    display: block;
+    filter: grayscale(100%) contrast(1.1);
+  }
+
+  .reader-bottom {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 30px;
+    flex-wrap: wrap;
+  }
+  .reader-bottom .btn-primary { flex: 1; min-width: 140px; text-align: center; }
+
+  /* ═══════════════════════════════════════════
+     FOOTER
+  ═══════════════════════════════════════════ */
+  footer {
+    border-top: 3px solid var(--branco);
+    padding: 30px 24px;
+    text-align: center;
+    color: var(--cinza-3);
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin-top: 60px;
+  }
+  footer strong { color: var(--branco); font-family: 'Bangers', cursive; letter-spacing: 2px; font-size: 16px; }
+
+  /* ═══════════════════════════════════════════
+     RESPONSIVO
+  ═══════════════════════════════════════════ */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; gap: 30px; padding: 30px 20px; }
+    .hero-img-wrap { max-width: 340px; margin: 0 auto; transform: rotate(-2deg); }
+    .hero-content { text-align: center; }
+    .hero-content p { margin-left: auto; margin-right: auto; }
+    .section-title { font-size: 30px; }
+    .logo { font-size: 24px; }
+    .nav-btn { padding: 6px 10px; font-size: 11px; }
+    .reader-top { top: 70px; padding: 10px 16px; }
+  }
+  @media (max-width: 500px) {
+    .chapters-grid { grid-template-columns: 1fr; }
+    .seasons-grid { grid-template-columns: repeat(2, 1fr); }
+    .lang-toggle { margin-left: 0; }
+  }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<div id="hud">
-  <div>Pontos: <span id="score">0</span></div>
-  <div class="best">Recorde: <span id="best">0</span></div>
-  <div class="spd">Vel: <span id="spd">0</span> km/h</div>
-</div>
-<div id="combo"></div>
 
-<button class="btn" id="btnUp" aria-label="Acelerar">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 12 L84 54 H66 V88 H34 V54 H16 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M50 26 L70 50 H60 V78 H40 V50 H30 Z" fill="rgba(255,255,255,0.35)"/>
-  </svg>
-</button>
-<button class="btn" id="btnDown" aria-label="Frear">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 88 L16 46 H34 V12 H66 V46 H84 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M50 74 L30 50 H40 V22 H60 V50 H70 Z" fill="rgba(255,255,255,0.35)"/>
-  </svg>
-</button>
-<button class="btn" id="btnLeft" aria-label="Esquerda">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 50 L54 16 V34 H88 V66 H54 V84 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M26 50 L50 30 V40 H78 V60 H50 V70 Z" fill="rgba(255,255,255,0.35)"/>
-  </svg>
-</button>
-<button class="btn" id="btnRight" aria-label="Direita">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M88 50 L46 16 V34 H12 V66 H46 V84 Z" fill="#78c8ff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M74 50 L50 30 V40 H22 V60 H50 V70 Z" fill="rgba(255,255,255,0.35)"/>
-  </svg>
-</button>
+<!-- ═══════════ HEADER ═══════════ -->
+<header>
+  <div class="header-inner">
+    <div class="logo" onclick="goHome()">MANGA<span>READER</span></div>
+    <nav>
+      <button class="nav-btn active" onclick="goHome()" data-i18n="nav_home">Início</button>
+      <button class="nav-btn" onclick="goSeasons()" data-i18n="nav_seasons">Temporadas</button>
+      <button class="nav-btn" onclick="goAbout()" data-i18n="nav_about">Sobre</button>
+      <div class="lang-toggle">
+        <button class="lang-btn active" id="lang-pt" onclick="setLang('pt')">PT</button>
+        <button class="lang-btn" id="lang-en" onclick="setLang('en')">EN</button>
+      </div>
+    </nav>
+  </div>
+</header>
 
-<button class="btn" id="btnGrau" aria-label="Grau">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <line x1="6" y1="86" x2="94" y2="86" stroke="rgba(255,255,255,0.5)" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="26" cy="72" r="14" fill="none" stroke="#ff5252" stroke-width="5"/>
-    <circle cx="26" cy="72" r="3" fill="#ff5252"/>
-    <circle cx="72" cy="30" r="12" fill="none" stroke="#ff5252" stroke-width="5"/>
-    <circle cx="72" cy="30" r="3" fill="#ff5252"/>
-    <path d="M26 72 L44 58 L60 44 L72 30" stroke="#ff5252" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    <line x1="40" y1="62" x2="50" y2="54" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-    <line x1="60" y1="44" x2="68" y2="38" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
-    <circle cx="52" cy="42" r="7" fill="#4ecdc4" stroke="#fff" stroke-width="3"/>
-    <path d="M48 58 L54 48 L64 42" stroke="#4ecdc4" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-</button>
-<button class="btn" id="btnJump" aria-label="Pular">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M50 14 L82 52 H66 V86 H34 V52 H18 Z" fill="#4ecdc4" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
-    <path d="M50 26 L70 50 H60 V78 H40 V50 H30 Z" fill="rgba(255,255,255,0.35)"/>
-  </svg>
-</button>
-<button class="btn" id="btnFlip" aria-label="Mortal">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M72 28 A30 30 0 1 1 28 28" stroke="#ffd166" stroke-width="7" stroke-linecap="round" fill="none"/>
-    <path d="M28 28 L22 40 L36 38 Z" fill="#ffd166" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/>
-    <circle cx="50" cy="52" r="7" fill="none" stroke="#fff" stroke-width="3"/>
-    <circle cx="50" cy="52" r="1.8" fill="#fff"/>
-    <line x1="50" y1="52" x2="60" y2="44" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-    <line x1="50" y1="52" x2="42" y2="44" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-  </svg>
-</button>
+<!-- ═══════════ VIEW: HOME ═══════════ -->
+<section class="view active" id="view-home">
+  <div class="hero">
+    <div class="hero-img-wrap">
+      <div class="hero-badge" id="hero-badge">VOL. 1</div>
+      <img class="hero-img" src="https://placehold.co/600x800/1a1a1a/ffffff?text=NARUTO%0A%0A%5B CAPA %5D&font=roboto" alt="Naruto">
+    </div>
+    <div class="hero-content">
+      <span class="tag" data-i18n="hero_tag">MANGÁ CLÁSSICO</span>
+      <h1>NARUTO</h1>
+      <h2 data-i18n="hero_sub">Parte 1 · Clássico</h2>
+      <p data-i18n="hero_synopsis">
+        Naruto Uzumaki é um jovem ninja da Vila da Folha que carrega dentro de si a Raposa de Nove Caudas. Rejeitado por todos, ele sonha em se tornar Hokage e conquistar o reconhecimento de sua vila. Acompanhe sua jornada do primeiro dia na Academia Ninja até se tornar um dos ninjas mais poderosos de todos os tempos.
+      </p>
+      <button class="btn-primary" onclick="goChapters()" data-i18n="btn_start">Começar a Ler</button>
+    </div>
+  </div>
 
-<div id="overlay">
-  <h1>BATEU!</h1>
-  <div class="pts">Pontos: <span id="finalScore">0</span></div>
-  <div class="best">Recorde: <span id="finalBest">0</span></div>
-  <button id="restartBtn">JOGAR DE NOVO</button>
-</div>
+  <div class="section">
+    <h2 class="section-title" data-i18n="title_seasons">Temporadas</h2>
+    <p class="section-sub" data-i18n="sub_seasons">Escolha uma temporada para explorar</p>
+    <div class="seasons-grid" id="seasons-grid"></div>
+  </div>
+</section>
+
+<!-- ═══════════ VIEW: CAPÍTULOS ═══════════ -->
+<section class="view" id="view-chapters">
+  <div class="section">
+    <div class="chapters-header">
+      <div>
+        <button class="back-btn" onclick="goHome()">← <span data-i18n="btn_back">Voltar</span></button>
+        <h2 class="section-title" style="margin-top:20px" id="chapters-title">Temporada 1</h2>
+        <p class="section-sub" id="chapters-sub">Naruto Clássico · Parte 1</p>
+      </div>
+    </div>
+    <div class="chapters-grid" id="chapters-grid"></div>
+  </div>
+</section>
+
+<!-- ═══════════ VIEW: LEITOR ═══════════ -->
+<section class="view" id="view-reader">
+  <div class="reader-top">
+    <div class="reader-title">
+      <span id="reader-chapter-title">Capítulo 1</span>
+      <small id="reader-chapter-sub">Naruto Clássico</small>
+    </div>
+    <div class="reader-controls">
+      <button class="ctrl-btn" id="btn-single" onclick="setMode('single')" data-i18n="mode_single">1 Página</button>
+      <button class="ctrl-btn" id="btn-double" onclick="setMode('double')" data-i18n="mode_double">2 Páginas</button>
+      <button class="ctrl-btn" onclick="prevPage()" id="btn-prev">◀ <span data-i18n="btn_prev">Ant</span></button>
+      <span class="page-indicator" id="page-indicator">1 / 10</span>
+      <button class="ctrl-btn" onclick="nextPage()" id="btn-next"><span data-i18n="btn_next">Próx</span> ▶</button>
+      <button class="ctrl-btn" onclick="goChapters()" data-i18n="btn_list">≡ Lista</button>
+    </div>
+  </div>
+
+  <div class="reader-body" id="reader-body"></div>
+
+  <div class="reader-body" style="padding-top:0">
+    <div class="reader-bottom">
+      <button class="btn-primary" onclick="prevChapter()" id="btn-prev-chap">◀ <span data-i18n="btn_prev_chap">Capítulo Anterior</span></button>
+      <button class="btn-primary" onclick="nextChapter()" id="btn-next-chap"><span data-i18n="btn_next_chap">Próximo Capítulo</span> ▶</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ VIEW: SOBRE ═══════════ -->
+<section class="view" id="view-about">
+  <div class="section">
+    <h2 class="section-title" data-i18n="about_title">Sobre</h2>
+    <p class="section-sub" data-i18n="about_sub">Informações do mangá</p>
+    <div style="max-width:700px; line-height:1.9; color:var(--cinza-4); font-size:15px;">
+      <p style="margin-bottom:20px" data-i18n="about_p1">
+        <strong style="color:#fff">Naruto</strong> é um mangá japonês escrito e ilustrado por Masashi Kishimoto. Foi serializado na revista Weekly Shōnen Jump de 1999 a 2014, com 72 volumes tankōbon.
+      </p>
+      <p style="margin-bottom:20px" data-i18n="about_p2">
+        A história acompanha Naruto Uzumaki, um jovem ninja que busca reconhecimento e sonha em se tornar Hokage, o líder de sua vila. A série é dividida em duas partes: a Parte 1 (Clássico) e a Parte 2 (Shippuden).
+      </p>
+      <p data-i18n="about_p3">
+        Este é um projeto de fã para fins educacionais. Todos os direitos pertencem a Masashi Kishimoto, Shueisha e Viz Media.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <strong>MANGA READER</strong><br><br>
+  <span data-i18n="footer_text">Projeto de fã · Naruto © Masashi Kishimoto</span>
+</footer>
 
 <script>
-(() => {
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d');
-  const scoreEl = document.getElementById('score');
-  const bestEl  = document.getElementById('best');
-  const spdEl   = document.getElementById('spd');
-  const comboEl = document.getElementById('combo');
-  const overlay = document.getElementById('overlay');
-  const finalScore = document.getElementById('finalScore');
-  const finalBest  = document.getElementById('finalBest');
-  const restartBtn = document.getElementById('restartBtn');
-
-  let W=0, H=0, DPR=1;
-  let horizonY = 0;      // linha do horizonte em px
-  let roadBottomW = 0;   // largura da estrada na base (px)
-
-  // ---- Pseudo-3D: projeção "out run" ----
-  // Cada objeto tem um z (metros à frente). A bike está em z=0 (na tela,
-  // sempre na base). z cresce pra frente (mais longe). z NUNCA é negativo
-  // — se ficar negativo, o objeto já passou e não é desenhado.
-  //
-  // A tela recebe:
-  //   profundidade normalizada t = z / Z_FAR     (0 = bike, 1 = horizonte)
-  //   escala = 1 - t * PERSPECTIVA  (perto = 1, longe = PERSPECTIVA_MIN)
-  //   y = base + (horizonY - base) * t   (interpola da base até o horizonte)
-  //   x = centro + (x_mundo - bike_x) * escala * MEIA_ESTRADA
-  //
-  // É literalmente interpolação linear. Impossível de bugar.
-
-  const Z_FAR = 80;               // distância em metros que mapeia pro horizonte
-  const PERSPECTIVA_MIN = 0.08;   // escala no horizonte (0 = tudo some, 1 = sem perspectiva)
-  const MEIA_ESTRADA = 4.0;       // x do mundo vai de -4 a +4 (largura da pista)
-  const LARGURA_PISTA_BASE = 0.86; // fração da largura da tela ocupada pela pista na base
-
-  let baseY = 0;                  // y onde fica a bike (parte de baixo da tela)
-  let trackHalfPx = 0;            // meia largura da pista na base em px
-
-  function recalcDims() {
-    baseY = H * 0.86;
-    horizonY = H * 0.42;
-    trackHalfPx = (W * LARGURA_PISTA_BASE) / 2;
+/* ═══════════════════════════════════════════════
+   DADOS — MANGA NARUTO
+   (estrutura pronta pra adicionar novas temporadas)
+═══════════════════════════════════════════════ */
+const MANGA_DATA = {
+  naruto: {
+    title: { pt: "Naruto Clássico", en: "Naruto Classic" },
+    subtitle: { pt: "Parte 1 · Clássico", en: "Part 1 · Classic" },
+    seasons: [
+      {
+        id: 1,
+        name: { pt: "Temporada 1", en: "Season 1" },
+        label: { pt: "Introdução", en: "Introduction" },
+        status: { pt: "Disponível", en: "Available" },
+        active: true,
+        chapters: [
+          { num: 1, title: { pt: "Naruto Uzumaki", en: "Uzumaki Naruto" }, pages: 12, thumb: "https://placehold.co/200x260/1a1a1a/fff?text=CAP+1" },
+          { num: 2, title: { pt: "Konohamaru!", en: "Konohamaru!" }, pages: 10, thumb: "https://placehold.co/200x260/222/fff?text=CAP+2" },
+          { num: 3, title: { pt: "Sasuke Uchiha", en: "Sasuke Uchiha" }, pages: 14, thumb: "https://placehold.co/200x260/1a1a1a/fff?text=CAP+3" },
+          { num: 4, title: { pt: "Hatake Kakashi", en: "Hatake Kakashi" }, pages: 12, thumb: "https://placehold.co/200x260/222/fff?text=CAP+4" },
+          { num: 5, title: { pt: "Descuido!", en: "Carelessness!" }, pages: 11, thumb: "https://placehold.co/200x260/1a1a1a/fff?text=CAP+5" },
+          { num: 6, title: { pt: "Só eu!", en: "Only Me!" }, pages: 13, thumb: "https://placehold.co/200x260/222/fff?text=CAP+6" },
+          { num: 7, title: { pt: "A Promessa", en: "The Promise" }, pages: 12, thumb: "https://placehold.co/200x260/1a1a1a/fff?text=CAP+7" },
+          { num: 8, title: { pt: "O Time 7", en: "Team 7" }, pages: 15, thumb: "https://placehold.co/200x260/222/fff?text=CAP+8" },
+        ]
+      },
+      { id: 2, name: { pt: "Temporada 2", en: "Season 2" }, label: { pt: "Exames Chunin", en: "Chunin Exams" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
+      { id: 3, name: { pt: "Temporada 3", en: "Season 3" }, label: { pt: "Invasão de Konoha", en: "Konoha Crush" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
+      { id: 4, name: { pt: "Temporada 4", en: "Season 4" }, label: { pt: "Missão de Recuperação", en: "Retrieval Mission" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
+      { id: 5, name: { pt: "Temporada 5", en: "Season 5" }, label: { pt: "Treinamento", en: "Training" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
+      { id: 6, name: { pt: "Temporada 6", en: "Season 6" }, label: { pt: "Sasuke vs Naruto", en: "Sasuke vs Naruto" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
+      { id: 7, name: { pt: "Temporada 7", en: "Season 7" }, label: { pt: "Fim da Parte 1", en: "End of Part 1" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] }
+    ]
   }
+};
 
-  // Projeta (x_mundo, z) -> {sx, sy, escala}
-  // x_mundo: -MEIA_ESTRADA (esq) a +MEIA_ESTRADA (dir)
-  // z: 0 (bike) a Z_FAR (horizonte)
-  // altura_y: 0 = chão. 1 = uma unidade de altura (afeta y)
-  function projetar(x_mundo, z, alturaY) {
-    const t = Math.min(1, Math.max(0, z / Z_FAR));
-    const escala = 1 - t * (1 - PERSPECTIVA_MIN); // linear de 1 -> MIN
-    const cx = W / 2;
-    // x relativo ao mundo, baseado na bike
-    const rel = (x_mundo - estado.bikeX);
-    const sx = cx + rel * escala * trackHalfPx;
-    // y: interpola da base até o horizonte
-    const sy = baseY + (horizonY - baseY) * t;
-    // sobe um pouco pela altura (pulo)
-    const alturaPx = alturaY * escala * (trackHalfPx * 0.5);
-    return { x: sx, y: sy - alturaPx, escala };
+/* ═══════════════════════════════════════════════
+   TRADUÇÕES (i18n)
+═══════════════════════════════════════════════ */
+const I18N = {
+  pt: {
+    nav_home: "Início",
+    nav_seasons: "Temporadas",
+    nav_about: "Sobre",
+    hero_tag: "MANGÁ CLÁSSICO",
+    hero_sub: "Parte 1 · Clássico",
+    hero_synopsis: "Naruto Uzumaki é um jovem ninja da Vila da Folha que carrega dentro de si a Raposa de Nove Caudas. Rejeitado por todos, ele sonha em se tornar Hokage e conquistar o reconhecimento de sua vila. Acompanhe sua jornada do primeiro dia na Academia Ninja até se tornar um dos ninjas mais poderosos de todos os tempos.",
+    btn_start: "Começar a Ler",
+    title_seasons: "Temporadas",
+    sub_seasons: "Escolha uma temporada para explorar",
+    btn_back: "Voltar",
+    mode_single: "1 Página",
+    mode_double: "2 Páginas",
+    btn_prev: "Ant",
+    btn_next: "Próx",
+    btn_list: "≡ Lista",
+    btn_prev_chap: "Capítulo Anterior",
+    btn_next_chap: "Próximo Capítulo",
+    about_title: "Sobre",
+    about_sub: "Informações do mangá",
+    about_p1: "Naruto é um mangá japonês escrito e ilustrado por Masashi Kishimoto. Foi serializado na revista Weekly Shōnen Jump de 1999 a 2014, com 72 volumes tankōbon.",
+    about_p2: "A história acompanha Naruto Uzumaki, um jovem ninja que busca reconhecimento e sonha em se tornar Hokage, o líder de sua vila. A série é dividida em duas partes: a Parte 1 (Clássico) e a Parte 2 (Shippuden).",
+    about_p3: "Este é um projeto de fã para fins educacionais. Todos os direitos pertencem a Masashi Kishimoto, Shueisha e Viz Media.",
+    footer_text: "Projeto de fã · Naruto © Masashi Kishimoto",
+    chapter_of: "Capítulo",
+    pages: "páginas",
+    page_of: "de"
+  },
+  en: {
+    nav_home: "Home",
+    nav_seasons: "Seasons",
+    nav_about: "About",
+    hero_tag: "CLASSIC MANGA",
+    hero_sub: "Part 1 · Classic",
+    hero_synopsis: "Naruto Uzumaki is a young ninja from the Village Hidden in the Leaves who carries the Nine-Tailed Fox within him. Rejected by everyone, he dreams of becoming Hokage and earning his village's recognition. Follow his journey from his first day at the Ninja Academy to becoming one of the most powerful ninjas of all time.",
+    btn_start: "Start Reading",
+    title_seasons: "Seasons",
+    sub_seasons: "Choose a season to explore",
+    btn_back: "Back",
+    mode_single: "1 Page",
+    mode_double: "2 Pages",
+    btn_prev: "Prev",
+    btn_next: "Next",
+    btn_list: "≡ List",
+    btn_prev_chap: "Previous Chapter",
+    btn_next_chap: "Next Chapter",
+    about_title: "About",
+    about_sub: "Manga information",
+    about_p1: "Naruto is a Japanese manga written and illustrated by Masashi Kishimoto. It was serialized in Weekly Shōnen Jump from 1999 to 2014, with 72 tankōbon volumes.",
+    about_p2: "The story follows Naruto Uzumaki, a young ninja seeking recognition and dreaming of becoming Hokage, the leader of his village. The series is divided into two parts: Part 1 (Classic) and Part 2 (Shippuden).",
+    about_p3: "This is a fan project for educational purposes. All rights belong to Masashi Kishimoto, Shueisha and Viz Media.",
+    footer_text: "Fan project · Naruto © Masashi Kishimoto",
+    chapter_of: "Chapter",
+    pages: "pages",
+    page_of: "of"
   }
+};
 
-  // ============================================================
-  // ESTADO
-  // ============================================================
-  const estado = {
-    bikeX: 0,           // -MEIA_ESTRADA..MEIA_ESTRADA
-    targetX: 0,
-    bikeY: 0,           // altura em unidades (0 = chão)
-    vy: 0, onGround: true,
-    pitch: 0, roll: 0, wheelie: 0,
-    spin: 0, spinSpeed: 0,
-    speed: 0,           // m/s
-    maxSpeed: 38,
-    accel: 16, brake: 36, friction: 2.5,
-    z: 0,               // distância total percorrida (pra spawn/score)
-    score: 0, airTime: 0,
-    comboMult: 1, comboTimer: 0, flipPending: false,
-  };
+/* ═══════════════════════════════════════════════
+   ESTADO
+═══════════════════════════════════════════════ */
+let currentLang = 'pt';
+let currentView = 'home';
+let currentChapter = 0;
+let currentPage = 0;
+let readerMode = 'single';
 
-  let best = +(localStorage.getItem('bikeRunnerBest') || 0);
-  bestEl.textContent = Math.floor(best);
+const chapters = MANGA_DATA.naruto.seasons[0].chapters;
 
-  const input = { up:false, down:false, left:false, right:false, jump:false, grau:false, flip:false };
-  let jumpWasPressed = false;
+/* ═══════════════════════════════════════════════
+   i18n
+═══════════════════════════════════════════════ */
+function t(key) { return I18N[currentLang][key] || key; }
 
-  // objetos: cada um tem z (m à frente da bike no momento do spawn),
-  // x (-MEIA..MEIA), tipo, etc. Guardamos em coordenadas "absolutas" (mundo)
-  // e subtraímos estado.z pra saber a distância atual.
-  const objetos = [];
-  const particulas = [];      // {x,y,z(abs),vx,vy,vz,life,size,color}
-  const predios = [];         // prédios do horizonte (parallax fixo)
-  const nuvens = [];
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('lang-pt').classList.toggle('active', lang === 'pt');
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
 
-  for (let i = 0; i < 40; i++) {
-    predios.push({
-      x: Math.random() * 2 - 1,        // -1..1 (fração da tela)
-      w: 0.03 + Math.random() * 0.06,  // fração
-      h: 0.06 + Math.random() * 0.18,
-      c: Math.random(),
-      z: Math.random() * 200,          // "camada" de parallax
-    });
-  }
-  for (let i = 0; i < 12; i++) {
-    nuvens.push({
-      x: Math.random(),
-      y: 0.05 + Math.random() * 0.25,
-      s: 0.5 + Math.random() * 0.9,
-      z: Math.random() * 200,
-    });
-  }
-
-  let gameOver = false;
-  let gameStarted = false;
-  let lastZCheck = 0;
-
-  function reset() {
-    estado.bikeX = 0; estado.targetX = 0;
-    estado.bikeY = 0; estado.vy = 0; estado.onGround = true;
-    estado.pitch = 0; estado.roll = 0; estado.wheelie = 0;
-    estado.spin = 0; estado.spinSpeed = 0;
-    estado.speed = 0;
-    estado.z = 0; estado.score = 0; estado.airTime = 0;
-    estado.comboMult = 1; estado.comboTimer = 0; estado.flipPending = false;
-
-    objetos.length = 0;
-    particulas.length = 0;
-
-    // spawna objetos de z=10 a z=200 (mundo absoluto)
-    for (let z = 10; z < 200; z += 18) spawnObjeto(z);
-
-    gameOver = false;
-    gameStarted = false;
-    lastZCheck = 0;
-    overlay.classList.remove('on');
-    comboEl.classList.remove('on');
-    atualizarHUD();
-  }
-
-  function spawnObjeto(zAbs) {
-    const r = Math.random();
-    if (r < 0.20) {
-      // rampa
-      const w = 1.8 + Math.random() * 1.0;
-      objetos.push({
-        tipo:'rampa', z:zAbs, x:(Math.random()*2-1)*(MEIA_ESTRADA-w*0.6),
-        w, h: 0.9 + Math.random() * 0.5, hit:false, lancou:false,
-      });
-    } else if (r < 0.70) {
-      const w = 0.7 + Math.random() * 0.6;
-      objetos.push({
-        tipo:'caixa', z:zAbs, x:(Math.random()*2-1)*(MEIA_ESTRADA-w*0.7),
-        w, h: 0.55 + Math.random() * 0.35, hit:false,
-      });
-    } else {
-      const w = 0.45;
-      objetos.push({
-        tipo:'cone', z:zAbs, x:(Math.random()*2-1)*(MEIA_ESTRADA-w*0.7),
-        w, h: 0.6, hit:false,
-      });
-    }
-  }
-
-  function atualizarHUD() {
-    scoreEl.textContent = Math.floor(estado.score);
-    spdEl.textContent = Math.round(estado.speed * 3.6);
-  }
-
-  // ============================================================
-  // INPUT
-  // ============================================================
-  function bind(id, key, onDown) {
-    const b = document.getElementById(id);
-    b.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      b.classList.add('pressed'); input[key] = true;
-      if (onDown) onDown();
-    });
-    const up = e => {
-      if (e) e.preventDefault();
-      b.classList.remove('pressed'); input[key] = false;
-    };
-    b.addEventListener('pointerup', up);
-    b.addEventListener('pointercancel', up);
-    b.addEventListener('pointerleave', up);
-  }
-
-  bind('btnUp', 'up', () => { if (!gameOver) gameStarted = true; });
-  bind('btnDown', 'down');
-  bind('btnLeft', 'left');
-  bind('btnRight', 'right');
-  bind('btnGrau', 'grau');
-  bind('btnJump', 'jump', () => {
-    if (gameOver) { reset(); return; }
-    gameStarted = true;
-    jumpWasPressed = true;
-  });
-  bind('btnFlip', 'flip', () => {
-    if (gameOver) { reset(); return; }
-    gameStarted = true;
-    if (estado.onGround) { estado.vy = 8; estado.onGround = false; }
+  // Atualiza todos os data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N[lang][key]) el.textContent = I18N[lang][key];
   });
 
-  window.addEventListener('keydown', e => {
-    if (gameOver) return;
-    if (e.code === 'ArrowUp' || e.code === 'KeyW') { input.up = true; gameStarted = true; }
-    if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = true;
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = true;
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = true;
-    if (e.code === 'Space' && !e.repeat) { input.jump = true; jumpWasPressed = true; gameStarted = true; }
-    if (e.code === 'KeyG') input.grau = true;
-    if (e.code === 'KeyF' && !e.repeat) { input.flip = true; gameStarted = true; if (estado.onGround) { estado.vy = 8; estado.onGround = false; } }
+  // Re-renderiza views dinâmicas
+  renderSeasons();
+  if (currentView === 'chapters') renderChapters();
+  if (currentView === 'reader') {
+    renderReader();
+    updateReaderTitle();
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   NAVEGAÇÃO
+═══════════════════════════════════════════════ */
+function showView(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  currentView = view;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goHome() { showView('home'); }
+function goSeasons() { showView('home'); setTimeout(() => document.getElementById('seasons-grid').scrollIntoView({behavior:'smooth'}), 100); }
+function goAbout() { showView('about'); }
+function goChapters() { renderChapters(); showView('chapters'); }
+function goReader() { renderReader(); showView('reader'); }
+
+/* ═══════════════════════════════════════════════
+   RENDER: TEMPORADAS
+═══════════════════════════════════════════════ */
+function renderSeasons() {
+  const grid = document.getElementById('seasons-grid');
+  grid.innerHTML = '';
+  MANGA_DATA.naruto.seasons.forEach(season => {
+    const card = document.createElement('div');
+    card.className = 'season-card ' + (season.active ? 'active' : 'locked');
+    card.innerHTML = `
+      <div class="season-num">${String(season.id).padStart(2, '0')}</div>
+      <div class="season-label">${season.label[currentLang]}</div>
+      <div class="season-name">${season.name[currentLang]}</div>
+      <div class="season-status">${season.status[currentLang]}</div>
+    `;
+    if (season.active) {
+      card.onclick = () => goChapters();
+    }
+    grid.appendChild(card);
   });
-  window.addEventListener('keyup', e => {
-    if (e.code === 'ArrowUp' || e.code === 'KeyW') input.up = false;
-    if (e.code === 'ArrowDown' || e.code === 'KeyS') input.down = false;
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') input.left = false;
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') input.right = false;
-    if (e.code === 'Space') input.jump = false;
-    if (e.code === 'KeyG') input.grau = false;
-    if (e.code === 'KeyF') input.flip = false;
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER: CAPÍTULOS
+═══════════════════════════════════════════════ */
+function renderChapters() {
+  document.getElementById('chapters-title').textContent =
+    MANGA_DATA.naruto.seasons[0].name[currentLang];
+  document.getElementById('chapters-sub').textContent =
+    MANGA_DATA.naruto.title[currentLang] + ' · ' + MANGA_DATA.naruto.subtitle[currentLang];
+
+  const grid = document.getElementById('chapters-grid');
+  grid.innerHTML = '';
+  chapters.forEach((ch, i) => {
+    const card = document.createElement('div');
+    card.className = 'chapter-card';
+    card.innerHTML = `
+      <div class="chapter-thumb"><img src="${ch.thumb}" alt=""></div>
+      <div class="chapter-info">
+        <div class="chapter-num">${t('chapter_of').toUpperCase()} ${String(ch.num).padStart(2,'0')}</div>
+        <div class="chapter-title">${ch.title[currentLang]}</div>
+        <div class="chapter-pages">${ch.pages} ${t('pages')}</div>
+      </div>
+    `;
+    card.onclick = () => { currentChapter = i; currentPage = 0; goReader(); };
+    grid.appendChild(card);
   });
-  restartBtn.addEventListener('click', reset);
+}
 
-  // ============================================================
-  // FÍSICA
-  // ============================================================
-  const GRAVITY = 22;
-  const JUMP_VEL = 8.5;
-  const STEER = 3.6;
+/* ═══════════════════════════════════════════════
+   RENDER: LEITOR
+═══════════════════════════════════════════════ */
+function updateReaderTitle() {
+  const ch = chapters[currentChapter];
+  document.getElementById('reader-chapter-title').textContent =
+    t('chapter_of') + ' ' + ch.num + ' — ' + ch.title[currentLang];
+  document.getElementById('reader-chapter-sub').textContent =
+    MANGA_DATA.naruto.title[currentLang];
 
-  function update(dt) {
-    // partículas (sempre)
-    for (let i = particulas.length - 1; i >= 0; i--) {
-      const p = particulas[i];
-      p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
-      p.vy -= 12 * dt; p.life -= dt;
-      if (p.life <= 0) particulas.splice(i, 1);
-    }
+  document.getElementById('btn-prev-chap').style.opacity = currentChapter === 0 ? 0.4 : 1;
+  document.getElementById('btn-prev-chap').disabled = currentChapter === 0;
+  document.getElementById('btn-next-chap').style.opacity = currentChapter >= chapters.length - 1 ? 0.4 : 1;
+  document.getElementById('btn-next-chap').disabled = currentChapter >= chapters.length - 1;
+}
 
-    if (gameOver) return;
+function renderReader() {
+  const ch = chapters[currentChapter];
+  const body = document.getElementById('reader-body');
+  body.innerHTML = '';
 
-    // aceleração
-    if (!gameStarted) {
-      estado.speed = Math.max(0, estado.speed - 5 * dt);
-    } else if (input.up) {
-      estado.speed = Math.min(estado.maxSpeed, estado.speed + estado.accel * dt);
-    } else if (input.down) {
-      estado.speed = Math.max(0, estado.speed - estado.brake * dt);
-    } else {
-      estado.speed = Math.max(0, estado.speed - estado.friction * dt);
-    }
+  const pagesPerView = readerMode === 'single' ? 1 : 2;
+  const total = ch.pages;
 
-    // direção
-    let tx = estado.targetX;
-    if (input.left)  tx -= STEER * dt * (0.55 + estado.speed/estado.maxSpeed*0.9);
-    if (input.right) tx += STEER * dt * (0.55 + estado.speed/estado.maxSpeed*0.9);
-    tx = Math.max(-MEIA_ESTRADA + 0.5, Math.min(MEIA_ESTRADA - 0.5, tx));
-    estado.targetX = tx;
-    estado.bikeX += (tx - estado.bikeX) * Math.min(1, dt * 9);
-    const targetRoll = (tx - estado.bikeX) * -1.2;
-    estado.roll += (targetRoll - estado.roll) * Math.min(1, dt * 8);
-
-    // avanço
-    estado.z += estado.speed * dt;
-
-    // pulo
-    if (jumpWasPressed) {
-      jumpWasPressed = false;
-      if (estado.onGround) {
-        estado.vy = JUMP_VEL;
-        estado.onGround = false;
-        spawnPoeira(8);
-      }
-    }
-
-    // mortal
-    if (input.flip && !estado.onGround) estado.spinSpeed = 9;
-    else { estado.spinSpeed *= 0.94; if (Math.abs(estado.spinSpeed) < 0.1) estado.spinSpeed = 0; }
-    estado.spin += estado.spinSpeed * dt;
-
-    // grau
-    if (input.grau && estado.onGround && estado.speed > 2) {
-      estado.wheelie = Math.min(1, estado.wheelie + 3 * dt);
-      if (estado.wheelie > 0.5 && Math.random() < 0.5) spawnFaisca();
-    } else {
-      estado.wheelie = Math.max(0, estado.wheelie - 4 * dt);
-    }
-
-    // física vertical
-    if (!estado.onGround) {
-      estado.vy -= GRAVITY * dt;
-      estado.bikeY += estado.vy * dt;
-      estado.airTime += dt;
-      if (Math.abs(estado.spin) >= Math.PI*2 - 0.25 && !estado.flipPending) {
-        estado.flipPending = true;
-        spawnFaisca(20);
-      }
-    }
-
-    // colisão com chão/rampa
-    let ground = 0, rampPitch = 0, rampaAtiva = null;
-    for (const o of objetos) {
-      if (o.tipo !== 'rampa') continue;
-      const zRel = o.z - estado.z;
-      if (zRel < -o.w * 0.5 || zRel > o.w * 0.5) continue;
-      if (Math.abs(estado.bikeX - o.x) > o.w * 0.5 + 0.5) continue;
-      // subindo a rampa: a altura depende de quanto já avançou sobre ela
-      const t = (zRel + o.w*0.5) / o.w;   // 0 = entrada, 1 = ponta
-      const h = t * o.h;
-      if (h > ground) {
-        ground = h;
-        rampPitch = -Math.atan2(o.h, o.w) * 0.9;
-        rampaAtiva = o;
-      }
-    }
-
-    if (estado.bikeY <= ground) {
-      if (!estado.onGround) {
-        estado.score += estado.airTime * 80;
-        if (estado.flipPending) {
-          estado.score += 800;
-          flashCombo('MORTAL! +800');
-          estado.flipPending = false;
-        } else if (estado.airTime > 0.4) {
-          flashCombo('AÉREO +' + Math.floor(estado.airTime * 80));
-        }
-        spawnPoeira(14);
-        estado.airTime = 0;
-      }
-      estado.bikeY = ground;
-      estado.vy = 0;
-      estado.onGround = true;
-      estado.pitch += (rampPitch - estado.pitch) * Math.min(1, dt * 8);
-      // lançamento da rampa ao chegar na ponta
-      if (rampaAtiva && !rampaAtiva.lancou && estado.speed > 10) {
-        const zRel = rampaAtiva.z - estado.z;
-        if (zRel < -rampaAtiva.w * 0.5 + 0.4) {
-          rampaAtiva.lancou = true;
-          estado.vy = 9 + estado.speed * 0.22;
-          estado.onGround = false;
-          estado.pitch = -0.5;
-          spawnPoeira(18);
-        }
-      }
-    } else {
-      estado.onGround = false;
-      estado.pitch += (0 - estado.pitch) * Math.min(1, dt * 3);
-    }
-
-    // colisão com obstáculos
-    for (const o of objetos) {
-      if (o.tipo === 'rampa' || o.hit) continue;
-      const zRel = o.z - estado.z;
-      if (zRel < -o.w * 0.5 - 0.5 || zRel > o.w * 0.5 + 0.5) continue;
-      if (Math.abs(estado.bikeX - o.x) < o.w * 0.55 + 0.5) {
-        if (estado.bikeY > o.h + 0.15) { o.hit = true; estado.score += 30; }
-        else { o.hit = true; boom(o); endGame(); return; }
-      }
-    }
-
-    // recicla objetos que passaram
-    for (let i = objetos.length - 1; i >= 0; i--) {
-      if (objetos[i].z < estado.z - 10) objetos.splice(i, 1);
-    }
-    // spawna mais à frente
-    let maxZ = 0;
-    for (const o of objetos) if (o.z > maxZ) maxZ = o.z;
-    const alvo = estado.z + 200;
-    while (maxZ < alvo) {
-      const gap = Math.max(8, 22 - estado.speed * 0.25) + Math.random() * 12;
-      maxZ += gap;
-      spawnObjeto(maxZ);
-    }
-
-    // score passivo
-    estado.score += estado.speed * dt * 1.6;
-
-    // grau dá pontos
-    if (estado.onGround && estado.wheelie > 0.35) {
-      estado.comboMult = 1 + Math.min(estado.wheelie * 2.2, 2.2);
-      estado.comboTimer = 0.5;
-      estado.score += dt * 50 * estado.wheelie * estado.comboMult;
-      if (!estado.flipPending) {
-        comboEl.textContent = 'GRAU x' + estado.comboMult.toFixed(1);
-        comboEl.classList.add('on');
-      }
-    } else if (estado.comboTimer > 0 && !estado.flipPending) {
-      estado.comboTimer -= dt;
-      if (estado.comboTimer <= 0) { comboEl.classList.remove('on'); estado.comboMult = 1; }
-    }
-
-    atualizarHUD();
+  for (let i = 0; i < pagesPerView; i++) {
+    const pageNum = currentPage + i + 1;
+    if (pageNum > total) break;
+    const page = document.createElement('div');
+    page.className = 'manga-page';
+    page.innerHTML = `<img src="https://placehold.co/800x1200/ffffff/000000?text=NARUTO+%7C+CAP+${ch.num}+%7C+PAG+${pageNum}&font=roboto" alt="Página ${pageNum}">`;
+    body.appendChild(page);
   }
 
-  function flashCombo(txt) {
-    comboEl.textContent = txt;
-    comboEl.classList.add('on');
-    estado.comboTimer = 1.2;
-    estado.comboMult = 1;
+  document.getElementById('page-indicator').textContent =
+    (currentPage + 1) + ' / ' + total;
+
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = currentPage + pagesPerView >= total;
+
+  document.getElementById('btn-single').classList.toggle('active', readerMode === 'single');
+  document.getElementById('btn-double').classList.toggle('active', readerMode === 'double');
+
+  updateReaderTitle();
+}
+
+function nextPage() {
+  const ch = chapters[currentChapter];
+  const step = readerMode === 'single' ? 1 : 2;
+  if (currentPage + step < ch.pages) {
+    currentPage += step;
+    renderReader();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+}
 
-  function spawnPoeira(n) {
-    for (let i = 0; i < n; i++) {
-      particulas.push({
-        x: estado.bikeX + (Math.random()-0.5)*0.5,
-        y: 0.05, z: estado.z - 0.5 + Math.random()*0.5,
-        vx: (Math.random()-0.5)*1.5, vy: Math.random()*2.2 + 0.5, vz: -0.5 - Math.random()*1.5,
-        life: 0.5 + Math.random()*0.5, maxLife: 1.0,
-        size: 0.12 + Math.random()*0.14,
-        color: Math.random() < 0.5 ? '#d4b48a' : '#a08868',
-      });
-    }
+function prevPage() {
+  const step = readerMode === 'single' ? 1 : 2;
+  currentPage = Math.max(0, currentPage - step);
+  renderReader();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function setMode(mode) {
+  readerMode = mode;
+  if (mode === 'double' && currentPage % 2 !== 0 && currentPage + 1 < chapters[currentChapter].pages) {
+    // mantém alinhado
   }
-  function spawnFaisca(n) {
-    n = n || 2;
-    for (let i = 0; i < n; i++) {
-      particulas.push({
-        x: estado.bikeX + (Math.random()-0.5)*0.5,
-        y: 0.25 + Math.random()*0.3, z: estado.z + (Math.random()-0.5)*0.4,
-        vx: (Math.random()-0.5)*4, vy: Math.random()*4 + 1, vz: (Math.random()-0.5)*2,
-        life: 0.35 + Math.random()*0.3, maxLife: 0.65,
-        size: 0.08 + Math.random()*0.07,
-        color: Math.random() < 0.5 ? '#ffd166' : '#ff8c42',
-      });
-    }
+  renderReader();
+}
+
+function nextChapter() {
+  if (currentChapter < chapters.length - 1) {
+    currentChapter++;
+    currentPage = 0;
+    renderReader();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function boom(o) {
-    for (let i = 0; i < 40; i++) {
-      particulas.push({
-        x: o.x + (Math.random()-0.5)*o.w,
-        y: Math.random()*o.h,
-        z: o.z + (Math.random()-0.5)*o.w,
-        vx: (Math.random()-0.5)*5, vy: Math.random()*5 + 1.5, vz: (Math.random()-0.5)*5,
-        life: 0.7 + Math.random()*0.5, maxLife: 1.2,
-        size: 0.1 + Math.random()*0.12,
-        color: Math.random() < 0.5 ? '#ff5252' : '#ffd166',
-      });
-    }
+}
+
+function prevChapter() {
+  if (currentChapter > 0) {
+    currentChapter--;
+    currentPage = 0;
+    renderReader();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function endGame() {
-    gameOver = true;
-    best = Math.max(best, estado.score);
-    localStorage.setItem('bikeRunnerBest', Math.floor(best));
-    bestEl.textContent = Math.floor(best);
-    finalScore.textContent = Math.floor(estado.score);
-    finalBest.textContent = Math.floor(best);
-    setTimeout(() => overlay.classList.add('on'), 450);
-  }
+}
 
-  // ============================================================
-  // DESENHO
-  // ============================================================
-  function drawSky() {
-    const g = ctx.createLinearGradient(0, 0, 0, horizonY);
-    g.addColorStop(0, '#0a0a1f');
-    g.addColorStop(0.45, '#2a1f4a');
-    g.addColorStop(0.78, '#7a3d6e');
-    g.addColorStop(1, '#f4a261');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, horizonY);
+/* ═══════════════════════════════════════════════
+   ATALHOS DE TECLADO
+═══════════════════════════════════════════════ */
+document.addEventListener('keydown', (e) => {
+  if (currentView !== 'reader') return;
+  if (e.key === 'ArrowRight') nextPage();
+  if (e.key === 'ArrowLeft') prevPage();
+});
 
-    // sol
-    const sx = W * 0.7, sy = horizonY - H * 0.05;
-    const sr = Math.min(W, H) * 0.06;
-    const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 4);
-    sg.addColorStop(0, 'rgba(255,225,160,0.95)');
-    sg.addColorStop(0.3, 'rgba(255,170,100,0.45)');
-    sg.addColorStop(1, 'rgba(255,170,100,0)');
-    ctx.fillStyle = sg;
-    ctx.beginPath(); ctx.arc(sx, sy, sr * 4, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#ffe8b8';
-    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI*2); ctx.fill();
-
-    // prédios com parallax (mais perto = desloca mais)
-    for (const b of predios) {
-      // offset horizontal por camada (z define o quanto "passa")
-      const phase = ((estado.z * (0.15 + b.z/200 * 0.4)) % 2 + 2) % 2; // 0..2
-      const bx = ((b.x + phase * 0.5 + 1) % 2 - 1) * W * 0.5 + W/2;
-      const bw = b.w * W;
-      const bh = b.h * H;
-      const by = horizonY - bh;
-      const shade = 0.35 + b.c * 0.15;
-      ctx.fillStyle = `rgba(15,10,30,${shade})`;
-      ctx.fillRect(bx - bw/2, by, bw, bh);
-      // janelas
-      ctx.fillStyle = `rgba(255,200,120,0.45)`;
-      for (let wy = by + 5; wy < horizonY - 3; wy += 7) {
-        for (let wx = bx - bw/2 + 3; wx < bx + bw/2 - 2; wx += 5) {
-          if ((Math.sin(wx*12.9 + wy*7.1 + b.c*100) * 0.5 + 0.5) > 0.55)
-            ctx.fillRect(wx, wy, 2, 2);
-        }
-      }
-    }
-
-    // nuvens
-    for (const n of nuvens) {
-      const phase = ((estado.z * (0.08 + n.z/200 * 0.2)) % 2 + 2) % 2;
-      const nx = ((n.x + phase * 0.5 + 1) % 2 - 1) * W * 0.6 + W/2;
-      const ny = n.y * horizonY;
-      const ns = n.s * W * 0.05;
-      ctx.fillStyle = 'rgba(255,200,200,0.13)';
-      ctx.beginPath();
-      ctx.arc(nx, ny, ns, 0, Math.PI*2);
-      ctx.arc(nx + ns*0.9, ny + ns*0.15, ns*0.75, 0, Math.PI*2);
-      ctx.arc(nx - ns*0.9, ny + ns*0.2, ns*0.65, 0, Math.PI*2);
-      ctx.fill();
-    }
-  }
-
-  function drawGround() {
-    const g = ctx.createLinearGradient(0, horizonY, 0, H);
-    g.addColorStop(0, '#1a1428');
-    g.addColorStop(1, '#05030a');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, horizonY, W, H - horizonY);
-  }
-
-  function drawRoad() {
-    // asfalto (trapézio simples)
-    const esqBase = projetar(-MEIA_ESTRADA, 0, 0);
-    const dirBase = projetar( MEIA_ESTRADA, 0, 0);
-    const esqTopo = projetar(-MEIA_ESTRADA, Z_FAR, 0);
-    const dirTopo = projetar( MEIA_ESTRADA, Z_FAR, 0);
-
-    ctx.beginPath();
-    ctx.moveTo(esqBase.x, esqBase.y);
-    ctx.lineTo(dirBase.x, dirBase.y);
-    ctx.lineTo(dirTopo.x, dirTopo.y);
-    ctx.lineTo(esqTopo.x, esqTopo.y);
-    ctx.closePath();
-    ctx.fillStyle = '#141420';
-    ctx.fill();
-
-    // bordas neon (desenhadas como linhas curvas)
-    for (const lado of [-1, 1]) {
-      ctx.strokeStyle = 'rgba(78,205,196,0.9)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      for (let i = 0; i <= 20; i++) {
-        const z = (i / 20) * Z_FAR;
-        const p = projetar(lado * MEIA_ESTRADA, z, 0);
-        if (i === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      }
-      ctx.stroke();
-    }
-
-    // linhas transversais (movimento)
-    const dashLen = 2.5;
-    const zOffset = estado.z % dashLen;
-    for (let i = 0; i < 40; i++) {
-      const z = i * dashLen - zOffset;
-      if (z < 0) continue;
-      if (z > Z_FAR) break;
-      const a = projetar(-MEIA_ESTRADA, z, 0);
-      const b = projetar( MEIA_ESTRADA, z, 0);
-      const alpha = Math.max(0, 1 - z / Z_FAR) * 0.2;
-      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-    }
-
-    // faixa central amarela tracejada
-    const dashC = 3.5;
-    const zOffC = estado.z % dashC;
-    for (let i = 0; i < 30; i++) {
-      const z = i * dashC - zOffC;
-      if (z < 0) continue;
-      if (z > Z_FAR) break;
-      const a = projetar(0, z, 0);
-      const b = projetar(0, z + dashC * 0.5, 0);
-      const alpha = Math.max(0, 1 - z / Z_FAR) * 0.75;
-      ctx.strokeStyle = `rgba(255,209,102,${alpha})`;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, b.y);
-      ctx.stroke();
-    }
-  }
-
-  function drawObjeto(o) {
-    const zRel = o.z - estado.z;
-    if (zRel < -1 || zRel > Z_FAR) return;
-
-    if (o.tipo === 'rampa') {
-      // desenha como trapézio da base até a ponta
-      const z0 = zRel - o.w * 0.5;
-      const z1 = zRel + o.w * 0.5;
-      if (z1 < 0) return;
-      const z0c = Math.max(0, z0);
-      // quatro cantos: base esq/dir, topo esq/dir
-      const bE = projetar(o.x - o.w*0.5, z0c, 0);
-      const bD = projetar(o.x + o.w*0.5, z0c, 0);
-      const tE = projetar(o.x - o.w*0.5, z1, o.h);
-      const tD = projetar(o.x + o.w*0.5, z1, o.h);
-      const bEf = projetar(o.x - o.w*0.5, z1, 0);
-      const bDf = projetar(o.x + o.w*0.5, z1, 0);
-
-      // face frontal (superfície)
-      const g = ctx.createLinearGradient(0, tE.y, 0, bE.y);
-      g.addColorStop(0, '#ffd166');
-      g.addColorStop(1, '#8a6a2a');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(bE.x, bE.y);
-      ctx.lineTo(tE.x, tE.y);
-      ctx.lineTo(tD.x, tD.y);
-      ctx.lineTo(bD.x, bD.y);
-      ctx.closePath();
-      ctx.fill();
-
-      // lateral direita
-      ctx.fillStyle = 'rgba(60,40,10,0.9)';
-      ctx.beginPath();
-      ctx.moveTo(tD.x, tD.y);
-      ctx.lineTo(bDf.x, bDf.y);
-      ctx.lineTo(bD.x, bD.y);
-      ctx.closePath();
-      ctx.fill();
-
-      // topo brilhante
-      ctx.strokeStyle = '#ffd166';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(tE.x, tE.y);
-      ctx.lineTo(tD.x, tD.y);
-      ctx.stroke();
-
-    } else if (o.tipo === 'caixa') {
-      const z0 = zRel - o.w * 0.5;
-      const z1 = zRel + o.w * 0.5;
-      if (z1 < 0) return;
-      const z0c = Math.max(0, z0);
-      const bE = projetar(o.x - o.w*0.5, z0c, 0);
-      const bD = projetar(o.x + o.w*0.5, z0c, 0);
-      const tE = projetar(o.x - o.w*0.5, z0c, o.h);
-      const tD = projetar(o.x + o.w*0.5, z0c, o.h);
-      const tEf = projetar(o.x - o.w*0.5, z1, o.h);
-      const tDf = projetar(o.x + o.w*0.5, z1, o.h);
-      const bDf = projetar(o.x + o.w*0.5, z1, 0);
-
-      // topo
-      ctx.fillStyle = '#a88848';
-      ctx.beginPath();
-      ctx.moveTo(tE.x, tE.y);
-      ctx.lineTo(tD.x, tD.y);
-      ctx.lineTo(tDf.x, tDf.y);
-      ctx.lineTo(tEf.x, tEf.y);
-      ctx.closePath();
-      ctx.fill();
-
-      // frente
-      ctx.fillStyle = '#8a6a3a';
-      ctx.beginPath();
-      ctx.moveTo(bE.x, bE.y);
-      ctx.lineTo(tE.x, tE.y);
-      ctx.lineTo(tD.x, tD.y);
-      ctx.lineTo(bD.x, bD.y);
-      ctx.closePath();
-      ctx.fill();
-
-      // lateral
-      ctx.fillStyle = '#5a3f1a';
-      ctx.beginPath();
-      ctx.moveTo(bD.x, bD.y);
-      ctx.lineTo(tD.x, tD.y);
-      ctx.lineTo(tDf.x, tDf.y);
-      ctx.lineTo(bDf.x, bDf.y);
-      ctx.closePath();
-      ctx.fill();
-
-      // X
-      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(tE.x, tE.y); ctx.lineTo(bD.x, bD.y);
-      ctx.moveTo(tD.x, tD.y); ctx.lineTo(bE.x, bE.y);
-      ctx.stroke();
-
-    } else if (o.tipo === 'cone') {
-      const base = projetar(o.x, zRel, 0);
-      const topo = projetar(o.x, zRel, o.h);
-      const w = Math.abs(base.escala) * trackHalfPx * 0.10;
-      if (w < 1) return;
-      ctx.fillStyle = '#111';
-      ctx.beginPath();
-      ctx.ellipse(base.x, base.y, w * 1.3, w * 0.5, 0, 0, Math.PI*2);
-      ctx.fill();
-      const g = ctx.createLinearGradient(base.x, topo.y, base.x, base.y);
-      g.addColorStop(0, '#ffb066');
-      g.addColorStop(1, '#c8501e');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(topo.x, topo.y);
-      ctx.lineTo(base.x - w, base.y);
-      ctx.lineTo(base.x + w, base.y);
-      ctx.closePath();
-      ctx.fill();
-      // listra
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      const midY = (topo.y + base.y) / 2;
-      const midW = w * 0.7;
-      ctx.beginPath();
-      ctx.moveTo(topo.x - midW, midY);
-      ctx.lineTo(topo.x + midW, midY);
-      ctx.lineTo(topo.x + midW * 1.15, midY + w * 0.25);
-      ctx.lineTo(topo.x - midW * 1.15, midY + w * 0.25);
-      ctx.closePath();
-      ctx.fill();
-    }
-  }
-
-  function drawBike() {
-    // A bike fica sempre na base da tela, centralizada lateralmente.
-    // Escala em pixels FIXA — não depende de projeção.
-    const px = W / 2;
-    const py = baseY;
-    const s = Math.min(W, H) * 0.0016;   // escala da moto
-
-    // sombra no chão (projetada)
-    const shadowY = baseY;
-    const shadowScale = Math.max(0.3, 1 - estado.bikeY * 0.15);
-    ctx.fillStyle = `rgba(0,0,0,${0.55 * shadowScale})`;
-    ctx.beginPath();
-    ctx.ellipse(px, shadowY, 150 * s * shadowScale, 20 * s * shadowScale, 0, 0, Math.PI*2);
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(px, py - estado.bikeY * 90 * s);   // sobe pela altura do pulo
-    ctx.rotate(estado.pitch * 0.9 + estado.spin);
-    ctx.rotate(estado.roll * 0.4);
-    ctx.scale(s, s);
-
-    // rastro do mortal
-    if (Math.abs(estado.spinSpeed) > 4) {
-      ctx.strokeStyle = 'rgba(78,205,196,0.5)';
-      ctx.lineWidth = 10;
-      ctx.beginPath(); ctx.arc(0, -150, 300, 0, Math.PI*2); ctx.stroke();
-    }
-
-    // roda traseira
-    ctx.fillStyle = '#0a0a0a';
-    ctx.beginPath(); ctx.ellipse(0, 60, 105, 55, 0, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = '#4a4a4a';
-    ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.ellipse(0, 60, 105, 55, 0, 0, Math.PI*2); ctx.stroke();
-    ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.ellipse(0, 60, 75, 38, 0, 0, Math.PI*2); ctx.stroke();
-
-    // raios girando
-    const rot = (estado.z * 2.4) % (Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-    ctx.lineWidth = 3;
-    for (let i = 0; i < 5; i++) {
-      const a = rot + i * (Math.PI*2/5);
-      ctx.beginPath();
-      ctx.moveTo(Math.cos(a) * 12, 60 + Math.sin(a) * 6);
-      ctx.lineTo(Math.cos(a) * 90, 60 + Math.sin(a) * 45);
-      ctx.stroke();
-    }
-
-    // escapamento
-    ctx.strokeStyle = '#c8c8c8';
-    ctx.lineWidth = 16; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(-85, 30); ctx.lineTo(-150, 20); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(85, 30); ctx.lineTo(150, 20); ctx.stroke();
-    ctx.fillStyle = '#3a3a3a';
-    ctx.beginPath(); ctx.arc(-150, 20, 12, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(150, 20, 12, 0, Math.PI*2); ctx.fill();
-
-    // quadro
-    ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = 24; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-55, 0); ctx.lineTo(0, -110); ctx.lineTo(55, 0);
-    ctx.moveTo(0, -110); ctx.lineTo(0, -175);
-    ctx.stroke();
-
-    // roda dianteira (mais alta)
-    ctx.fillStyle = '#0a0a0a';
-    ctx.beginPath(); ctx.ellipse(0, -200, 50, 78, 0, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = '#3a3a3a';
-    ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.ellipse(0, -200, 50, 78, 0, 0, Math.PI*2); ctx.stroke();
-    ctx.strokeStyle = '#ff5252';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.ellipse(0, -200, 33, 50, 0, 0, Math.PI*2); ctx.stroke();
-
-    // garfo
-    ctx.strokeStyle = '#b8b8b8';
-    ctx.lineWidth = 12;
-    ctx.beginPath();
-    ctx.moveTo(-28, -130); ctx.lineTo(-28, -200);
-    ctx.moveTo(28, -130); ctx.lineTo(28, -200);
-    ctx.stroke();
-
-    // banco
-    ctx.fillStyle = '#0d0d0d';
-    ctx.beginPath(); ctx.ellipse(0, -50, 65, 22, 0, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.beginPath(); ctx.ellipse(0, -55, 55, 12, 0, 0, Math.PI*2); ctx.fill();
-
-    // guidão
-    ctx.strokeStyle = '#d0d0d0';
-    ctx.lineWidth = 11;
-    ctx.beginPath();
-    ctx.moveTo(-95, -165); ctx.lineTo(-28, -185);
-    ctx.moveTo(95, -165); ctx.lineTo(28, -185);
-    ctx.stroke();
-    ctx.strokeStyle = '#222';
-    ctx.lineWidth = 18;
-    ctx.beginPath();
-    ctx.moveTo(-95, -165); ctx.lineTo(-120, -158);
-    ctx.moveTo(95, -165); ctx.lineTo(120, -158);
-    ctx.stroke();
-
-    // lanterna
-    ctx.fillStyle = '#ff3333';
-    ctx.shadowColor = '#ff3333'; ctx.shadowBlur = 35;
-    ctx.beginPath(); ctx.ellipse(0, -30, 20, 9, 0, 0, Math.PI*2); ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // piloto
-    ctx.fillStyle = '#2a3f66';
-    ctx.beginPath(); ctx.ellipse(-30, -28, 22, 42, 0, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(30, -28, 22, 42, 0, 0, Math.PI*2); ctx.fill();
-
-    const gBody = ctx.createLinearGradient(0, -155, 0, -55);
-    gBody.addColorStop(0, '#4ecdc4');
-    gBody.addColorStop(1, '#2a8b85');
-    ctx.fillStyle = gBody;
-    ctx.beginPath(); ctx.ellipse(0, -115, 55, 66, 0, 0, Math.PI*2); ctx.fill();
-
-    ctx.strokeStyle = '#4ecdc4';
-    ctx.lineWidth = 22; ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-45, -125); ctx.lineTo(-95, -165);
-    ctx.moveTo(45, -125); ctx.lineTo(95, -165);
-    ctx.stroke();
-
-    // capacete
-    ctx.fillStyle = '#ff5252';
-    ctx.beginPath(); ctx.arc(0, -195, 44, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fillRect(-44, -202, 88, 8);
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.beginPath(); ctx.ellipse(0, -185, 38, 12, 0, 0, Math.PI); ctx.fill();
-
-    ctx.restore();
-  }
-
-  function drawParticulas() {
-    // ordena por z descrescente (mais longe primeiro)
-    const arr = particulas.slice().sort((a, b) => (b.z - estado.z) - (a.z - estado.z));
-    for (const p of arr) {
-      const zRel = p.z - estado.z;
-      if (zRel < -0.5 || zRel > Z_FAR) continue;
-      const pr = projetar(p.x, zRel, p.y);
-      const a = Math.max(0, p.life / p.maxLife);
-      const size = Math.max(1, p.size * pr.escala * trackHalfPx * 0.25);
-      ctx.globalAlpha = a;
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(pr.x, pr.y, size, 0, Math.PI*2);
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  function drawVignette() {
-    const g = ctx.createRadialGradient(W/2, H*0.55, Math.min(W,H)*0.35, W/2, H*0.55, Math.max(W,H)*0.85);
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,0.55)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-  }
-
-  function drawStartHint() {
-    if (gameStarted || gameOver) return;
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
-    ctx.font = `bold ${Math.min(W*0.06, 32)}px system-ui, sans-serif`;
-    ctx.fillText('Segure ▲ para acelerar', W/2, H * 0.32);
-    ctx.font = `500 ${Math.min(W*0.038, 16)}px system-ui, sans-serif`;
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.fillText('◀ ▶ desviar · direita: grau, pulo, mortal', W/2, H * 0.37);
-  }
-
-  // ============================================================
-  // LOOP
-  // ============================================================
-  let last = performance.now();
-  function loop(now) {
-    let dt = (now - last) / 1000;
-    last = now;
-    if (dt > 0.05) dt = 0.05;
-    if (dt < 0.001) dt = 0.001;
-
-    recalcDims();
-    update(dt);
-
-    ctx.fillStyle = '#05030a';
-    ctx.fillRect(0, 0, W, H);
-
-    drawSky();
-    drawGround();
-    drawRoad();
-
-    // objetos ordenados por z descrescente
-    const ord = objetos.slice().sort((a, b) => (b.z - estado.z) - (a.z - estado.z));
-    for (const o of ord) drawObjeto(o);
-
-    drawParticulas();
-    drawBike();
-    drawVignette();
-    drawStartHint();
-
-    requestAnimationFrame(loop);
-  }
-
-  reset();
-  requestAnimationFrame(loop);
-})();
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+renderSeasons();
 </script>
 </body>
 </html>
