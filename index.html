@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Porsche Drift - Cidade</title>
+<title>Porsche Drift - Cidade Grande</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; touch-action: none; }
@@ -38,6 +38,7 @@
     box-shadow: 0 2px 6px rgba(79,195,247,0.6), inset 0 0 12px rgba(255,255,255,0.4);
   }
 
+  /* D-Pad no canto ESQUERDO inferior */
   #dpad { bottom: 20px; left: 20px; width: 180px; height: 180px; position: fixed; }
   #dpad .btn { position: absolute; width: 58px; height: 58px; }
   #up    { top: 0; left: 61px; }
@@ -45,6 +46,30 @@
   #left  { top: 61px; left: 0; }
   #right { top: 61px; right: 0; }
 
+  /* Câmbio manual — LADO ESQUERDO, acima do D-Pad */
+  #gearbox {
+    position: fixed; left: 20px; bottom: 220px; z-index: 20;
+    display: flex; flex-direction: column; gap: 8px;
+    user-select: none;
+  }
+  #gearbox .btn {
+    position: static;
+    width: 62px; height: 62px;
+    font-size: 26px;
+    background: rgba(20,20,20,0.7);
+    border-color: rgba(255,255,255,0.6);
+    border-radius: 14px;
+  }
+  #gearUp   { color: #4fc3f7; background: rgba(30,60,90,0.85); }
+  #gearDown { color: #ff8a65; background: rgba(90,40,30,0.85); }
+  #gearLabel {
+    text-align: center; color: #fff; font-weight: 900; font-size: 18px;
+    background: rgba(0,0,0,0.75); padding: 4px 0; border-radius: 8px;
+    font-family: monospace; letter-spacing: 1px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* Ações no canto DIREITO inferior */
   #actions { bottom: 20px; right: 20px; width: 210px; height: 210px; position: fixed; }
   #actions .btn { position: absolute; }
   #gas    { bottom: 0; right: 0; width: 82px; height: 82px; font-size: 15px; background: rgba(56,142,60,0.65); border-color: rgba(129,199,132,0.9); }
@@ -64,7 +89,7 @@
   }
   #reset:active { transform: scale(0.92); }
 
-  #gear {
+  #gearBig {
     position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
     color: #fff; font-weight: 900; font-size: 22px;
     background: rgba(0,0,0,0.6); padding: 6px 18px; border-radius: 8px;
@@ -72,26 +97,46 @@
     letter-spacing: 2px; font-family: monospace;
     pointer-events: none;
   }
+  #rpm {
+    position: fixed; bottom: 52px; left: 50%; transform: translateX(-50%);
+    width: 200px; height: 8px; background: rgba(0,0,0,0.6);
+    border-radius: 4px; z-index: 10; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.15);
+    pointer-events: none;
+  }
+  #rpmFill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #4caf50 0%, #ffeb3b 60%, #f44336 90%);
+    transition: width 0.05s linear;
+  }
 </style>
 </head>
 <body>
 <canvas id="canvas"></canvas>
 
 <div id="hud">
-  <div><b>WASD</b> — Dirigir</div>
+  <div><b>WASD</b> — Dirigir | <b>Q/E</b> — Marcha</div>
   <div><b>Espaço</b> — Freio de mão</div>
   <div><b>C</b> — Câmera | <b>R</b> — Reset</div>
   <div id="speedInfo">0 km/h</div>
 </div>
 
 <button id="reset" onclick="resetCar()">⟳</button>
-<div id="gear">N</div>
+<div id="gearBig">N</div>
+<div id="rpm"><div id="rpmFill"></div></div>
 
 <div id="dpad" class="controls">
   <div class="btn" id="up"    data-key="w">▲</div>
   <div class="btn" id="left"  data-key="a">◀</div>
   <div class="btn" id="down"  data-key="s">▼</div>
   <div class="btn" id="right" data-key="d">▶</div>
+</div>
+
+<!-- CÂMBIO MANUAL -->
+<div id="gearbox">
+  <div class="btn" id="gearUp">+</div>
+  <div id="gearLabel">1</div>
+  <div class="btn" id="gearDown">−</div>
 </div>
 
 <div id="actions" class="controls">
@@ -118,12 +163,12 @@ renderer.outputEncoding = THREE.sRGBEncoding;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0d1b2a);
-scene.fog = new THREE.Fog(0x0d1b2a, 90, 320);
+scene.fog = new THREE.Fog(0x0d1b2a, 120, 450);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1200);
 
 /* ============================================================
-   ILUMINAÇÃO — só 2 luzes dinâmicas (moon + farol do carro)
+   ILUMINAÇÃO
 ============================================================ */
 const hemi = new THREE.HemisphereLight(0x556688, 0x0a0a14, 0.7);
 scene.add(hemi);
@@ -131,15 +176,15 @@ scene.add(hemi);
 const ambient = new THREE.AmbientLight(0x223344, 0.5);
 scene.add(ambient);
 
-const moon = new THREE.DirectionalLight(0xaabbdd, 0.7);
+const moon = new THREE.DirectionalLight(0xaabbdd, 0.75);
 moon.position.set(80, 150, 60);
 moon.castShadow = true;
 moon.shadow.mapSize.set(1024, 1024);
-moon.shadow.camera.left = -150;
-moon.shadow.camera.right = 150;
-moon.shadow.camera.top = 150;
-moon.shadow.camera.bottom = -150;
-moon.shadow.camera.far = 400;
+moon.shadow.camera.left = -160;
+moon.shadow.camera.right = 160;
+moon.shadow.camera.top = 160;
+moon.shadow.camera.bottom = -160;
+moon.shadow.camera.far = 500;
 moon.shadow.bias = -0.0008;
 scene.add(moon);
 scene.add(moon.target);
@@ -147,7 +192,10 @@ scene.add(moon.target);
 /* ============================================================
    CHÃO
 ============================================================ */
-const CITY_SIZE = 400;
+const CITY_SIZE = 700;   // MUITO maior
+const GRID_N = 9;        // 9x9 quarteirões
+const BLOCK = CITY_SIZE / GRID_N;
+const ROAD_W = Math.max(12, BLOCK * 0.22);
 
 function makeAsphaltTexture(size = 512) {
   const c = document.createElement('canvas');
@@ -164,7 +212,7 @@ function makeAsphaltTexture(size = 512) {
   }
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(40, 40);
+  tex.repeat.set(60, 60);
   return tex;
 }
 
@@ -181,17 +229,13 @@ scene.add(ground);
 /* ============================================================
    RUAS
 ============================================================ */
-const BLOCK = 50;
-const ROAD_W = 14;
-const GRID_N = 5;
-const GRID_HALF = (GRID_N * BLOCK) / 2;
-
 const roadMat = new THREE.MeshStandardMaterial({ color: 0x252530, roughness: 0.95 });
-const lineMat = new THREE.MeshStandardMaterial({ color: 0xffe066, emissive: 0xffaa22, emissiveIntensity: 0.35 });
+const lineMat = new THREE.MeshStandardMaterial({ color: 0xffe066, emissive: 0xffaa22, emissiveIntensity: 0.4 });
+const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0x3a3a44, roughness: 0.9 });
 
 function makeRoadLine(x, z, horizontal) {
-  const dashLen = 3;
-  const gap = 3;
+  const dashLen = 3.5;
+  const gap = 3.5;
   const totalLen = BLOCK;
   const count = Math.floor(totalLen / (dashLen + gap));
   for (let i = 0; i < count; i++) {
@@ -204,32 +248,51 @@ function makeRoadLine(x, z, horizontal) {
     );
     dash.position.set(
       horizontal ? x + offset : x,
-      0.02,
+      0.03,
       horizontal ? z : z + offset
     );
     scene.add(dash);
   }
 }
 
+const gridHalf = GRID_N * BLOCK / 2;
+
 for (let i = -Math.floor(GRID_N/2); i <= Math.floor(GRID_N/2); i++) {
   const pos = i * BLOCK;
-  if (Math.abs(pos) > GRID_HALF) continue;
+  if (Math.abs(pos) > gridHalf) continue;
 
+  // Rua horizontal
   const rh = new THREE.Mesh(new THREE.BoxGeometry(GRID_N * BLOCK, 0.05, ROAD_W), roadMat);
   rh.position.set(0, 0.025, pos);
   rh.receiveShadow = true;
   scene.add(rh);
   makeRoadLine(0, pos, true);
 
+  // Calçadas (faixas laterais cinza-claro)
+  [-1, 1].forEach(s => {
+    const sw = new THREE.Mesh(new THREE.BoxGeometry(GRID_N * BLOCK, 0.15, 1.5), sidewalkMat);
+    sw.position.set(0, 0.075, pos + s * (ROAD_W/2 + 0.75));
+    sw.receiveShadow = true;
+    scene.add(sw);
+  });
+
+  // Rua vertical
   const rv = new THREE.Mesh(new THREE.BoxGeometry(ROAD_W, 0.05, GRID_N * BLOCK), roadMat);
   rv.position.set(pos, 0.025, 0);
   rv.receiveShadow = true;
   scene.add(rv);
   makeRoadLine(pos, 0, false);
+
+  [-1, 1].forEach(s => {
+    const sw = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, GRID_N * BLOCK), sidewalkMat);
+    sw.position.set(pos + s * (ROAD_W/2 + 0.75), 0.075, 0);
+    sw.receiveShadow = true;
+    scene.add(sw);
+  });
 }
 
 /* ============================================================
-   POSTES — SEM PointLight! Apenas material emissivo
+   POSTES
 ============================================================ */
 const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.7, roughness: 0.4 });
 const lampMat = new THREE.MeshStandardMaterial({
@@ -238,7 +301,7 @@ const lampMat = new THREE.MeshStandardMaterial({
   emissiveIntensity: 3
 });
 
-function makeStreetLamp(x, z) {
+function makeStreetLamp(x, z, rotY = 0) {
   const g = new THREE.Group();
 
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 9, 6), poleMat);
@@ -254,55 +317,91 @@ function makeStreetLamp(x, z) {
   lamp.position.set(1.8, 8.85, 0);
   g.add(lamp);
 
-  // Halo brilhante (sprite) sem luz dinâmica
   const halo = new THREE.Mesh(
     new THREE.SphereGeometry(0.6, 8, 8),
-    new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.25 })
+    new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.3 })
   );
   halo.position.set(1.8, 8.85, 0);
   g.add(halo);
 
   g.position.set(x, 0, z);
+  g.rotation.y = rotY;
   scene.add(g);
 }
 
-// Postes nas esquinas
 for (let i = -Math.floor(GRID_N/2); i <= Math.floor(GRID_N/2); i++) {
   for (let j = -Math.floor(GRID_N/2); j <= Math.floor(GRID_N/2); j++) {
     if ((i + j) % 2 === 0) {
-      makeStreetLamp(i * BLOCK + ROAD_W/2 + 1, j * BLOCK + ROAD_W/2 + 1);
+      makeStreetLamp(i * BLOCK + ROAD_W/2 + 1, j * BLOCK + ROAD_W/2 + 1, Math.PI * 0.25);
     }
   }
 }
 
 /* ============================================================
-   PRÉDIOS
+   PRÉDIOS — muito mais detalhados e bonitos
 ============================================================ */
-function makeBuildingTexture(baseHue) {
-  const size = 256;
+function makeBuildingTexture(baseHue, style) {
+  const size = 512;
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const ctx = c.getContext('2d');
 
-  ctx.fillStyle = `hsl(${baseHue}, 15%, 12%)`;
+  // Base com gradiente (mais bonito)
+  const grad = ctx.createLinearGradient(0, 0, 0, size);
+  grad.addColorStop(0, `hsl(${baseHue}, 25%, 18%)`);
+  grad.addColorStop(1, `hsl(${baseHue}, 18%, 8%)`);
+  ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
 
-  const cols = 6, rows = 10;
+  // Textura estilo "concreto" com linhas finas
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+  ctx.lineWidth = 1;
+  for (let y = 0; y < size; y += 8) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(size, y);
+    ctx.stroke();
+  }
+
+  // Janelas
+  const cols = 8, rows = 14;
   const w = size / cols, h = size / rows;
+  const padX = w * 0.2, padY = h * 0.22;
+
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const lit = Math.random() > 0.45;
+      const wx = x*w + padX;
+      const wy = y*h + padY;
+      const ww = w - padX*2;
+      const wh = h - padY*2;
+
+      // Moldura escura
+      ctx.fillStyle = `hsl(${baseHue}, 20%, 6%)`;
+      ctx.fillRect(wx - 2, wy - 2, ww + 4, wh + 4);
+
       if (lit) {
-        const hue = 40 + Math.random() * 20;
-        ctx.fillStyle = `hsl(${hue}, 80%, ${55 + Math.random() * 20}%)`;
+        // Janela acesa com gradiente
+        const wg = ctx.createLinearGradient(wx, wy, wx, wy+wh);
+        const hue = 35 + Math.random() * 25;
+        const bright = 55 + Math.random() * 25;
+        wg.addColorStop(0, `hsl(${hue}, 85%, ${bright + 10}%)`);
+        wg.addColorStop(1, `hsl(${hue}, 75%, ${bright - 10}%)`);
+        ctx.fillStyle = wg;
+        ctx.fillRect(wx, wy, ww, wh);
+
+        // Divisória vertical fina (janela dupla)
+        ctx.fillStyle = `hsl(${hue}, 90%, 15%)`;
+        ctx.fillRect(wx + ww/2 - 0.5, wy, 1, wh);
       } else {
-        ctx.fillStyle = `hsl(${baseHue}, 20%, 8%)`;
+        ctx.fillStyle = `hsl(${baseHue}, 20%, 10%)`;
+        ctx.fillRect(wx, wy, ww, wh);
       }
-      ctx.fillRect(x*w + w*0.15, y*h + h*0.15, w*0.7, h*0.55);
     }
   }
 
-  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  // Andares (linhas escuras horizontais)
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
   ctx.lineWidth = 2;
   for (let y = 0; y <= rows; y++) {
     ctx.beginPath();
@@ -311,18 +410,20 @@ function makeBuildingTexture(baseHue) {
     ctx.stroke();
   }
 
-  const tex = new THREE.CanvasTexture(c);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  return tex;
+  return new THREE.CanvasTexture(c);
 }
 
 function makeBuilding(x, z, w, h, d, hue) {
   const tex = makeBuildingTexture(hue);
-  tex.repeat.set(Math.max(1, w/8), Math.max(1, h/8));
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(Math.max(1, w/10), Math.max(1, h/14));
   tex.needsUpdate = true;
 
-  const sideMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, metalness: 0.1 });
-  const topMat = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.9 });
+  const sideMat = new THREE.MeshStandardMaterial({
+    map: tex, roughness: 0.85, metalness: 0.15,
+    emissive: 0x111111, emissiveIntensity: 0.1
+  });
+  const topMat = new THREE.MeshStandardMaterial({ color: 0x0a0a10, roughness: 0.9 });
 
   const mats = [sideMat, sideMat, topMat, topMat, sideMat, sideMat];
   const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats);
@@ -330,17 +431,50 @@ function makeBuilding(x, z, w, h, d, hue) {
   b.castShadow = true;
   b.receiveShadow = true;
   scene.add(b);
+
+  // Antena no topo
+  if (Math.random() > 0.5 && h > 20) {
+    const antenna = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 3 + Math.random()*4, 6),
+      new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8, roughness: 0.3 })
+    );
+    antenna.position.set(x, h + antenna.geometry.parameters.height/2, z);
+    scene.add(antenna);
+
+    // Luz vermelha piscante no topo (estática, emissiva)
+    const beacon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0xff0000, emissiveIntensity: 3 })
+    );
+    beacon.position.set(x, h + antenna.geometry.parameters.height, z);
+    scene.add(beacon);
+  }
+
+  // Caixa d'água / detalhe no topo
+  if (Math.random() > 0.6 && h > 25) {
+    const tank = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.2, 1.2, 2, 10),
+      new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 })
+    );
+    tank.position.set(x + (Math.random()-0.5)*w*0.4, h + 1, z + (Math.random()-0.5)*d*0.4);
+    tank.castShadow = true;
+    scene.add(tank);
+  }
 }
 
+const HUE_POOL = [210, 220, 200, 15, 350, 190, 260, 30, 320];
+
+// Loop de prédios: em cada quarteirão
 for (let i = -Math.floor(GRID_N/2); i < GRID_N/2; i++) {
   for (let j = -Math.floor(GRID_N/2); j < GRID_N/2; j++) {
     const cx = i * BLOCK + BLOCK/2;
     const cz = j * BLOCK + BLOCK/2;
 
-    const perBlock = Math.random() > 0.5 ? 4 : 2;
+    const halfBlock = (BLOCK - ROAD_W) / 2 - 2;
+
+    const perBlock = Math.random() > 0.4 ? 4 : 1;
 
     if (perBlock === 4) {
-      const halfBlock = (BLOCK - ROAD_W) / 2;
       const cellW = halfBlock / 2;
       const positions = [
         [cx - halfBlock + cellW, cz - halfBlock + cellW],
@@ -351,14 +485,14 @@ for (let i = -Math.floor(GRID_N/2); i < GRID_N/2; i++) {
       positions.forEach(([px, pz]) => {
         const w = cellW * (0.75 + Math.random() * 0.2);
         const d = cellW * (0.75 + Math.random() * 0.2);
-        const h = 12 + Math.random() * 35;
-        makeBuilding(px, pz, w, h, d, [210, 220, 200, 15, 350, 190][Math.floor(Math.random()*6)]);
+        const h = 12 + Math.random() * 40;
+        makeBuilding(px, pz, w, h, d, HUE_POOL[Math.floor(Math.random()*HUE_POOL.length)]);
       });
     } else {
-      const w = (BLOCK - ROAD_W) * 0.7;
-      const d = (BLOCK - ROAD_W) * 0.7;
-      const h = 18 + Math.random() * 45;
-      makeBuilding(cx, cz, w, h, d, [210, 220, 200, 15, 350, 190][Math.floor(Math.random()*6)]);
+      const w = halfBlock * 2 * (0.7 + Math.random() * 0.2);
+      const d = halfBlock * 2 * (0.7 + Math.random() * 0.2);
+      const h = 20 + Math.random() * 55;
+      makeBuilding(cx, cz, w, h, d, HUE_POOL[Math.floor(Math.random()*HUE_POOL.length)]);
     }
   }
 }
@@ -377,109 +511,78 @@ const chromeMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0
 const lightMat = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffee88, emissiveIntensity: 2 });
 const tailLightMat = new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0xff0000, emissiveIntensity: 1.5 });
 
-// Frente = +Z
 const body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.5, 4.4), bodyMat);
-body.position.y = 0.75;
-body.castShadow = true;
-car.add(body);
+body.position.y = 0.75; body.castShadow = true; car.add(body);
 
 const hood = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.3, 1.5), bodyMat);
-hood.position.set(0, 0.78, 1.5);
-hood.castShadow = true;
-car.add(hood);
+hood.position.set(0, 0.78, 1.5); hood.castShadow = true; car.add(hood);
 
 const nose = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.35, 0.6), bodyMat);
-nose.position.set(0, 0.62, 2.15);
-nose.castShadow = true;
-car.add(nose);
+nose.position.set(0, 0.62, 2.15); nose.castShadow = true; car.add(nose);
 
 const grille = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 0.15), blackMat);
-grille.position.set(0, 0.6, 2.42);
-car.add(grille);
+grille.position.set(0, 0.6, 2.42); car.add(grille);
 
 const splitter = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.06, 0.3), blackMat);
-splitter.position.set(0, 0.45, 2.35);
-car.add(splitter);
+splitter.position.set(0, 0.45, 2.35); car.add(splitter);
 
 const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 1.9), bodyMat);
-cabin.position.set(0, 1.28, -0.25);
-cabin.castShadow = true;
-car.add(cabin);
+cabin.position.set(0, 1.28, -0.25); cabin.castShadow = true; car.add(cabin);
 
 const roof = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 1.7), blackMat);
-roof.position.set(0, 1.58, -0.25);
-roof.castShadow = true;
-car.add(roof);
+roof.position.set(0, 1.58, -0.25); roof.castShadow = true; car.add(roof);
 
 const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 1.0), glassMat);
-windshield.position.set(0, 1.42, 0.75);
-windshield.rotation.x = 0.6;
-car.add(windshield);
+windshield.position.set(0, 1.42, 0.75); windshield.rotation.x = 0.6; car.add(windshield);
 
 const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.85), glassMat);
-rearGlass.position.set(0, 1.42, -1.15);
-rearGlass.rotation.x = -0.55;
-car.add(rearGlass);
+rearGlass.position.set(0, 1.42, -1.15); rearGlass.rotation.x = -0.55; car.add(rearGlass);
 
 [-0.86, 0.86].forEach(x => {
   const sg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.45, 1.6), glassMat);
-  sg.position.set(x, 1.32, -0.25);
-  car.add(sg);
+  sg.position.set(x, 1.32, -0.25); car.add(sg);
 });
 
 const rear = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.42, 0.9), bodyMat);
-rear.position.set(0, 0.85, -1.95);
-rear.castShadow = true;
-car.add(rear);
+rear.position.set(0, 0.85, -1.95); rear.castShadow = true; car.add(rear);
 
 const engineCover = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.08, 0.7), blackMat);
-engineCover.position.set(0, 1.08, -2.0);
-car.add(engineCover);
+engineCover.position.set(0, 1.08, -2.0); car.add(engineCover);
 
 const diffuser = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.15, 0.25), blackMat);
-diffuser.position.set(0, 0.5, -2.4);
-car.add(diffuser);
+diffuser.position.set(0, 0.5, -2.4); car.add(diffuser);
 
 const spoiler = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.08, 0.4), blackMat);
-spoiler.position.set(0, 1.35, -2.25);
-spoiler.castShadow = true;
-car.add(spoiler);
+spoiler.position.set(0, 1.35, -2.25); spoiler.castShadow = true; car.add(spoiler);
 [-0.85, 0.85].forEach(x => {
   const strut = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.35, 0.12), blackMat);
-  strut.position.set(x, 1.15, -2.25);
-  car.add(strut);
+  strut.position.set(x, 1.15, -2.25); car.add(strut);
 });
 
 [-1.05, 1.05].forEach(x => {
   const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.1), bodyMat);
-  mirror.position.set(x, 1.28, 0.6);
-  car.add(mirror);
+  mirror.position.set(x, 1.28, 0.6); car.add(mirror);
   const stalk = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.2), blackMat);
-  stalk.position.set(x * 0.9, 1.25, 0.65);
-  car.add(stalk);
+  stalk.position.set(x * 0.9, 1.25, 0.65); car.add(stalk);
 });
 
 [-0.65, 0.65].forEach(x => {
   const hl = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.12), lightMat);
-  hl.position.set(x, 0.82, 2.2);
-  car.add(hl);
+  hl.position.set(x, 0.82, 2.2); car.add(hl);
 });
 
 [-0.65, 0.65].forEach(x => {
   const tl = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.08), tailLightMat);
-  tl.position.set(x, 0.9, -2.42);
-  car.add(tl);
+  tl.position.set(x, 0.9, -2.42); car.add(tl);
 });
 
 const rearStrip = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.05), tailLightMat);
-rearStrip.position.set(0, 0.9, -2.43);
-car.add(rearStrip);
+rearStrip.position.set(0, 0.9, -2.43); car.add(rearStrip);
 
 [-0.6, 0.6].forEach(x => {
   const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.2, 12), chromeMat);
   ex.rotation.x = Math.PI / 2;
-  ex.position.set(x, 0.4, -2.35);
-  car.add(ex);
+  ex.position.set(x, 0.4, -2.35); car.add(ex);
 });
 
 /* ---- RODAS ---- */
@@ -525,17 +628,113 @@ wheelPositions.forEach(([x, y, z, isFront]) => {
   wheels.push({ group: wheelGroup, tire, rim, isFront });
 });
 
-/* Farol do carro — 1 SpotLight só */
-const carLight = new THREE.SpotLight(0xfff2cc, 2, 50, Math.PI/5, 0.5, 1.5);
+const carLight = new THREE.SpotLight(0xfff2cc, 2, 55, Math.PI/5, 0.5, 1.5);
 carLight.position.set(0, 1, 2);
 carLight.target.position.set(0, 0, 25);
 car.add(carLight);
 car.add(carLight.target);
 
-/* Luz vermelha traseira (bem fraquinha) */
 const brakeLight = new THREE.PointLight(0xff0000, 0.5, 8, 2);
 brakeLight.position.set(0, 1, -2.5);
 car.add(brakeLight);
+
+/* ============================================================
+   MARCAS DE DERrapagem — pool de marcas no chão
+============================================================ */
+const SKID_MAX = 300;
+const skidPool = [];
+const skidGeo = new THREE.PlaneGeometry(0.35, 0.5);
+const skidMatBase = new THREE.MeshBasicMaterial({
+  color: 0x000000,
+  transparent: true,
+  opacity: 0.55,
+  depthWrite: false,
+});
+
+let skidIndex = 0;
+for (let i = 0; i < SKID_MAX; i++) {
+  const m = new THREE.Mesh(skidGeo, skidMatBase.clone());
+  m.rotation.x = -Math.PI / 2;
+  m.position.y = 0.03;
+  m.visible = false;
+  m.renderOrder = 1;
+  scene.add(m);
+  skidPool.push(m);
+}
+
+// Distância acumulada desde a última marca
+let skidAccum = 0;
+const SKID_STEP = 0.35;
+
+function dropSkidMark(x, z, angle) {
+  // Duas marcas (rodas traseiras)
+  const rearOffset = 1.5;
+  const halfTrack = 0.95;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+
+  // Posição das duas rodas traseiras no mundo
+  // traseira direita local: (+halfTrack, -rearOffset)
+  // traseira esquerda local: (-halfTrack, -rearOffset)
+  for (let s = -1; s <= 1; s += 2) {
+    const lx = s * halfTrack;
+    const lz = -rearOffset;
+    const wx = x + lx * cos + lz * sin;
+    const wz = z - lx * sin + lz * cos;
+
+    const m = skidPool[skidIndex];
+    skidIndex = (skidIndex + 1) % SKID_MAX;
+    m.position.set(wx, 0.03, wz);
+    m.rotation.z = -angle;
+    m.visible = true;
+    // Variação sutil de opacidade
+    m.material.opacity = 0.45 + Math.random() * 0.2;
+  }
+}
+
+/* ============================================================
+   CÂMBIO MANUAL
+============================================================ */
+const GEAR_RATIOS = [
+  // [maxSpeedKmh, accelMultiplier]
+  { max: 20,  accel: 1.6 }, // 1ª
+  { max: 35,  accel: 1.4 }, // 2ª
+  { max: 50,  accel: 1.2 }, // 3ª
+  { max: 70,  accel: 1.0 }, // 4ª
+  { max: 95,  accel: 0.85 }, // 5ª
+  { max: 130, accel: 0.7 }, // 6ª
+];
+
+const gearState = {
+  gear: 1,       // 1 a 6 (só avança/reduz, sem neutro)
+  rpm: 0.2,
+};
+
+const gearLabelEl = document.getElementById('gearLabel');
+const gearBigEl = document.getElementById('gearBig');
+const rpmFillEl = document.getElementById('rpmFill');
+
+function shiftUp() {
+  if (gearState.gear < 6) {
+    gearState.gear++;
+    updateGearUI();
+  }
+}
+function shiftDown() {
+  if (gearState.gear > 1) {
+    gearState.gear--;
+    updateGearUI();
+  }
+}
+function updateGearUI() {
+  gearLabelEl.textContent = gearState.gear;
+  gearBigEl.textContent = gearState.gear;
+}
+
+document.getElementById('gearUp').addEventListener('click', (e) => { e.preventDefault(); shiftUp(); });
+document.getElementById('gearDown').addEventListener('click', (e) => { e.preventDefault(); shiftDown(); });
+document.getElementById('gearUp').addEventListener('touchstart', (e) => { e.preventDefault(); shiftUp(); }, { passive: false });
+document.getElementById('gearDown').addEventListener('touchstart', (e) => { e.preventDefault(); shiftDown(); }, { passive: false });
 
 /* ============================================================
    FÍSICA
@@ -550,10 +749,7 @@ const carState = {
   speed: 0,
 };
 
-const MAX_SPEED = 55;
-const ACCEL = 34;
-const BRAKE = 48;
-const FRICTION = 2.0;
+const MAX_SPEED = 60;      // limite global (m/s)
 const TURN_SPEED = 2.4;
 
 /* ============================================================
@@ -567,6 +763,8 @@ window.addEventListener('keydown', e => {
   if (e.key === ' ') e.preventDefault();
   if (e.key.toLowerCase() === 'c') toggleCamera();
   if (e.key.toLowerCase() === 'r') resetCar();
+  if (e.key.toLowerCase() === 'q') shiftDown();
+  if (e.key.toLowerCase() === 'e') shiftUp();
 });
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
@@ -624,7 +822,6 @@ function updateCamera(dt) {
   }
   camera.updateProjectionMatrix();
 
-  // Fazer a luz da lua seguir o carro pra sombra funcionar sempre
   moon.position.set(carPos.x + 80, 150, carPos.z + 60);
   moon.target.position.copy(carPos);
   moon.target.updateMatrixWorld();
@@ -633,8 +830,6 @@ function updateCamera(dt) {
 /* ============================================================
    FÍSICA
 ============================================================ */
-const gearEl = document.getElementById('gear');
-
 function updatePhysics(dt) {
   const throttle = isPressed('w', 'arrowup') ? 1 : 0;
   const brake = isPressed('s', 'arrowdown') ? 1 : 0;
@@ -652,18 +847,32 @@ function updatePhysics(dt) {
   const movingForward = carState.velocity.dot(forward) > 0.5;
   const movingBackward = carState.velocity.dot(forward) < -0.5;
 
+  // === Câmbio manual influencia a aceleração ===
+  const gearInfo = GEAR_RATIOS[gearState.gear - 1];
+  const gearMaxSpeed = gearInfo.max / 3.6; // converte km/h para m/s
+  const gearAccel = gearInfo.accel;
+
+  // Velocidade atual em km/h
+  const speedKmh = speed * 3.6;
+
+  // Aceleração
   if (throttle) {
-    carState.velocity.add(forward.clone().multiplyScalar(ACCEL * dt));
+    // Só acelera se não passou do limite da marcha
+    if (speedKmh < gearMaxSpeed * 3.6 + 3) {
+      carState.velocity.add(forward.clone().multiplyScalar(34 * gearAccel * dt));
+    }
   }
+  // Freio / ré
   if (brake) {
     if (movingForward) {
-      carState.velocity.add(forward.clone().multiplyScalar(-BRAKE * dt));
+      carState.velocity.add(forward.clone().multiplyScalar(-48 * dt));
     } else {
-      carState.velocity.add(forward.clone().multiplyScalar(-ACCEL * 0.6 * dt));
+      carState.velocity.add(forward.clone().multiplyScalar(-20 * dt));
     }
   }
 
-  let friction = handbrake ? 0.7 : FRICTION;
+  // Atrito
+  const friction = handbrake ? 0.7 : 2.0;
   if (!throttle && !brake) {
     carState.velocity.multiplyScalar(Math.max(0, 1 - friction * dt));
   } else {
@@ -675,6 +884,7 @@ function updatePhysics(dt) {
     carState.velocity.multiplyScalar(MAX_SPEED / currentSpeed);
   }
 
+  // Rotação
   const speedFactor = Math.min(1, currentSpeed / 12);
   const turnRate = TURN_SPEED * speedFactor * carState.steer;
   const driftMultiplier = handbrake ? 2.0 : 1.0;
@@ -694,7 +904,22 @@ function updatePhysics(dt) {
     carState.velocity.z *= -0.3;
   }
 
+  // Drift detection
   carState.drifting = handbrake && currentSpeed > 8;
+
+  // ===== RPM / marcha =====
+  // RPM baseado na velocidade dentro da faixa da marcha
+  const speedKmhNow = currentSpeed * 3.6;
+  const gearMax = gearInfo.max;
+  const gearMin = gearState.gear > 1 ? GEAR_RATIOS[gearState.gear - 2].max : 0;
+  let rpmNorm = (speedKmhNow - gearMin) / (gearMax - gearMin);
+  rpmNorm = Math.max(0.15, Math.min(1.1, rpmNorm));
+  // Adicionar ruído de RPM quando acelerando no limite
+  if (throttle && speedKmhNow > gearMax * 0.9) {
+    rpmNorm = Math.min(1.2, rpmNorm + Math.sin(performance.now() * 0.02) * 0.05);
+  }
+  gearState.rpm += (rpmNorm - gearState.rpm) * 0.15;
+  rpmFillEl.style.width = (Math.min(100, gearState.rpm * 100)) + '%';
 
   car.position.copy(carState.pos);
   car.rotation.y = carState.angle;
@@ -712,13 +937,23 @@ function updatePhysics(dt) {
   car.rotation.x = (throttle - brake) * 0.015;
 
   carState.speed = currentSpeed;
-
-  // Intensidade do freio traseiro quando freando
   brakeLight.intensity = brake ? 1.5 : 0.3;
 
-  if (speed < 0.5) gearEl.textContent = 'N';
-  else if (movingBackward && !movingForward) gearEl.textContent = 'R';
-  else gearEl.textContent = Math.min(6, Math.floor(speed / 8) + 1);
+  // ===== MARCAS DE DERRAPAGEM =====
+  // Deixa marca quando: freio de mão ativo + velocidade OU drift forte (rotação alta vs velocidade)
+  const lateralSlip = Math.abs(carState.steer) * speedFactor;
+  const shouldMark = (handbrake && currentSpeed > 3) ||
+                     (currentSpeed > 12 && lateralSlip > 0.7 && Math.abs(carState.steer) > 0.5);
+
+  if (shouldMark) {
+    skidAccum += currentSpeed * dt;
+    if (skidAccum > SKID_STEP) {
+      skidAccum = 0;
+      dropSkidMark(carState.pos.x, carState.pos.z, carState.angle);
+    }
+  } else {
+    skidAccum = 0;
+  }
 }
 
 /* ============================================================
@@ -729,6 +964,8 @@ function resetCar() {
   carState.velocity.set(0, 0, 0);
   carState.angle = 0;
   carState.steer = 0;
+  gearState.gear = 1;
+  updateGearUI();
 }
 
 /* ============================================================
