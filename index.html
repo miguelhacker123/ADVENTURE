@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Porsche Drift - Roblox Style</title>
+<title>Porsche Drift - Cidade</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; touch-action: none; }
@@ -38,6 +38,7 @@
     box-shadow: 0 2px 6px rgba(79,195,247,0.6), inset 0 0 12px rgba(255,255,255,0.4);
   }
 
+  /* D-Pad no canto ESQUERDO inferior */
   #dpad { bottom: 20px; left: 20px; width: 180px; height: 180px; position: fixed; }
   #dpad .btn { position: absolute; width: 58px; height: 58px; }
   #up    { top: 0; left: 61px; }
@@ -45,6 +46,7 @@
   #left  { top: 61px; left: 0; }
   #right { top: 61px; right: 0; }
 
+  /* Ações no canto DIREITO inferior */
   #actions { bottom: 20px; right: 20px; width: 210px; height: 210px; position: fixed; }
   #actions .btn { position: absolute; }
   #gas    { bottom: 0; right: 0; width: 82px; height: 82px; font-size: 15px; background: rgba(56,142,60,0.65); border-color: rgba(129,199,132,0.9); }
@@ -64,7 +66,6 @@
   }
   #reset:active { transform: scale(0.92); }
 
-  /* Indicador de marcha */
   #gear {
     position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
     color: #fff; font-weight: 900; font-size: 22px;
@@ -114,282 +115,413 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.15;
 renderer.outputEncoding = THREE.sRGBEncoding;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1e3a5f); // azul céu profundo
-scene.fog = new THREE.Fog(0x1e3a5f, 100, 320);
+scene.background = new THREE.Color(0x0d1b2a);
+scene.fog = new THREE.Fog(0x0d1b2a, 80, 320);
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
 
 /* ============================================================
-   ILUMINAÇÃO — mais dramática
+   ILUMINAÇÃO NOITE
 ============================================================ */
-const hemi = new THREE.HemisphereLight(0xffffff, 0x223344, 0.55);
+const hemi = new THREE.HemisphereLight(0x445577, 0x080810, 0.5);
 scene.add(hemi);
 
-const sun = new THREE.DirectionalLight(0xfff2cc, 1.4);
-sun.position.set(80, 120, 50);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -120;
-sun.shadow.camera.right = 120;
-sun.shadow.camera.top = 120;
-sun.shadow.camera.bottom = -120;
-sun.shadow.camera.far = 400;
-sun.shadow.bias = -0.0005;
-scene.add(sun);
+// "Lua"
+const moon = new THREE.DirectionalLight(0xaabbdd, 0.5);
+moon.position.set(80, 150, 60);
+moon.castShadow = true;
+moon.shadow.mapSize.set(2048, 2048);
+moon.shadow.camera.left = -150;
+moon.shadow.camera.right = 150;
+moon.shadow.camera.top = 150;
+moon.shadow.camera.bottom = -150;
+moon.shadow.camera.far = 500;
+moon.shadow.bias = -0.0005;
+scene.add(moon);
 
-// Luz de preenchimento azulada
-const fill = new THREE.DirectionalLight(0x88aaff, 0.35);
-fill.position.set(-60, 40, -50);
-scene.add(fill);
+// Luz ambiente quente
+const ambient = new THREE.AmbientLight(0x334455, 0.4);
+scene.add(ambient);
 
 /* ============================================================
-   CHÃO — asfalto texturizado proceduralmente
+   CHÃO — asfalto escuro
 ============================================================ */
-const PLATE_SIZE = 240;
+const CITY_SIZE = 400;
 
-// Função pra gerar textura de asfalto granulado
 function makeAsphaltTexture(size = 512) {
   const c = document.createElement('canvas');
   c.width = c.height = size;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#3a3a42';
+  ctx.fillStyle = '#1a1a20';
   ctx.fillRect(0, 0, size, size);
-  for (let i = 0; i < 8000; i++) {
+  for (let i = 0; i < 10000; i++) {
     const x = Math.random() * size;
     const y = Math.random() * size;
-    const g = Math.random() * 60 + 30;
-    ctx.fillStyle = `rgba(${g},${g},${g+5},${Math.random()*0.6})`;
+    const g = Math.random() * 40 + 15;
+    ctx.fillStyle = `rgba(${g},${g},${g+3},${Math.random()*0.7})`;
     ctx.fillRect(x, y, Math.random()*2+1, Math.random()*2+1);
   }
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(20, 20);
+  tex.repeat.set(40, 40);
   return tex;
 }
 
-const asphaltTex = makeAsphaltTexture();
-const plateMat = new THREE.MeshStandardMaterial({
-  map: asphaltTex,
-  roughness: 0.95,
-  metalness: 0.05,
+const groundMat = new THREE.MeshStandardMaterial({
+  map: makeAsphaltTexture(),
+  roughness: 0.98,
+  metalness: 0.0,
 });
-const plate = new THREE.Mesh(new THREE.BoxGeometry(PLATE_SIZE, 2, PLATE_SIZE), plateMat);
-plate.position.y = -1;
-plate.receiveShadow = true;
-scene.add(plate);
-
-// Faixas brancas pintadas (pista circular decorativa)
-const stripeMat = new THREE.MeshStandardMaterial({ color: 0xf5f5dc, roughness: 0.8 });
-for (let i = 0; i < 32; i++) {
-  const angle = (i / 32) * Math.PI * 2;
-  const r = 90;
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(3, 0.02, 1.2), stripeMat);
-  stripe.position.set(Math.cos(angle) * r, 0.01, Math.sin(angle) * r);
-  stripe.rotation.y = -angle;
-  stripe.receiveShadow = true;
-  scene.add(stripe);
-}
-
-// Círculo central decorativo
-const centerCircle = new THREE.Mesh(
-  new THREE.RingGeometry(8, 9, 64),
-  new THREE.MeshStandardMaterial({ color: 0xf5f5dc, roughness: 0.8, side: THREE.DoubleSide })
-);
-centerCircle.rotation.x = -Math.PI / 2;
-centerCircle.position.y = 0.02;
-scene.add(centerCircle);
+const ground = new THREE.Mesh(new THREE.BoxGeometry(CITY_SIZE, 2, CITY_SIZE), groundMat);
+ground.position.y = -1;
+ground.receiveShadow = true;
+scene.add(ground);
 
 /* ============================================================
-   CENÁRIO — prédios "hard" low-poly com janelas
+   RUAS — grade de ruas com faixas
 ============================================================ */
-function makeWindowTexture(color = '#1a2a44', winColor = '#ffd88a') {
-  const c = document.createElement('canvas');
-  c.width = c.height = 256;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = color;
-  ctx.fillRect(0, 0, 256, 256);
-  const cols = 6, rows = 8;
-  const w = 256 / cols, h = 256 / rows;
-  for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < cols; x++) {
-      if (Math.random() > 0.3) {
-        ctx.fillStyle = winColor;
-        ctx.globalAlpha = 0.5 + Math.random() * 0.5;
-        ctx.fillRect(x*w + w*0.2, y*h + h*0.2, w*0.6, h*0.5);
-      }
+const BLOCK = 50;       // tamanho do quarteirão
+const ROAD_W = 14;      // largura da rua
+const GRID_N = 5;       // 5x5 quarteirões
+const GRID_HALF = (GRID_N * BLOCK) / 2;
+
+const roadMat = new THREE.MeshStandardMaterial({ color: 0x252530, roughness: 0.95 });
+const lineMat = new THREE.MeshStandardMaterial({ color: 0xffe066, emissive: 0xffaa22, emissiveIntensity: 0.35 });
+
+// Faixa amarela central tracejada
+function makeRoadLine(x, z, horizontal) {
+  const dashLen = 3;
+  const gap = 3;
+  const totalLen = BLOCK;
+  const count = Math.floor(totalLen / (dashLen + gap));
+  for (let i = 0; i < count; i++) {
+    const offset = -totalLen/2 + i * (dashLen + gap) + dashLen/2;
+    const dash = new THREE.Mesh(
+      horizontal
+        ? new THREE.BoxGeometry(dashLen, 0.02, 0.25)
+        : new THREE.BoxGeometry(0.25, 0.02, dashLen),
+      lineMat
+    );
+    dash.position.set(
+      horizontal ? x + offset : x,
+      0.02,
+      horizontal ? z : z + offset
+    );
+    scene.add(dash);
+  }
+}
+
+// Desenha ruas da grade
+for (let i = -Math.floor(GRID_N/2); i <= Math.floor(GRID_N/2); i++) {
+  const pos = i * BLOCK;
+  if (Math.abs(pos) > GRID_HALF) continue;
+
+  // Rua horizontal (ao longo de X)
+  const rh = new THREE.Mesh(new THREE.BoxGeometry(GRID_N * BLOCK, 0.05, ROAD_W), roadMat);
+  rh.position.set(0, 0.025, pos);
+  rh.receiveShadow = true;
+  scene.add(rh);
+  makeRoadLine(0, pos, true);
+
+  // Rua vertical (ao longo de Z)
+  const rv = new THREE.Mesh(new THREE.BoxGeometry(ROAD_W, 0.05, GRID_N * BLOCK), roadMat);
+  rv.position.set(pos, 0.025, 0);
+  rv.receiveShadow = true;
+  scene.add(rv);
+  makeRoadLine(pos, 0, false);
+}
+
+/* ============================================================
+   POSTES DE LUZ
+============================================================ */
+const poleMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.7, roughness: 0.4 });
+const lampMat = new THREE.MeshStandardMaterial({ color: 0xffee88, emissive: 0xffcc44, emissiveIntensity: 2.5 });
+
+function makeStreetLamp(x, z) {
+  const g = new THREE.Group();
+
+  // Poste
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 9, 8), poleMat);
+  pole.position.y = 4.5;
+  pole.castShadow = true;
+  g.add(pole);
+
+  // Braço
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.15, 0.15), poleMat);
+  arm.position.set(0.9, 9, 0);
+  g.add(arm);
+
+  // Luminária
+  const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.25, 0.5), lampMat);
+  lamp.position.set(1.8, 8.85, 0);
+  g.add(lamp);
+
+  // PointLight (mas não muitas pra não travar)
+  const light = new THREE.PointLight(0xffcc66, 0.9, 30, 2);
+  light.position.set(1.8, 8.5, 0);
+  g.add(light);
+
+  g.position.set(x, 0, z);
+  scene.add(g);
+}
+
+// Coloca postes nos cruzamentos e meio de ruas
+for (let i = -Math.floor(GRID_N/2); i <= Math.floor(GRID_N/2); i++) {
+  for (let j = -Math.floor(GRID_N/2); j <= Math.floor(GRID_N/2); j++) {
+    const x = i * BLOCK + BLOCK/2 * 0; // nos cruzamentos
+    const z = j * BLOCK;
+    if (Math.abs(x) > GRID_HALF || Math.abs(z) > GRID_HALF) continue;
+    // Poste em cada esquina
+    if ((i + j) % 2 === 0) {
+      makeStreetLamp(i * BLOCK + ROAD_W/2 + 1, j * BLOCK + ROAD_W/2 + 1);
     }
   }
-  ctx.globalAlpha = 1;
-  return new THREE.CanvasTexture(c);
+}
+
+// Postes extras nas ruas principais
+for (let i = -3; i <= 3; i++) {
+  makeStreetLamp(i * BLOCK, -GRID_HALF - 2);
+  makeStreetLamp(i * BLOCK, GRID_HALF + 2);
+}
+
+/* ============================================================
+   PRÉDIOS COM JANELAS ILUMINADAS
+============================================================ */
+function makeBuildingTexture(baseHue) {
+  const size = 256;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+
+  // Base
+  ctx.fillStyle = `hsl(${baseHue}, 15%, 12%)`;
+  ctx.fillRect(0, 0, size, size);
+
+  // Grade de janelas
+  const cols = 6, rows = 10;
+  const w = size / cols, h = size / rows;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const lit = Math.random() > 0.45;
+      if (lit) {
+        const hue = 40 + Math.random() * 20; // amarelo/laranja
+        ctx.fillStyle = `hsl(${hue}, 80%, ${55 + Math.random() * 20}%)`;
+      } else {
+        ctx.fillStyle = `hsl(${baseHue}, 20%, 8%)`;
+      }
+      ctx.fillRect(x*w + w*0.15, y*h + h*0.15, w*0.7, h*0.55);
+    }
+  }
+
+  // Linhas horizontais
+  ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+  ctx.lineWidth = 2;
+  for (let y = 0; y <= rows; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y*h);
+    ctx.lineTo(size, y*h);
+    ctx.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  return tex;
 }
 
 function makeBuilding(x, z, w, h, d, hue) {
-  const tex = makeWindowTexture(`hsl(${hue}, 20%, 20%)`);
-  const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, metalness: 0.2 });
-  const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  const tex = makeBuildingTexture(hue);
+  // Repetir a textura conforme tamanho
+  const texTop = tex.clone();
+  texTop.needsUpdate = true;
+  texTop.wrapS = texTop.wrapT = THREE.RepeatWrapping;
+  texTop.repeat.set(Math.max(1, w/6), Math.max(1, h/6));
+  texTop.needsUpdate = true;
+
+  const sideMat = new THREE.MeshStandardMaterial({ map: texTop, roughness: 0.85, metalness: 0.1 });
+  const topMat = new THREE.MeshStandardMaterial({ color: 0x111118, roughness: 0.9 });
+
+  const mats = [sideMat, sideMat, topMat, topMat, sideMat, sideMat];
+  const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats);
   b.position.set(x, h/2, z);
   b.castShadow = true;
   b.receiveShadow = true;
   scene.add(b);
 }
 
-const buildingColors = [210, 220, 200, 15, 350, 190];
-for (let i = 0; i < 40; i++) {
-  const edge = PLATE_SIZE/2 - 8;
-  const angle = Math.random() * Math.PI * 2;
-  const dist = 60 + Math.random() * (edge - 60);
-  const x = Math.cos(angle) * dist;
-  const z = Math.sin(angle) * dist;
-  const w = 8 + Math.random() * 14;
-  const d = 8 + Math.random() * 14;
-  const h = 10 + Math.random() * 35;
-  makeBuilding(x, z, w, h, d, buildingColors[i % buildingColors.length]);
+// Coloca prédios em cada quarteirão
+for (let i = -Math.floor(GRID_N/2); i < GRID_N/2; i++) {
+  for (let j = -Math.floor(GRID_N/2); j < GRID_N/2; j++) {
+    const cx = i * BLOCK + BLOCK/2;
+    const cz = j * BLOCK + BLOCK/2;
+
+    // Quantos prédios por quarteirão
+    const perBlock = Math.random() > 0.5 ? 4 : 2;
+
+    if (perBlock === 4) {
+      const halfBlock = (BLOCK - ROAD_W) / 2;
+      const cellW = halfBlock / 2;
+      const positions = [
+        [cx - halfBlock + cellW, cz - halfBlock + cellW],
+        [cx + halfBlock - cellW, cz - halfBlock + cellW],
+        [cx - halfBlock + cellW, cz + halfBlock - cellW],
+        [cx + halfBlock - cellW, cz + halfBlock - cellW],
+      ];
+      positions.forEach(([px, pz]) => {
+        const w = cellW * (0.75 + Math.random() * 0.2);
+        const d = cellW * (0.75 + Math.random() * 0.2);
+        const h = 12 + Math.random() * 35;
+        makeBuilding(px, pz, w, h, d, [210, 220, 200, 15, 350, 190][Math.floor(Math.random()*6)]);
+      });
+    } else {
+      const w = (BLOCK - ROAD_W) * 0.7;
+      const d = (BLOCK - ROAD_W) * 0.7;
+      const h = 18 + Math.random() * 45;
+      makeBuilding(cx, cz, w, h, d, [210, 220, 200, 15, 350, 190][Math.floor(Math.random()*6)]);
+    }
+  }
 }
 
 /* ============================================================
-   PORSCHE — modelo detalhado, apontando pra -Z (frente)
+   PORSCHE — CORRIGIDO (frente = +Z agora)
 ============================================================ */
 const car = new THREE.Group();
 scene.add(car);
 
 const bodyColor = 0xc62828;
-const bodyMat = new THREE.MeshStandardMaterial({
-  color: bodyColor, metalness: 0.75, roughness: 0.25, envMapIntensity: 1
-});
+const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0.75, roughness: 0.25 });
 const blackMat = new THREE.MeshStandardMaterial({ color: 0x0a0a0a, metalness: 0.5, roughness: 0.4 });
-const glassMat = new THREE.MeshStandardMaterial({
-  color: 0x0a1520, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.7
-});
+const glassMat = new THREE.MeshStandardMaterial({ color: 0x0a1520, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.7 });
 const chromeMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.95, roughness: 0.1 });
 const lightMat = new THREE.MeshStandardMaterial({ color: 0xffffcc, emissive: 0xffee88, emissiveIntensity: 2 });
 const tailLightMat = new THREE.MeshStandardMaterial({ color: 0xff2222, emissive: 0xff0000, emissiveIntensity: 1.5 });
 
-/* ---- NOTA: -Z é a FRENTE do carro ---- */
+/* ============================================================
+   CORREÇÃO: agora a FRENTE do carro aponta para +Z
+   (mesma direção que a física move com angle=0)
+============================================================ */
 
-// Chassi principal (corpo)
+// Chassi
 const body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.5, 4.4), bodyMat);
 body.position.y = 0.75;
 body.castShadow = true;
 car.add(body);
 
-// Capô dianteiro (frente = -Z)
+// Capô dianteiro (+Z = frente)
 const hood = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.3, 1.5), bodyMat);
-hood.position.set(0, 0.78, -1.5);
+hood.position.set(0, 0.78, 1.5);
 hood.castShadow = true;
 car.add(hood);
 
-// Bico dianteiro aerodinâmico
+// Bico dianteiro
 const nose = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.35, 0.6), bodyMat);
-nose.position.set(0, 0.62, -2.15);
+nose.position.set(0, 0.62, 2.15);
 nose.castShadow = true;
 car.add(nose);
 
-// Entrada de ar frontal
+// Grade frontal
 const grille = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 0.15), blackMat);
-grille.position.set(0, 0.6, -2.42);
+grille.position.set(0, 0.6, 2.42);
 car.add(grille);
 
-// Splitter frontal
+// Splitter
 const splitter = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.06, 0.3), blackMat);
-splitter.position.set(0, 0.45, -2.35);
+splitter.position.set(0, 0.45, 2.35);
 car.add(splitter);
 
-// Cabine / teto
+// Cabine
 const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.55, 1.9), bodyMat);
-cabin.position.set(0, 1.28, 0.25);
+cabin.position.set(0, 1.28, -0.25);
 cabin.castShadow = true;
 car.add(cabin);
 
-// Teto (parte superior mais escura)
+// Teto
 const roof = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 1.7), blackMat);
-roof.position.set(0, 1.58, 0.25);
+roof.position.set(0, 1.58, -0.25);
 roof.castShadow = true;
 car.add(roof);
 
 // Para-brisa (frente, inclinado)
 const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 1.0), glassMat);
-windshield.position.set(0, 1.42, -0.75);
-windshield.rotation.x = -0.6;
+windshield.position.set(0, 1.42, 0.75);
+windshield.rotation.x = 0.6;
 car.add(windshield);
 
 // Vidro traseiro
 const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.06, 0.85), glassMat);
-rearGlass.position.set(0, 1.42, 1.15);
-rearGlass.rotation.x = 0.55;
+rearGlass.position.set(0, 1.42, -1.15);
+rearGlass.rotation.x = -0.55;
 car.add(rearGlass);
 
 // Vidros laterais
 [-0.86, 0.86].forEach(x => {
   const sg = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.45, 1.6), glassMat);
-  sg.position.set(x, 1.32, 0.25);
+  sg.position.set(x, 1.32, -0.25);
   car.add(sg);
 });
 
-// Traseira (motor)
+// Traseira
 const rear = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.42, 0.9), bodyMat);
-rear.position.set(0, 0.85, 1.95);
+rear.position.set(0, 0.85, -1.95);
 rear.castShadow = true;
 car.add(rear);
 
-// Tampa do motor (grade traseira)
+// Capô do motor
 const engineCover = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.08, 0.7), blackMat);
-engineCover.position.set(0, 1.08, 2.0);
+engineCover.position.set(0, 1.08, -2.0);
 car.add(engineCover);
 
-// Difusor traseiro
+// Difusor
 const diffuser = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.15, 0.25), blackMat);
-diffuser.position.set(0, 0.5, 2.4);
+diffuser.position.set(0, 0.5, -2.4);
 car.add(diffuser);
 
-// Spoiler traseiro
+// Spoiler
 const spoiler = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.08, 0.4), blackMat);
-spoiler.position.set(0, 1.35, 2.25);
+spoiler.position.set(0, 1.35, -2.25);
 spoiler.castShadow = true;
 car.add(spoiler);
 [-0.85, 0.85].forEach(x => {
   const strut = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.35, 0.12), blackMat);
-  strut.position.set(x, 1.15, 2.25);
+  strut.position.set(x, 1.15, -2.25);
   car.add(strut);
 });
 
 // Retrovisores
 [-1.05, 1.05].forEach(x => {
   const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.1), bodyMat);
-  mirror.position.set(x, 1.28, -0.6);
+  mirror.position.set(x, 1.28, 0.6);
   car.add(mirror);
   const stalk = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.2), blackMat);
-  stalk.position.set(x * 0.9, 1.25, -0.65);
+  stalk.position.set(x * 0.9, 1.25, 0.65);
   car.add(stalk);
 });
 
-// Faróis (frente, -Z)
+// Faróis (frente +Z)
 [-0.65, 0.65].forEach(x => {
   const hl = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.12), lightMat);
-  hl.position.set(x, 0.82, -2.2);
+  hl.position.set(x, 0.82, 2.2);
   car.add(hl);
 });
 
 // Lanternas traseiras
 [-0.65, 0.65].forEach(x => {
   const tl = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.08), tailLightMat);
-  tl.position.set(x, 0.9, 2.42);
+  tl.position.set(x, 0.9, -2.42);
   car.add(tl);
 });
 
-// Faixa central traseira
 const rearStrip = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.1, 0.05), tailLightMat);
-rearStrip.position.set(0, 0.9, 2.43);
+rearStrip.position.set(0, 0.9, -2.43);
 car.add(rearStrip);
 
 // Escapamentos
 [-0.6, 0.6].forEach(x => {
   const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.2, 12), chromeMat);
   ex.rotation.x = Math.PI / 2;
-  ex.position.set(x, 0.4, 2.35);
+  ex.position.set(x, 0.4, -2.35);
   car.add(ex);
 });
 
@@ -401,10 +533,10 @@ const brakeMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, metalness: 0.
 
 const wheels = [];
 const wheelPositions = [
-  [-1.0, 0.45, -1.5, true],
-  [ 1.0, 0.45, -1.5, true],
-  [-1.0, 0.45,  1.5, false],
-  [ 1.0, 0.45,  1.5, false],
+  [-1.0, 0.45,  1.5, true],
+  [ 1.0, 0.45,  1.5, true],
+  [-1.0, 0.45, -1.5, false],
+  [ 1.0, 0.45, -1.5, false],
 ];
 
 wheelPositions.forEach(([x, y, z, isFront]) => {
@@ -416,12 +548,10 @@ wheelPositions.forEach(([x, y, z, isFront]) => {
   tire.castShadow = true;
   wheelGroup.add(tire);
 
-  // Aro (aro central)
   const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.37, 16), rimMat);
   rim.rotation.z = Math.PI / 2;
   wheelGroup.add(rim);
 
-  // Raios do aro (detalhe)
   for (let i = 0; i < 6; i++) {
     const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.05), rimMat);
     spoke.rotation.z = Math.PI / 2;
@@ -430,14 +560,20 @@ wheelPositions.forEach(([x, y, z, isFront]) => {
     wheelGroup.add(spoke);
   }
 
-  // Disco de freio
   const brake = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.38, 12), brakeMat);
   brake.rotation.z = Math.PI / 2;
   wheelGroup.add(brake);
 
   car.add(wheelGroup);
-  wheels.push({ group: wheelGroup, tire, rim, isFront, baseX: x });
+  wheels.push({ group: wheelGroup, tire, rim, isFront });
 });
+
+// Faróis de verdade (PointLight do carro)
+const carLight = new THREE.SpotLight(0xfff2cc, 1.5, 40, Math.PI/5, 0.4, 1.5);
+carLight.position.set(0, 1, 2);
+carLight.target.position.set(0, 0, 20);
+car.add(carLight);
+car.add(carLight.target);
 
 /* ============================================================
    FÍSICA
@@ -451,9 +587,9 @@ const carState = {
   drifting: false,
 };
 
-const MAX_SPEED = 50;
-const ACCEL = 32;
-const BRAKE = 45;
+const MAX_SPEED = 55;
+const ACCEL = 34;
+const BRAKE = 48;
 const FRICTION = 2.0;
 const TURN_SPEED = 2.4;
 
@@ -495,19 +631,22 @@ document.querySelectorAll('[data-key]').forEach(btn => {
 function isPressed(...ks) { return ks.some(k => keys[k] || mobileKeys[k]); }
 
 /* ============================================================
-   CÂMERA
+   CÂMERA — atrás do carro (frente = +Z, então câmera fica em -Z)
 ============================================================ */
 let cameraMode = 0;
-const camPos = new THREE.Vector3(0, 5, 10);
+const camPos = new THREE.Vector3(0, 5, -10);
 const camTarget = new THREE.Vector3();
 
 function toggleCamera() { cameraMode = (cameraMode + 1) % 2; }
 
 function updateCamera(dt) {
   const carPos = carState.pos;
+  // Frente = (sin, 0, cos) — mas agora +Z é a frente, e o modelo foi construído
+  // com a frente em +Z, então o forward correto é (sin(angle), 0, cos(angle))
   const forward = new THREE.Vector3(Math.sin(carState.angle), 0, Math.cos(carState.angle));
 
   if (cameraMode === 1) {
+    // Primeira pessoa
     const targetPos = carPos.clone().add(new THREE.Vector3(0, 1.45, 0)).add(forward.clone().multiplyScalar(0.2));
     camPos.lerp(targetPos, 0.5);
     camera.position.copy(camPos);
@@ -515,6 +654,7 @@ function updateCamera(dt) {
     camera.lookAt(lookAt);
     camera.fov = 78;
   } else {
+    // Terceira pessoa — câmera ATRÁS do carro (oposto da frente)
     const back = forward.clone().multiplyScalar(-9.5);
     const targetPos = carPos.clone().add(back).add(new THREE.Vector3(0, 4.8, 0));
     camPos.lerp(targetPos, 0.12);
@@ -540,7 +680,8 @@ function updatePhysics(dt) {
 
   carState.handbrake = handbrake;
 
-  let steerInput = (right - left);
+  // Inverter direção da direção conforme requisitado
+  let steerInput = (left - right);
   carState.steer += (steerInput - carState.steer) * 0.15;
 
   const forward = new THREE.Vector3(Math.sin(carState.angle), 0, Math.cos(carState.angle));
@@ -581,7 +722,7 @@ function updatePhysics(dt) {
   carState.pos.add(carState.velocity.clone().multiplyScalar(dt));
 
   // Limites
-  const limit = PLATE_SIZE / 2 - 4;
+  const limit = CITY_SIZE / 2 - 4;
   if (Math.abs(carState.pos.x) > limit) {
     carState.pos.x = Math.sign(carState.pos.x) * limit;
     carState.velocity.x *= -0.3;
@@ -591,14 +732,11 @@ function updatePhysics(dt) {
     carState.velocity.z *= -0.3;
   }
 
-  // Drift
   carState.drifting = handbrake && currentSpeed > 8;
 
-  // Aplicar transformações
   car.position.copy(carState.pos);
   car.rotation.y = carState.angle;
 
-  // Rodas
   const wheelRot = currentSpeed * dt * 2.5;
   wheels.forEach(w => {
     w.tire.rotation.x += wheelRot * (movingForward || throttle ? 1 : -1);
@@ -608,13 +746,11 @@ function updatePhysics(dt) {
     }
   });
 
-  // Inclinação (roll) e pitch
   car.rotation.z = -carState.steer * speedFactor * 0.08;
   car.rotation.x = (throttle - brake) * 0.015;
 
   carState.speed = currentSpeed;
 
-  // Gear indicator
   if (speed < 0.5) gearEl.textContent = 'N';
   else if (movingBackward && !movingForward) gearEl.textContent = 'R';
   else gearEl.textContent = Math.min(6, Math.floor(speed / 8) + 1);
