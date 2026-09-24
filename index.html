@@ -2,961 +2,513 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MangaReader — Naruto Clássico</title>
-<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Noto+Sans+JP:wght@400;700;900&family=Anton&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Porsche Drift - Roblox Style</title>
 <style>
-  /* ═══════════════════════════════════════════
-     RESET & BASE
-  ═══════════════════════════════════════════ */
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: Arial, sans-serif; touch-action: none; }
+  #canvas { display: block; width: 100%; height: 100%; }
 
-  :root {
-    --preto: #0a0a0a;
-    --branco: #ffffff;
-    --cinza-1: #1a1a1a;
-    --cinza-2: #2a2a2a;
-    --cinza-3: #666;
-    --cinza-4: #b0b0b0;
-    --cinza-5: #e5e5e5;
-    --tinta: #000;
+  /* HUD */
+  #hud {
+    position: fixed; top: 10px; left: 10px; color: #fff; font-size: 14px;
+    background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 8px;
+    pointer-events: none; z-index: 10; line-height: 1.5;
   }
+  #hud b { color: #4fc3f7; }
 
-  body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: var(--preto);
-    color: var(--branco);
-    background-image:
-      radial-gradient(circle at 20% 10%, rgba(255,255,255,0.03) 0%, transparent 50%),
-      radial-gradient(circle at 80% 90%, rgba(255,255,255,0.03) 0%, transparent 50%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    min-height: 100vh;
-    overflow-x: hidden;
+  /* Controles mobile */
+  .controls { position: fixed; z-index: 20; user-select: none; }
+  .btn {
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 50%;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold;
+    backdrop-filter: blur(4px);
+    transition: background 0.1s;
   }
+  .btn:active, .btn.active { background: rgba(79,195,247,0.6); }
 
-  /* ═══════════════════════════════════════════
-     HEADER
-  ═══════════════════════════════════════════ */
-  header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: rgba(10,10,10,0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 3px solid var(--branco);
-    padding: 14px 24px;
-  }
+  /* Direcionais (esquerda) */
+  #dpad { bottom: 20px; left: 20px; width: 180px; height: 180px; position: fixed; }
+  #dpad .btn { position: absolute; width: 60px; height: 60px; }
+  #up    { top: 0; left: 60px; }
+  #down  { bottom: 0; left: 60px; }
+  #left  { top: 60px; left: 0; }
+  #right { top: 60px; right: 0; }
 
-  .header-inner {
-    max-width: 1400px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
+  /* Ações (direita) */
+  #actions { bottom: 20px; right: 20px; width: 200px; height: 200px; position: fixed; }
+  #actions .btn { position: absolute; }
+  #gas    { bottom: 0; right: 0; width: 80px; height: 80px; font-size: 16px; background: rgba(76,175,80,0.3); }
+  #brake  { bottom: 90px; right: 0; width: 80px; height: 80px; font-size: 16px; background: rgba(244,67,54,0.3); }
+  #hand   { bottom: 40px; right: 90px; width: 80px; height: 80px; font-size: 14px; background: rgba(255,152,0,0.3); }
+  #cam    { top: 0; right: 0; width: 60px; height: 60px; font-size: 12px; background: rgba(156,39,176,0.3); }
 
-  .logo {
-    font-family: 'Bangers', cursive;
-    font-size: 34px;
-    letter-spacing: 3px;
-    color: var(--branco);
-    text-shadow: 3px 3px 0 #000, 5px 5px 0 rgba(255,255,255,0.15);
-    cursor: pointer;
-    transform: skew(-4deg);
-    transition: transform .2s;
-  }
-  .logo:hover { transform: skew(-4deg) scale(1.05); }
-  .logo span { color: #888; }
-
-  nav {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
+  /* Botão reset */
+  #reset {
+    position: fixed; top: 10px; right: 10px; z-index: 20;
+    width: 50px; height: 50px; font-size: 20px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 50%; color: #fff;
+    display: flex; align-items: center; justify-content: center;
   }
 
-  .nav-btn {
-    background: transparent;
-    border: 2px solid transparent;
-    color: var(--cinza-4);
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 8px 14px;
-    cursor: pointer;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all .2s;
-    border-radius: 2px;
-  }
-  .nav-btn:hover, .nav-btn.active {
-    color: var(--branco);
-    border-color: var(--branco);
-    background: rgba(255,255,255,0.08);
-  }
-
-  /* BOTÃO DE IDIOMA */
-  .lang-toggle {
-    display: flex;
-    border: 2px solid var(--branco);
-    border-radius: 3px;
-    overflow: hidden;
-    margin-left: 8px;
-  }
-  .lang-btn {
-    background: transparent;
-    border: none;
-    color: var(--branco);
-    font-family: 'Anton', sans-serif;
-    font-size: 13px;
-    letter-spacing: 1px;
-    padding: 6px 12px;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .lang-btn.active {
-    background: var(--branco);
-    color: var(--preto);
-  }
-
-  /* ═══════════════════════════════════════════
-     VIEWS
-  ═══════════════════════════════════════════ */
-  .view { display: none; }
-  .view.active { display: block; animation: fadeIn .4s ease; }
-  @keyframes fadeIn { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
-
-  /* ═══════════════════════════════════════════
-     HERO / HOME
-  ═══════════════════════════════════════════ */
-  .hero {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 60px 24px 40px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 50px;
-    align-items: center;
-  }
-
-  .hero-img-wrap {
-    position: relative;
-    aspect-ratio: 3/4;
-    overflow: hidden;
-    border: 4px solid var(--branco);
-    box-shadow: 12px 12px 0 rgba(255,255,255,0.15);
-    transform: rotate(-2deg);
-    transition: transform .4s;
-  }
-  .hero-img-wrap:hover { transform: rotate(-2deg) scale(1.02); }
-  .hero-img-wrap::after {
-    content: '';
-    position: absolute; inset: 0;
-    background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.9));
-  }
-  .hero-img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    filter: grayscale(100%) contrast(1.15);
-  }
-
-  .hero-badge {
-    position: absolute;
-    top: 16px; left: 16px;
-    background: var(--branco);
-    color: var(--preto);
-    font-family: 'Anton', sans-serif;
-    font-size: 13px;
-    letter-spacing: 2px;
-    padding: 6px 12px;
-    z-index: 2;
-    transform: skew(-6deg);
-  }
-
-  .hero-content .tag {
-    display: inline-block;
-    background: var(--branco);
-    color: var(--preto);
-    font-family: 'Anton', sans-serif;
-    font-size: 12px;
-    letter-spacing: 3px;
-    padding: 5px 12px;
-    margin-bottom: 18px;
-    transform: skew(-6deg);
-  }
-
-  .hero-content h1 {
-    font-family: 'Bangers', cursive;
-    font-size: clamp(48px, 7vw, 92px);
-    line-height: 0.95;
-    letter-spacing: 4px;
-    margin-bottom: 8px;
-    text-shadow: 4px 4px 0 #333, 8px 8px 0 rgba(255,255,255,0.08);
-  }
-
-  .hero-content h2 {
-    font-family: 'Anton', sans-serif;
-    font-size: clamp(20px, 2.5vw, 30px);
-    color: var(--cinza-4);
-    letter-spacing: 6px;
-    margin-bottom: 24px;
-    text-transform: uppercase;
-  }
-
-  .hero-content p {
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--cinza-4);
-    margin-bottom: 30px;
-    max-width: 520px;
-  }
-
-  .btn-primary {
-    background: var(--branco);
-    color: var(--preto);
-    border: 3px solid var(--branco);
-    font-family: 'Anton', sans-serif;
-    font-size: 16px;
-    letter-spacing: 2px;
-    padding: 14px 32px;
-    cursor: pointer;
-    transition: all .2s;
-    text-transform: uppercase;
-    transform: skew(-4deg);
-    box-shadow: 6px 6px 0 rgba(255,255,255,0.2);
-  }
-  .btn-primary:hover {
-    background: var(--preto);
-    color: var(--branco);
-    transform: skew(-4deg) translate(-2px,-2px);
-    box-shadow: 8px 8px 0 rgba(255,255,255,0.3);
-  }
-
-  /* ═══════════════════════════════════════════
-     SEÇÕES
-  ═══════════════════════════════════════════ */
-  .section {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 50px 24px;
-  }
-
-  .section-title {
-    font-family: 'Bangers', cursive;
-    font-size: 42px;
-    letter-spacing: 3px;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .section-title::before {
-    content: '';
-    width: 8px;
-    height: 36px;
-    background: var(--branco);
-    transform: skew(-15deg);
-  }
-  .section-sub {
-    color: var(--cinza-3);
-    font-size: 13px;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    margin-bottom: 30px;
-    padding-left: 24px;
-  }
-
-  /* TEMPORADAS */
-  .seasons-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 18px;
-  }
-
-  .season-card {
-    background: var(--cinza-1);
-    border: 2px solid var(--cinza-2);
-    padding: 24px 20px;
-    cursor: pointer;
-    transition: all .25s;
-    position: relative;
-    overflow: hidden;
-  }
-  .season-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%;
-    width: 100%; height: 3px;
-    background: var(--branco);
-    transition: left .4s;
-  }
-  .season-card:hover::before { left: 0; }
-  .season-card:hover {
-    border-color: var(--branco);
-    transform: translateY(-4px);
-  }
-  .season-card.locked {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-  .season-card.locked:hover { transform: none; border-color: var(--cinza-2); }
-
-  .season-num {
-    font-family: 'Anton', sans-serif;
-    font-size: 48px;
-    color: var(--branco);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .season-card.locked .season-num { color: var(--cinza-3); }
-  .season-label {
-    font-size: 11px;
-    letter-spacing: 3px;
-    color: var(--cinza-3);
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-  .season-name {
-    font-family: 'Bangers', cursive;
-    font-size: 22px;
-    letter-spacing: 1px;
-    color: var(--branco);
-  }
-  .season-status {
-    margin-top: 12px;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--cinza-3);
-  }
-  .season-card.active .season-status { color: var(--branco); }
-
-  /* CAPÍTULOS */
-  .chapters-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin-bottom: 30px;
-  }
-
-  .back-btn {
-    background: transparent;
-    border: 2px solid var(--cinza-3);
-    color: var(--cinza-4);
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 2px;
-    padding: 8px 16px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all .2s;
-  }
-  .back-btn:hover { border-color: var(--branco); color: var(--branco); }
-
-  .chapters-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 20px;
-  }
-
-  .chapter-card {
-    background: var(--branco);
-    color: var(--preto);
-    cursor: pointer;
-    transition: all .25s;
-    display: flex;
-    overflow: hidden;
-    border: 3px solid var(--branco);
-    position: relative;
-  }
-  .chapter-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 8px 8px 0 rgba(255,255,255,0.25);
-  }
-
-  .chapter-thumb {
-    width: 90px;
-    flex-shrink: 0;
-    background: var(--cinza-1);
-    overflow: hidden;
-    position: relative;
-  }
-  .chapter-thumb img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-    filter: grayscale(100%) contrast(1.2);
-  }
-
-  .chapter-info {
-    padding: 14px 16px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .chapter-num {
-    font-family: 'Anton', sans-serif;
-    font-size: 11px;
-    letter-spacing: 2px;
-    color: var(--cinza-3);
-    margin-bottom: 4px;
-  }
-  .chapter-title {
-    font-family: 'Bangers', cursive;
-    font-size: 20px;
-    letter-spacing: 0.5px;
-    line-height: 1.1;
-    color: var(--preto);
-    margin-bottom: 6px;
-  }
-  .chapter-pages {
-    font-size: 10px;
-    letter-spacing: 1px;
-    color: var(--cinza-3);
-    text-transform: uppercase;
-  }
-
-  /* ═══════════════════════════════════════════
-     LEITOR
-  ═══════════════════════════════════════════ */
-  .reader-top {
-    position: sticky;
-    top: 78px;
-    z-index: 50;
-    background: rgba(10,10,10,0.97);
-    border-bottom: 2px solid var(--cinza-2);
-    padding: 12px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .reader-title {
-    font-family: 'Bangers', cursive;
-    font-size: 22px;
-    letter-spacing: 2px;
-  }
-  .reader-title small {
-    display: block;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--cinza-3);
-    font-weight: 400;
-  }
-
-  .reader-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .ctrl-btn {
-    background: transparent;
-    border: 2px solid var(--cinza-3);
-    color: var(--branco);
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 1px;
-    padding: 8px 14px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all .2s;
-  }
-  .ctrl-btn:hover { border-color: var(--branco); background: rgba(255,255,255,0.1); }
-  .ctrl-btn.active { background: var(--branco); color: var(--preto); border-color: var(--branco); }
-  .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  .page-indicator {
-    font-family: 'Anton', sans-serif;
-    font-size: 14px;
-    letter-spacing: 2px;
-    padding: 0 12px;
-    color: var(--cinza-4);
-  }
-
-  .reader-body {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 30px 20px 100px;
-  }
-
-  .manga-page {
-    background: var(--branco);
-    margin-bottom: 20px;
-    border: 3px solid var(--branco);
-    box-shadow: 0 0 40px rgba(0,0,0,0.6);
-    animation: fadeIn .35s ease;
-  }
-  .manga-page img {
-    width: 100%;
-    display: block;
-    filter: grayscale(100%) contrast(1.1);
-  }
-
-  .reader-bottom {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 30px;
-    flex-wrap: wrap;
-  }
-  .reader-bottom .btn-primary { flex: 1; min-width: 140px; text-align: center; }
-
-  /* ═══════════════════════════════════════════
-     FOOTER
-  ═══════════════════════════════════════════ */
-  footer {
-    border-top: 3px solid var(--branco);
-    padding: 30px 24px;
-    text-align: center;
-    color: var(--cinza-3);
-    font-size: 12px;
-    letter-spacing: 1px;
-    margin-top: 60px;
-  }
-  footer strong { color: var(--branco); font-family: 'Bangers', cursive; letter-spacing: 2px; font-size: 16px; }
-
-  /* ═══════════════════════════════════════════
-     RESPONSIVO
-  ═══════════════════════════════════════════ */
-  @media (max-width: 900px) {
-    .hero { grid-template-columns: 1fr; gap: 30px; padding: 30px 20px; }
-    .hero-img-wrap { max-width: 340px; margin: 0 auto; transform: rotate(-2deg); }
-    .hero-content { text-align: center; }
-    .hero-content p { margin-left: auto; margin-right: auto; }
-    .section-title { font-size: 30px; }
-    .logo { font-size: 24px; }
-    .nav-btn { padding: 6px 10px; font-size: 11px; }
-    .reader-top { top: 70px; padding: 10px 16px; }
-  }
-  @media (max-width: 500px) {
-    .chapters-grid { grid-template-columns: 1fr; }
-    .seasons-grid { grid-template-columns: repeat(2, 1fr); }
-    .lang-toggle { margin-left: 0; }
+  /* Desktop: esconde controles touch */
+  @media (min-width: 900px) and (hover: hover) {
+    #dpad, #actions { opacity: 0.35; }
   }
 </style>
 </head>
 <body>
+<canvas id="canvas"></canvas>
 
-<!-- ═══════════ HEADER ═══════════ -->
-<header>
-  <div class="header-inner">
-    <div class="logo" onclick="goHome()">MANGA<span>READER</span></div>
-    <nav>
-      <button class="nav-btn active" onclick="goHome()" data-i18n="nav_home">Início</button>
-      <button class="nav-btn" onclick="goSeasons()" data-i18n="nav_seasons">Temporadas</button>
-      <button class="nav-btn" onclick="goAbout()" data-i18n="nav_about">Sobre</button>
-      <div class="lang-toggle">
-        <button class="lang-btn active" id="lang-pt" onclick="setLang('pt')">PT</button>
-        <button class="lang-btn" id="lang-en" onclick="setLang('en')">EN</button>
-      </div>
-    </nav>
-  </div>
-</header>
+<div id="hud">
+  <div><b>WASD</b> / Setas — Dirigir</div>
+  <div><b>Espaço</b> — Freio de mão (drift)</div>
+  <div><b>C</b> — Trocar câmera</div>
+  <div><b>R</b> — Resetar</div>
+  <div id="speedInfo">Vel: 0 km/h</div>
+</div>
 
-<!-- ═══════════ VIEW: HOME ═══════════ -->
-<section class="view active" id="view-home">
-  <div class="hero">
-    <div class="hero-img-wrap">
-      <div class="hero-badge" id="hero-badge">VOL. 1</div>
-      <img class="hero-img" src="https://placehold.co/600x800/1a1a1a/ffffff?text=NARUTO%0A%0A%5B CAPA %5D&font=roboto" alt="Naruto">
-    </div>
-    <div class="hero-content">
-      <span class="tag" data-i18n="hero_tag">MANGÁ CLÁSSICO</span>
-      <h1>NARUTO</h1>
-      <h2 data-i18n="hero_sub">Parte 1 · Clássico</h2>
-      <p data-i18n="hero_synopsis">
-        Naruto Uzumaki é um jovem ninja da Vila da Folha que carrega dentro de si a Raposa de Nove Caudas. Rejeitado por todos, ele sonha em se tornar Hokage e conquistar o reconhecimento de sua vila. Acompanhe sua jornada do primeiro dia na Academia Ninja até se tornar um dos ninjas mais poderosos de todos os tempos.
-      </p>
-      <button class="btn-primary" onclick="goChapters()" data-i18n="btn_start">Começar a Ler</button>
-    </div>
-  </div>
+<button id="reset" onclick="resetCar()">⟳</button>
 
-  <div class="section">
-    <h2 class="section-title" data-i18n="title_seasons">Temporadas</h2>
-    <p class="section-sub" data-i18n="sub_seasons">Escolha uma temporada para explorar</p>
-    <div class="seasons-grid" id="seasons-grid"></div>
-  </div>
-</section>
+<!-- D-Pad -->
+<div id="dpad" class="controls">
+  <div class="btn" id="up"    data-key="w">▲</div>
+  <div class="btn" id="left"  data-key="a">◀</div>
+  <div class="btn" id="down"  data-key="s">▼</div>
+  <div class="btn" id="right" data-key="d">▶</div>
+</div>
 
-<!-- ═══════════ VIEW: CAPÍTULOS ═══════════ -->
-<section class="view" id="view-chapters">
-  <div class="section">
-    <div class="chapters-header">
-      <div>
-        <button class="back-btn" onclick="goHome()">← <span data-i18n="btn_back">Voltar</span></button>
-        <h2 class="section-title" style="margin-top:20px" id="chapters-title">Temporada 1</h2>
-        <p class="section-sub" id="chapters-sub">Naruto Clássico · Parte 1</p>
-      </div>
-    </div>
-    <div class="chapters-grid" id="chapters-grid"></div>
-  </div>
-</section>
+<!-- Ações -->
+<div id="actions" class="controls">
+  <div class="btn" id="cam"   data-key="c">📷</div>
+  <div class="btn" id="hand"  data-key=" ">DRIFT</div>
+  <div class="btn" id="brake" data-key="s">FREIO</div>
+  <div class="btn" id="gas"   data-key="w">GÁS</div>
+</div>
 
-<!-- ═══════════ VIEW: LEITOR ═══════════ -->
-<section class="view" id="view-reader">
-  <div class="reader-top">
-    <div class="reader-title">
-      <span id="reader-chapter-title">Capítulo 1</span>
-      <small id="reader-chapter-sub">Naruto Clássico</small>
-    </div>
-    <div class="reader-controls">
-      <button class="ctrl-btn" id="btn-single" onclick="setMode('single')" data-i18n="mode_single">1 Página</button>
-      <button class="ctrl-btn" id="btn-double" onclick="setMode('double')" data-i18n="mode_double">2 Páginas</button>
-      <button class="ctrl-btn" onclick="prevPage()" id="btn-prev">◀ <span data-i18n="btn_prev">Ant</span></button>
-      <span class="page-indicator" id="page-indicator">1 / 10</span>
-      <button class="ctrl-btn" onclick="nextPage()" id="btn-next"><span data-i18n="btn_next">Próx</span> ▶</button>
-      <button class="ctrl-btn" onclick="goChapters()" data-i18n="btn_list">≡ Lista</button>
-    </div>
-  </div>
-
-  <div class="reader-body" id="reader-body"></div>
-
-  <div class="reader-body" style="padding-top:0">
-    <div class="reader-bottom">
-      <button class="btn-primary" onclick="prevChapter()" id="btn-prev-chap">◀ <span data-i18n="btn_prev_chap">Capítulo Anterior</span></button>
-      <button class="btn-primary" onclick="nextChapter()" id="btn-next-chap"><span data-i18n="btn_next_chap">Próximo Capítulo</span> ▶</button>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════ VIEW: SOBRE ═══════════ -->
-<section class="view" id="view-about">
-  <div class="section">
-    <h2 class="section-title" data-i18n="about_title">Sobre</h2>
-    <p class="section-sub" data-i18n="about_sub">Informações do mangá</p>
-    <div style="max-width:700px; line-height:1.9; color:var(--cinza-4); font-size:15px;">
-      <p style="margin-bottom:20px" data-i18n="about_p1">
-        <strong style="color:#fff">Naruto</strong> é um mangá japonês escrito e ilustrado por Masashi Kishimoto. Foi serializado na revista Weekly Shōnen Jump de 1999 a 2014, com 72 volumes tankōbon.
-      </p>
-      <p style="margin-bottom:20px" data-i18n="about_p2">
-        A história acompanha Naruto Uzumaki, um jovem ninja que busca reconhecimento e sonha em se tornar Hokage, o líder de sua vila. A série é dividida em duas partes: a Parte 1 (Clássico) e a Parte 2 (Shippuden).
-      </p>
-      <p data-i18n="about_p3">
-        Este é um projeto de fã para fins educacionais. Todos os direitos pertencem a Masashi Kishimoto, Shueisha e Viz Media.
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════ FOOTER ═══════════ -->
-<footer>
-  <strong>MANGA READER</strong><br><br>
-  <span data-i18n="footer_text">Projeto de fã · Naruto © Masashi Kishimoto</span>
-</footer>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-/* ═══════════════════════════════════════════════
-   DADOS — MANGA NARUTO
-   (estrutura pronta pra adicionar novas temporadas)
-═══════════════════════════════════════════════ */
-const MANGA_DATA = {
-  naruto: {
-    title: { pt: "Naruto Clássico", en: "Naruto Classic" },
-    subtitle: { pt: "Parte 1 · Clássico", en: "Part 1 · Classic" },
-    seasons: [
-      {
-        id: 1,
-        name: { pt: "Temporada 1", en: "Season 1" },
-        label: { pt: "Introdução", en: "Introduction" },
-        status: { pt: "Disponível", en: "Available" },
-        active: true,
-        chapters: [
-          { num: 1, title: { pt: "Naruto Uzumaki", en: "Uzumaki Naruto" }, pages: 12, thumb: "https://placehold.co/200x260/1a1a1a/fff?text=CAP+1" },
-          { num: 2, title: { pt: "Konohamaru!", en: "Konohamaru!" }, pages: 10, thumb: "https://placehold.co/200x260/222/fff?text=CAP+2" },
-          { num: 3, title: { pt: "Sasuke Uchiha", en: "Sasuke Uchiha" }, pages: 14, thumb: "https://placehold.co/200x260/1a1a1a/fff?text=CAP+3" },
-          { num: 4, title: { pt: "Hatake Kakashi", en: "Hatake Kakashi" }, pages: 12, thumb: "https://placehold.co/200x260/222/fff?text=CAP+4" },
-          { num: 5, title: { pt: "Descuido!", en: "Carelessness!" }, pages: 11, thumb: "https://placehold.co/200x260/1a1a1a/fff?text=CAP+5" },
-          { num: 6, title: { pt: "Só eu!", en: "Only Me!" }, pages: 13, thumb: "https://placehold.co/200x260/222/fff?text=CAP+6" },
-          { num: 7, title: { pt: "A Promessa", en: "The Promise" }, pages: 12, thumb: "https://placehold.co/200x260/1a1a1a/fff?text=CAP+7" },
-          { num: 8, title: { pt: "O Time 7", en: "Team 7" }, pages: 15, thumb: "https://placehold.co/200x260/222/fff?text=CAP+8" },
-        ]
-      },
-      { id: 2, name: { pt: "Temporada 2", en: "Season 2" }, label: { pt: "Exames Chunin", en: "Chunin Exams" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
-      { id: 3, name: { pt: "Temporada 3", en: "Season 3" }, label: { pt: "Invasão de Konoha", en: "Konoha Crush" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
-      { id: 4, name: { pt: "Temporada 4", en: "Season 4" }, label: { pt: "Missão de Recuperação", en: "Retrieval Mission" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
-      { id: 5, name: { pt: "Temporada 5", en: "Season 5" }, label: { pt: "Treinamento", en: "Training" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
-      { id: 6, name: { pt: "Temporada 6", en: "Season 6" }, label: { pt: "Sasuke vs Naruto", en: "Sasuke vs Naruto" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] },
-      { id: 7, name: { pt: "Temporada 7", en: "Season 7" }, label: { pt: "Fim da Parte 1", en: "End of Part 1" }, status: { pt: "Em breve", en: "Coming Soon" }, active: false, chapters: [] }
-    ]
-  }
-};
+/* ============================================================
+   SETUP BÁSICO
+============================================================ */
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-/* ═══════════════════════════════════════════════
-   TRADUÇÕES (i18n)
-═══════════════════════════════════════════════ */
-const I18N = {
-  pt: {
-    nav_home: "Início",
-    nav_seasons: "Temporadas",
-    nav_about: "Sobre",
-    hero_tag: "MANGÁ CLÁSSICO",
-    hero_sub: "Parte 1 · Clássico",
-    hero_synopsis: "Naruto Uzumaki é um jovem ninja da Vila da Folha que carrega dentro de si a Raposa de Nove Caudas. Rejeitado por todos, ele sonha em se tornar Hokage e conquistar o reconhecimento de sua vila. Acompanhe sua jornada do primeiro dia na Academia Ninja até se tornar um dos ninjas mais poderosos de todos os tempos.",
-    btn_start: "Começar a Ler",
-    title_seasons: "Temporadas",
-    sub_seasons: "Escolha uma temporada para explorar",
-    btn_back: "Voltar",
-    mode_single: "1 Página",
-    mode_double: "2 Páginas",
-    btn_prev: "Ant",
-    btn_next: "Próx",
-    btn_list: "≡ Lista",
-    btn_prev_chap: "Capítulo Anterior",
-    btn_next_chap: "Próximo Capítulo",
-    about_title: "Sobre",
-    about_sub: "Informações do mangá",
-    about_p1: "Naruto é um mangá japonês escrito e ilustrado por Masashi Kishimoto. Foi serializado na revista Weekly Shōnen Jump de 1999 a 2014, com 72 volumes tankōbon.",
-    about_p2: "A história acompanha Naruto Uzumaki, um jovem ninja que busca reconhecimento e sonha em se tornar Hokage, o líder de sua vila. A série é dividida em duas partes: a Parte 1 (Clássico) e a Parte 2 (Shippuden).",
-    about_p3: "Este é um projeto de fã para fins educacionais. Todos os direitos pertencem a Masashi Kishimoto, Shueisha e Viz Media.",
-    footer_text: "Projeto de fã · Naruto © Masashi Kishimoto",
-    chapter_of: "Capítulo",
-    pages: "páginas",
-    page_of: "de"
-  },
-  en: {
-    nav_home: "Home",
-    nav_seasons: "Seasons",
-    nav_about: "About",
-    hero_tag: "CLASSIC MANGA",
-    hero_sub: "Part 1 · Classic",
-    hero_synopsis: "Naruto Uzumaki is a young ninja from the Village Hidden in the Leaves who carries the Nine-Tailed Fox within him. Rejected by everyone, he dreams of becoming Hokage and earning his village's recognition. Follow his journey from his first day at the Ninja Academy to becoming one of the most powerful ninjas of all time.",
-    btn_start: "Start Reading",
-    title_seasons: "Seasons",
-    sub_seasons: "Choose a season to explore",
-    btn_back: "Back",
-    mode_single: "1 Page",
-    mode_double: "2 Pages",
-    btn_prev: "Prev",
-    btn_next: "Next",
-    btn_list: "≡ List",
-    btn_prev_chap: "Previous Chapter",
-    btn_next_chap: "Next Chapter",
-    about_title: "About",
-    about_sub: "Manga information",
-    about_p1: "Naruto is a Japanese manga written and illustrated by Masashi Kishimoto. It was serialized in Weekly Shōnen Jump from 1999 to 2014, with 72 tankōbon volumes.",
-    about_p2: "The story follows Naruto Uzumaki, a young ninja seeking recognition and dreaming of becoming Hokage, the leader of his village. The series is divided into two parts: Part 1 (Classic) and Part 2 (Shippuden).",
-    about_p3: "This is a fan project for educational purposes. All rights belong to Masashi Kishimoto, Shueisha and Viz Media.",
-    footer_text: "Fan project · Naruto © Masashi Kishimoto",
-    chapter_of: "Chapter",
-    pages: "pages",
-    page_of: "of"
-  }
-};
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 80, 250);
 
-/* ═══════════════════════════════════════════════
-   ESTADO
-═══════════════════════════════════════════════ */
-let currentLang = 'pt';
-let currentView = 'home';
-let currentChapter = 0;
-let currentPage = 0;
-let readerMode = 'single';
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-const chapters = MANGA_DATA.naruto.seasons[0].chapters;
+/* ============================================================
+   ILUMINAÇÃO
+============================================================ */
+const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.9);
+scene.add(hemi);
 
-/* ═══════════════════════════════════════════════
-   i18n
-═══════════════════════════════════════════════ */
-function t(key) { return I18N[currentLang][key] || key; }
+const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+sun.position.set(60, 100, 40);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -100;
+sun.shadow.camera.right = 100;
+sun.shadow.camera.top = 100;
+sun.shadow.camera.bottom = -100;
+sun.shadow.camera.far = 300;
+scene.add(sun);
 
-function setLang(lang) {
-  currentLang = lang;
-  document.getElementById('lang-pt').classList.toggle('active', lang === 'pt');
-  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
-  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+/* ============================================================
+   BASE PLATE (estilo Roblox)
+============================================================ */
+const PLATE_SIZE = 200;
+const plateGeo = new THREE.BoxGeometry(PLATE_SIZE, 2, PLATE_SIZE);
+const plateMat = new THREE.MeshLambertMaterial({ color: 0x5a9e3f });
+const plate = new THREE.Mesh(plateGeo, plateMat);
+plate.position.y = -1;
+plate.receiveShadow = true;
+scene.add(plate);
 
-  // Atualiza todos os data-i18n
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (I18N[lang][key]) el.textContent = I18N[lang][key];
-  });
+// Grade (linhas de studs estilo Roblox)
+const gridHelper = new THREE.GridHelper(PLATE_SIZE, PLATE_SIZE/2, 0x3d7a2a, 0x3d7a2a);
+gridHelper.position.y = 0.01;
+scene.add(gridHelper);
 
-  // Re-renderiza views dinâmicas
-  renderSeasons();
-  if (currentView === 'chapters') renderChapters();
-  if (currentView === 'reader') {
-    renderReader();
-    updateReaderTitle();
-  }
+// Céu ao redor (paredes invisíveis não, mas blocos decorativos)
+for (let i = 0; i < 25; i++) {
+  const size = 4 + Math.random() * 8;
+  const box = new THREE.Mesh(
+    new THREE.BoxGeometry(size, size, size),
+    new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(Math.random(), 0.6, 0.6) })
+  );
+  const edge = PLATE_SIZE/2 - 5;
+  box.position.set(
+    (Math.random() - 0.5) * PLATE_SIZE * 0.9,
+    size/2,
+    (Math.random() - 0.5) * PLATE_SIZE * 0.9
+  );
+  box.castShadow = true;
+  box.receiveShadow = true;
+  scene.add(box);
 }
 
-/* ═══════════════════════════════════════════════
-   NAVEGAÇÃO
-═══════════════════════════════════════════════ */
-function showView(view) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + view).classList.add('active');
-  currentView = view;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+/* ============================================================
+   PORSCHE (modelo low-poly construído com primitivas)
+============================================================ */
+const car = new THREE.Group();
+scene.add(car);
 
-function goHome() { showView('home'); }
-function goSeasons() { showView('home'); setTimeout(() => document.getElementById('seasons-grid').scrollIntoView({behavior:'smooth'}), 100); }
-function goAbout() { showView('about'); }
-function goChapters() { renderChapters(); showView('chapters'); }
-function goReader() { renderReader(); showView('reader'); }
+const bodyColor = 0xd50000; // vermelho Porsche
 
-/* ═══════════════════════════════════════════════
-   RENDER: TEMPORADAS
-═══════════════════════════════════════════════ */
-function renderSeasons() {
-  const grid = document.getElementById('seasons-grid');
-  grid.innerHTML = '';
-  MANGA_DATA.naruto.seasons.forEach(season => {
-    const card = document.createElement('div');
-    card.className = 'season-card ' + (season.active ? 'active' : 'locked');
-    card.innerHTML = `
-      <div class="season-num">${String(season.id).padStart(2, '0')}</div>
-      <div class="season-label">${season.label[currentLang]}</div>
-      <div class="season-name">${season.name[currentLang]}</div>
-      <div class="season-status">${season.status[currentLang]}</div>
-    `;
-    if (season.active) {
-      card.onclick = () => goChapters();
-    }
-    grid.appendChild(card);
-  });
-}
+// Corpo principal
+const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, metalness: 0.6, roughness: 0.3 });
+const body = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.55, 4.4), bodyMat);
+body.position.y = 0.7;
+body.castShadow = true;
+car.add(body);
 
-/* ═══════════════════════════════════════════════
-   RENDER: CAPÍTULOS
-═══════════════════════════════════════════════ */
-function renderChapters() {
-  document.getElementById('chapters-title').textContent =
-    MANGA_DATA.naruto.seasons[0].name[currentLang];
-  document.getElementById('chapters-sub').textContent =
-    MANGA_DATA.naruto.title[currentLang] + ' · ' + MANGA_DATA.naruto.subtitle[currentLang];
+// Capô dianteiro mais baixo
+const hood = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.25, 1.4), bodyMat);
+hood.position.set(0, 0.62, -1.6);
+hood.castShadow = true;
+car.add(hood);
 
-  const grid = document.getElementById('chapters-grid');
-  grid.innerHTML = '';
-  chapters.forEach((ch, i) => {
-    const card = document.createElement('div');
-    card.className = 'chapter-card';
-    card.innerHTML = `
-      <div class="chapter-thumb"><img src="${ch.thumb}" alt=""></div>
-      <div class="chapter-info">
-        <div class="chapter-num">${t('chapter_of').toUpperCase()} ${String(ch.num).padStart(2,'0')}</div>
-        <div class="chapter-title">${ch.title[currentLang]}</div>
-        <div class="chapter-pages">${ch.pages} ${t('pages')}</div>
-      </div>
-    `;
-    card.onclick = () => { currentChapter = i; currentPage = 0; goReader(); };
-    grid.appendChild(card);
-  });
-}
+// Teto / cabine
+const cabin = new THREE.Mesh(
+  new THREE.BoxGeometry(1.7, 0.55, 2.0),
+  new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.7, roughness: 0.2 })
+);
+cabin.position.set(0, 1.2, 0.15);
+cabin.castShadow = true;
+car.add(cabin);
 
-/* ═══════════════════════════════════════════════
-   RENDER: LEITOR
-═══════════════════════════════════════════════ */
-function updateReaderTitle() {
-  const ch = chapters[currentChapter];
-  document.getElementById('reader-chapter-title').textContent =
-    t('chapter_of') + ' ' + ch.num + ' — ' + ch.title[currentLang];
-  document.getElementById('reader-chapter-sub').textContent =
-    MANGA_DATA.naruto.title[currentLang];
+// Para-brisa inclinado
+const windshield = new THREE.Mesh(
+  new THREE.BoxGeometry(1.6, 0.05, 0.9),
+  new THREE.MeshStandardMaterial({ color: 0x2a2a2a, metalness: 0.9, roughness: 0.1, transparent: true, opacity: 0.85 })
+);
+windshield.position.set(0, 1.1, -0.9);
+windshield.rotation.x = -0.5;
+car.add(windshield);
 
-  document.getElementById('btn-prev-chap').style.opacity = currentChapter === 0 ? 0.4 : 1;
-  document.getElementById('btn-prev-chap').disabled = currentChapter === 0;
-  document.getElementById('btn-next-chap').style.opacity = currentChapter >= chapters.length - 1 ? 0.4 : 1;
-  document.getElementById('btn-next-chap').disabled = currentChapter >= chapters.length - 1;
-}
+// Traseira (motor)
+const rear = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.4, 1.0), bodyMat);
+rear.position.set(0, 0.75, 1.9);
+rear.castShadow = true;
+car.add(rear);
 
-function renderReader() {
-  const ch = chapters[currentChapter];
-  const body = document.getElementById('reader-body');
-  body.innerHTML = '';
+// Spoiler
+const spoiler = new THREE.Mesh(
+  new THREE.BoxGeometry(1.9, 0.08, 0.35),
+  new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.5, roughness: 0.5 })
+);
+spoiler.position.set(0, 1.15, 2.1);
+car.add(spoiler);
+const spoilerL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.35, 0.1), spoiler.material);
+spoilerL.position.set(-0.8, 0.98, 2.1);
+car.add(spoilerL);
+const spoilerR = spoilerL.clone();
+spoilerR.position.x = 0.8;
+car.add(spoilerR);
 
-  const pagesPerView = readerMode === 'single' ? 1 : 2;
-  const total = ch.pages;
-
-  for (let i = 0; i < pagesPerView; i++) {
-    const pageNum = currentPage + i + 1;
-    if (pageNum > total) break;
-    const page = document.createElement('div');
-    page.className = 'manga-page';
-    page.innerHTML = `<img src="https://placehold.co/800x1200/ffffff/000000?text=NARUTO+%7C+CAP+${ch.num}+%7C+PAG+${pageNum}&font=roboto" alt="Página ${pageNum}">`;
-    body.appendChild(page);
-  }
-
-  document.getElementById('page-indicator').textContent =
-    (currentPage + 1) + ' / ' + total;
-
-  document.getElementById('btn-prev').disabled = currentPage === 0;
-  document.getElementById('btn-next').disabled = currentPage + pagesPerView >= total;
-
-  document.getElementById('btn-single').classList.toggle('active', readerMode === 'single');
-  document.getElementById('btn-double').classList.toggle('active', readerMode === 'double');
-
-  updateReaderTitle();
-}
-
-function nextPage() {
-  const ch = chapters[currentChapter];
-  const step = readerMode === 'single' ? 1 : 2;
-  if (currentPage + step < ch.pages) {
-    currentPage += step;
-    renderReader();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}
-
-function prevPage() {
-  const step = readerMode === 'single' ? 1 : 2;
-  currentPage = Math.max(0, currentPage - step);
-  renderReader();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function setMode(mode) {
-  readerMode = mode;
-  if (mode === 'double' && currentPage % 2 !== 0 && currentPage + 1 < chapters[currentChapter].pages) {
-    // mantém alinhado
-  }
-  renderReader();
-}
-
-function nextChapter() {
-  if (currentChapter < chapters.length - 1) {
-    currentChapter++;
-    currentPage = 0;
-    renderReader();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}
-
-function prevChapter() {
-  if (currentChapter > 0) {
-    currentChapter--;
-    currentPage = 0;
-    renderReader();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}
-
-/* ═══════════════════════════════════════════════
-   ATALHOS DE TECLADO
-═══════════════════════════════════════════════ */
-document.addEventListener('keydown', (e) => {
-  if (currentView !== 'reader') return;
-  if (e.key === 'ArrowRight') nextPage();
-  if (e.key === 'ArrowLeft') prevPage();
+// Faróis
+const headMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: 0xffff88, emissiveIntensity: 0.8 });
+[-0.65, 0.65].forEach(x => {
+  const hl = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.2, 0.1), headMat);
+  hl.position.set(x, 0.72, -2.15);
+  car.add(hl);
 });
 
-/* ═══════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════ */
-renderSeasons();
+// Lanternas traseiras
+const tailMat = new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 0.6 });
+[-0.7, 0.7].forEach(x => {
+  const tl = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.08), tailMat);
+  tl.position.set(x, 0.8, 2.42);
+  car.add(tl);
+});
+
+// Rodas
+const wheelGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.32, 20);
+const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+const rimMat = new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.9, roughness: 0.2 });
+
+const wheels = [];
+const wheelPositions = [
+  [-0.95, 0.42, -1.5],  // frente esquerda
+  [ 0.95, 0.42, -1.5],  // frente direita
+  [-0.95, 0.42,  1.5],  // trás esquerda
+  [ 0.95, 0.42,  1.5],  // trás direita
+];
+
+wheelPositions.forEach(([x, y, z], i) => {
+  const w = new THREE.Mesh(wheelGeo, wheelMat);
+  w.rotation.z = Math.PI / 2;
+  w.position.set(x, y, z);
+  w.castShadow = true;
+  car.add(w);
+
+  // Aro
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.34, 12), rimMat);
+  rim.rotation.z = Math.PI / 2;
+  rim.position.set(x, y, z);
+  car.add(rim);
+
+  wheels.push({ mesh: w, rim, isFront: i < 2, side: i % 2 === 0 ? 1 : -1 });
+});
+
+car.position.set(0, 0, 0);
+
+/* ============================================================
+   FÍSICA DO CARRO (simples arcade)
+============================================================ */
+const carState = {
+  pos: new THREE.Vector3(0, 0, 0),
+  velocity: new THREE.Vector3(0, 0, 0),
+  angle: 0,           // rotação Y (radianos)
+  angularVel: 0,
+  speed: 0,
+  steer: 0,           // -1 a 1
+  handbrake: false,
+  drifting: false,
+  driftFactor: 0,
+};
+
+const MAX_SPEED = 45;
+const ACCEL = 28;
+const BRAKE = 40;
+const FRICTION = 1.8;
+const TURN_SPEED = 2.2;
+const HANDBRAKE_FRICTION = 0.6;
+
+/* ============================================================
+   INPUT
+============================================================ */
+const keys = {};
+const mobileKeys = {};
+
+function setKey(k, v) { keys[k.toLowerCase()] = v; }
+
+window.addEventListener('keydown', e => {
+  setKey(e.key, true);
+  if (e.key === ' ') e.preventDefault();
+  if (e.key.toLowerCase() === 'c') toggleCamera();
+  if (e.key.toLowerCase() === 'r') resetCar();
+});
+window.addEventListener('keyup', e => setKey(e.key, false));
+
+// Controles touch
+document.querySelectorAll('[data-key]').forEach(btn => {
+  const key = btn.dataset.key;
+  const press = (e) => { e.preventDefault(); mobileKeys[key] = true; btn.classList.add('active'); if (key === 'c') toggleCamera(); };
+  const release = (e) => { e.preventDefault(); mobileKeys[key] = false; btn.classList.remove('active'); };
+
+  btn.addEventListener('touchstart', press, { passive: false });
+  btn.addEventListener('touchend', release);
+  btn.addEventListener('touchcancel', release);
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('mouseup', release);
+  btn.addEventListener('mouseleave', release);
+});
+
+function isPressed(...ks) {
+  return ks.some(k => keys[k] || mobileKeys[k]);
+}
+
+/* ============================================================
+   CÂMERA
+============================================================ */
+let cameraMode = 0; // 0 = terceira pessoa, 1 = primeira pessoa
+const camTarget = new THREE.Vector3();
+const camPos = new THREE.Vector3(0, 5, 10);
+
+function toggleCamera() {
+  cameraMode = (cameraMode + 1) % 2;
+}
+
+function updateCamera(dt) {
+  const carPos = carState.pos;
+  const forward = new THREE.Vector3(Math.sin(carState.angle), 0, Math.cos(carState.angle));
+
+  if (cameraMode === 1) {
+    // Primeira pessoa
+    const offset = forward.clone().multiplyScalar(0.4);
+    const targetPos = carPos.clone().add(offset).add(new THREE.Vector3(0, 1.35, 0));
+    camPos.lerp(targetPos, 0.5);
+    camera.position.copy(camPos);
+    const lookAt = carPos.clone().add(forward.clone().multiplyScalar(20)).add(new THREE.Vector3(0, 1.2, 0));
+    camera.lookAt(lookAt);
+    camera.fov = 75;
+  } else {
+    // Terceira pessoa
+    const back = forward.clone().multiplyScalar(-9);
+    const targetPos = carPos.clone().add(back).add(new THREE.Vector3(0, 4.5, 0));
+    camPos.lerp(targetPos, 0.12);
+    camera.position.copy(camPos);
+    camTarget.lerp(carPos.clone().add(new THREE.Vector3(0, 1, 0)), 0.2);
+    camera.lookAt(camTarget);
+    camera.fov = 65;
+  }
+  camera.updateProjectionMatrix();
+}
+
+/* ============================================================
+   FÍSICA
+============================================================ */
+function updatePhysics(dt) {
+  const throttle = isPressed('w', 'arrowup') ? 1 : 0;
+  const brake = isPressed('s', 'arrowdown') ? 1 : 0;
+  const left = isPressed('a', 'arrowleft') ? 1 : 0;
+  const right = isPressed('d', 'arrowright') ? 1 : 0;
+  const handbrake = isPressed(' ', 'spacebar') || mobileKeys[' '];
+
+  carState.handbrake = handbrake;
+
+  // Direção
+  let steerInput = (right - left);
+  carState.steer += (steerInput - carState.steer) * 0.15;
+
+  // Aceleração
+  const forward = new THREE.Vector3(Math.sin(carState.angle), 0, Math.cos(carState.angle));
+  const speed = carState.velocity.length();
+
+  if (throttle) {
+    carState.velocity.add(forward.clone().multiplyScalar(ACCEL * dt));
+  }
+  if (brake) {
+    const backDir = forward.clone().negate();
+    // Se estiver indo pra frente, freia; senão, dá ré
+    if (carState.velocity.dot(forward) > 0.5) {
+      carState.velocity.add(forward.clone().multiplyScalar(-BRAKE * dt));
+    } else {
+      carState.velocity.add(backDir.multiplyScalar(ACCEL * 0.5 * dt));
+    }
+  }
+
+  // Atrito
+  let friction = FRICTION;
+  if (handbrake) friction = HANDBRAKE_FRICTION;
+  if (!throttle && !brake) {
+    carState.velocity.multiplyScalar(Math.max(0, 1 - friction * dt));
+  } else {
+    carState.velocity.multiplyScalar(Math.max(0, 1 - 0.3 * dt));
+  }
+
+  // Limite de velocidade
+  const currentSpeed = carState.velocity.length();
+  if (currentSpeed > MAX_SPEED) {
+    carState.velocity.multiplyScalar(MAX_SPEED / currentSpeed);
+  }
+
+  // Rotação (depende da velocidade pra ser mais realista)
+  const speedFactor = Math.min(1, currentSpeed / 15);
+  const turnRate = TURN_SPEED * speedFactor * carState.steer;
+  
+  // Se estiver com freio de mão, gira mais rápido (drift)
+  const driftMultiplier = handbrake ? 1.8 : 1.0;
+  
+  // Direção invertida quando dá ré
+  const direction = carState.velocity.dot(forward) < -0.5 ? -1 : 1;
+  carState.angularVel = turnRate * direction * driftMultiplier;
+
+  carState.angle += carState.angularVel * dt;
+
+  // Aplicar movimento
+  carState.pos.add(carState.velocity.clone().multiplyScalar(dt));
+
+  // Limites da base plate
+  const limit = PLATE_SIZE / 2 - 3;
+  if (Math.abs(carState.pos.x) > limit) {
+    carState.pos.x = Math.sign(carState.pos.x) * limit;
+    carState.velocity.x *= -0.3;
+  }
+  if (Math.abs(carState.pos.z) > limit) {
+    carState.pos.z = Math.sign(carState.pos.z) * limit;
+    carState.velocity.z *= -0.3;
+  }
+
+  // Detecção de drift
+  carState.drifting = handbrake && currentSpeed > 8;
+  if (carState.drifting) {
+    carState.driftFactor = Math.min(1, carState.driftFactor + dt * 2);
+  } else {
+    carState.driftFactor = Math.max(0, carState.driftFactor - dt * 2);
+  }
+
+  // Atualizar mesh
+  car.position.copy(carState.pos);
+  car.rotation.y = carState.angle;
+
+  // Rotação das rodas
+  const wheelRot = currentSpeed * dt * 2;
+  wheels.forEach(w => {
+    w.mesh.rotation.x += wheelRot * (carState.velocity.dot(forward) >= 0 ? 1 : -1);
+    w.rim.rotation.x = w.mesh.rotation.x;
+    
+    // Direção das rodas dianteiras
+    if (w.isFront) {
+      w.mesh.rotation.y = carState.steer * 0.5;
+      w.rim.rotation.y = carState.steer * 0.5;
+    }
+  });
+
+  // Efeito de inclinação ao virar
+  const roll = -carState.steer * speedFactor * 0.08;
+  car.rotation.z = roll;
+
+  carState.speed = currentSpeed;
+}
+
+/* ============================================================
+   RESET
+============================================================ */
+function resetCar() {
+  carState.pos.set(0, 0, 0);
+  carState.velocity.set(0, 0, 0);
+  carState.angle = 0;
+  carState.angularVel = 0;
+  carState.steer = 0;
+}
+
+/* ============================================================
+   LOOP
+============================================================ */
+let lastTime = performance.now();
+const speedInfo = document.getElementById('speedInfo');
+
+function animate(now) {
+  const dt = Math.min((now - lastTime) / 1000, 0.05);
+  lastTime = now;
+
+  updatePhysics(dt);
+  updateCamera(dt);
+  renderer.render(scene, camera);
+
+  speedInfo.textContent = `Vel: ${Math.round(carState.speed * 3.6)} km/h${carState.drifting ? ' 🔥 DRIFT' : ''}`;
+
+  requestAnimationFrame(animate);
+}
+
+/* ============================================================
+   RESIZE
+============================================================ */
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Inicia
+resetCar();
+requestAnimationFrame(animate);
 </script>
 </body>
 </html>
