@@ -3,301 +3,872 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Batalha Ninja - Cartas Naruto</title>
+<title>BATALHA NINJA ULTIMATE 🍥</title>
 <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: radial-gradient(circle at 50% 0%, #2a1a0a 0%, #0d0d0d 70%);
-    color: #fff; min-height: 100vh; overflow-x: hidden;
+    font-family: 'Rajdhani', sans-serif;
+    background: #050505;
+    color: #fff;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    position: relative;
   }
-  #app { max-width: 1100px; margin: 0 auto; padding: 15px; }
 
-  /* ===== TELAS ===== */
-  .tela { display: none; }
-  .tela.ativa { display: block; }
-
-  /* ===== MENU ===== */
-  #menu { text-align: center; padding-top: 60px; }
-  #menu h1 {
-    font-size: 3.5em; color: #ff8c00;
-    text-shadow: 0 0 20px #ff4500, 0 0 40px #ff4500;
-    margin-bottom: 10px; letter-spacing: 3px;
+  /* Fundo animado com partículas de chakra */
+  #particulas {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
   }
-  #menu p.sub { color: #bbb; margin-bottom: 40px; font-size: 1.1em; }
+  .particula {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle, #ff8c00, transparent);
+    animation: flutuar linear infinite;
+    opacity: 0.6;
+  }
+  @keyframes flutuar {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.6; }
+    100% { transform: translateY(-100vh) scale(1.5); opacity: 0; }
+  }
+
+  /* Overlay de fundo tipo pergaminho */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 50% 0%, rgba(255,69,0,0.15) 0%, transparent 50%),
+      radial-gradient(circle at 50% 100%, rgba(30,144,255,0.1) 0%, transparent 50%),
+      repeating-linear-gradient(45deg, transparent, transparent 50px, rgba(255,140,0,0.02) 50px, rgba(255,140,0,0.02) 51px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app {
+    position: relative;
+    z-index: 2;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 12px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ========== TELAS ========== */
+  .tela { display: none; flex: 1; }
+  .tela.ativa { display: flex; flex-direction: column; }
+
+  /* ========== MENU ========== */
+  #menu {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 20px;
+  }
+  .logo {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.5em, 6vw, 5em);
+    font-weight: 900;
+    background: linear-gradient(180deg, #ffcc00 0%, #ff8c00 40%, #ff4500 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 4px;
+    filter: drop-shadow(0 0 30px rgba(255,140,0,0.8)) drop-shadow(0 0 60px rgba(255,69,0,0.4));
+    animation: pulsarLogo 3s ease-in-out infinite;
+    line-height: 1;
+  }
+  @keyframes pulsarLogo {
+    0%, 100% { filter: drop-shadow(0 0 30px rgba(255,140,0,0.8)) drop-shadow(0 0 60px rgba(255,69,0,0.4)); }
+    50% { filter: drop-shadow(0 0 50px rgba(255,140,0,1)) drop-shadow(0 0 90px rgba(255,69,0,0.7)); }
+  }
+  .subtitulo {
+    color: #aaa;
+    font-size: 1.1em;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
   .btn {
-    background: linear-gradient(135deg, #ff8c00, #ff4500);
-    color: #fff; border: none; padding: 15px 35px; font-size: 1.1em;
-    border-radius: 10px; cursor: pointer; margin: 10px; font-weight: bold;
-    transition: transform .2s, box-shadow .2s;
-    box-shadow: 0 4px 15px rgba(255,69,0,.4);
+    position: relative;
+    background: linear-gradient(135deg, #ff8c00 0%, #ff4500 100%);
+    color: #fff;
+    border: 2px solid rgba(255,200,100,0.5);
+    padding: 16px 42px;
+    font-size: 1.15em;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    border-radius: 12px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 6px 20px rgba(255,69,0,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+    overflow: hidden;
   }
-  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(255,69,0,.7); }
-  .btn:disabled { opacity: .5; cursor: not-allowed; }
-  .btn.sec { background: linear-gradient(135deg, #444, #222); box-shadow: none; }
+  .btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
+  }
+  .btn:hover::before { left: 100%; }
+  .btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 30px rgba(255,69,0,0.8), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .btn:active { transform: translateY(0) scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+  .btn.sec {
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-color: rgba(255,140,0,0.3);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+  }
+  .btn.sec:hover { box-shadow: 0 10px 30px rgba(255,140,0,0.4); }
+
   #inputCodigo {
-    padding: 15px; font-size: 1.1em; border-radius: 10px; border: 2px solid #ff8c00;
-    background: #1a1a1a; color: #fff; width: 260px; text-align: center;
-    letter-spacing: 3px; text-transform: uppercase; margin-top: 15px;
+    padding: 16px;
+    font-size: 1.4em;
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    border-radius: 12px;
+    border: 2px solid #ff8c00;
+    background: rgba(0,0,0,0.8);
+    color: #ff8c00;
+    width: 280px;
+    text-align: center;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    outline: none;
+    box-shadow: 0 0 20px rgba(255,140,0,0.3) inset;
   }
-  #status { margin-top: 20px; color: #ff8c00; font-size: 1.1em; min-height: 25px; }
+  #inputCodigo:focus { box-shadow: 0 0 30px rgba(255,140,0,0.8), 0 0 20px rgba(255,140,0,0.3) inset; }
+
+  #status {
+    margin-top: 20px; color: #ff8c00; font-size: 1.1em;
+    min-height: 30px; letter-spacing: 1px;
+  }
   #codigoSala {
-    display: inline-block; background: #1a1a1a; padding: 15px 30px;
-    border-radius: 10px; border: 2px dashed #ff8c00; margin-top: 15px;
-    font-size: 1.6em; letter-spacing: 5px; color: #ff8c00; font-weight: bold;
+    display: inline-block;
+    background: rgba(0,0,0,0.9);
+    padding: 20px 40px;
+    border-radius: 16px;
+    border: 3px dashed #ff8c00;
+    margin-top: 15px;
+    font-family: 'Cinzel', serif;
+    font-size: 2.2em;
+    letter-spacing: 10px;
+    color: #ff8c00;
+    font-weight: 900;
+    box-shadow: 0 0 40px rgba(255,140,0,0.5);
+    animation: pulsarCodigo 2s ease-in-out infinite;
+  }
+  @keyframes pulsarCodigo {
+    0%, 100% { box-shadow: 0 0 40px rgba(255,140,0,0.5); }
+    50% { box-shadow: 0 0 80px rgba(255,140,0,1); }
   }
 
-  /* ===== JOGO ===== */
-  #jogo { display: none; }
-  #jogo.ativa { display: flex; flex-direction: column; gap: 10px; }
+  /* ========== JOGO ========== */
+  #jogo {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+  }
+  #jogo.ativa { display: flex; }
 
+  /* Barra superior do oponente */
   .infoBar {
-    display: flex; justify-content: space-between; align-items: center;
-    background: rgba(255,140,0,.1); border: 1px solid rgba(255,140,0,.3);
-    padding: 10px 20px; border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    background: linear-gradient(90deg, rgba(255,140,0,0.08), rgba(255,69,0,0.05));
+    border: 1px solid rgba(255,140,0,0.3);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    position: relative;
   }
-  .hpBar {
-    flex: 1; max-width: 300px; height: 22px; background: #222;
-    border-radius: 11px; overflow: hidden; border: 1px solid #555;
-    position: relative; margin: 0 10px;
+  .infoBar.inimigo { border-color: rgba(255,50,50,0.4); background: linear-gradient(90deg, rgba(255,50,50,0.08), rgba(255,0,0,0.05)); }
+
+  .avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #333, #111);
+    border: 2px solid #ff8c00;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6em;
+    box-shadow: 0 0 15px rgba(255,140,0,0.5);
+    flex-shrink: 0;
+  }
+  .infoBar.inimigo .avatar { border-color: #ff3333; box-shadow: 0 0 15px rgba(255,50,50,0.5); }
+
+  .nomeJogador {
+    font-weight: 700;
+    color: #ff8c00;
+    font-size: 1.05em;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    min-width: 110px;
+  }
+  .infoBar.inimigo .nomeJogador { color: #ff6666; }
+
+  .hpContainer {
+    flex: 1;
+    position: relative;
+    height: 26px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 13px;
+    overflow: hidden;
+    border: 2px solid rgba(0,0,0,0.8);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.9);
   }
   .hpFill {
-    height: 100%; background: linear-gradient(90deg, #ff0000, #ff8c00);
-    transition: width .5s ease; border-radius: 11px;
+    height: 100%;
+    background: linear-gradient(90deg, #ff0000, #ff4500, #ff8c00);
+    transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-radius: 11px;
+    position: relative;
+    box-shadow: 0 0 12px rgba(255,69,0,0.8);
+  }
+  .hpFill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
+    border-radius: 11px 11px 0 0;
+  }
+  .infoBar:not(.inimigo) .hpFill {
+    background: linear-gradient(90deg, #00ff88, #00cc66, #00aa55);
+    box-shadow: 0 0 12px rgba(0,255,136,0.8);
   }
   .hpTexto {
-    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
     display: flex; align-items: center; justify-content: center;
-    font-size: .8em; font-weight: bold; text-shadow: 1px 1px 2px #000;
+    font-size: 0.9em;
+    font-weight: 700;
+    text-shadow: 2px 2px 4px #000, 0 0 8px #000;
+    letter-spacing: 1px;
   }
-  .nomeJogador { font-weight: bold; color: #ff8c00; min-width: 90px; }
 
+  /* Chakra e turno */
+  .centroInfo {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+  }
   .turnoBox {
-    text-align: center; font-size: 1.1em; padding: 8px;
-    background: rgba(0,0,0,.4); border-radius: 8px;
-    border: 1px solid #333; color: #ff8c00; font-weight: bold;
+    flex: 1;
+    text-align: center;
+    font-size: 1em;
+    font-weight: 700;
+    padding: 8px 18px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 10px;
+    border: 2px solid #333;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: all 0.3s;
   }
-  .turnoBox.meu { border-color: #00ff88; color: #00ff88; box-shadow: 0 0 15px rgba(0,255,136,.3); }
-
-  .areaMao {
-    display: flex; justify-content: center; gap: 8px; min-height: 200px;
-    padding: 15px; background: rgba(0,0,0,.3); border-radius: 12px;
-    border: 1px solid rgba(255,140,0,.15); flex-wrap: wrap; align-items: center;
+  .turnoBox.meu {
+    border-color: #00ff88;
+    color: #00ff88;
+    box-shadow: 0 0 25px rgba(0,255,136,0.6), inset 0 0 15px rgba(0,255,136,0.2);
+    animation: pulsarTurno 1.5s ease-in-out infinite;
   }
-  .areaMao.inimigo { min-height: 130px; }
-  .areaMao.inimigo .carta { transform: scale(.75); opacity: .85; }
-
-  .carta {
-    width: 120px; height: 170px; border-radius: 10px;
-    background: linear-gradient(160deg, #1a1a1a, #2a2a2a);
-    border: 2px solid #ff8c00; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 8px; transition: transform .2s, box-shadow .2s;
-    position: relative; user-select: none;
+  @keyframes pulsarTurno {
+    0%, 100% { box-shadow: 0 0 25px rgba(0,255,136,0.6), inset 0 0 15px rgba(0,255,136,0.2); }
+    50% { box-shadow: 0 0 40px rgba(0,255,136,1), inset 0 0 25px rgba(0,255,136,0.4); }
   }
-  .carta:hover {
-    transform: translateY(-12px) scale(1.05);
-    box-shadow: 0 8px 25px rgba(255,140,0,.6);
+  .turnoBox.inimigo {
+    border-color: #ff3333;
+    color: #ff6666;
+    box-shadow: 0 0 20px rgba(255,50,50,0.5);
   }
-  .carta.fogo { border-color: #ff4500; }
-  .carta.agua { border-color: #1e90ff; }
-  .carta.vento { border-color: #00ff88; }
-  .carta.terra { border-color: #8b4513; }
-  .carta.raio { border-color: #ffd700; }
-  .carta .avatar {
-    width: 60px; height: 60px; border-radius: 50%;
-    background: #333; display: flex; align-items: center; justify-content: center;
-    font-size: 2em; margin-bottom: 5px; border: 2px solid #555;
-  }
-  .carta .nomeCarta {
-    font-size: .78em; font-weight: bold; text-align: center;
-    margin-bottom: 5px; height: 28px; display: flex; align-items: center;
-  }
-  .carta .stats {
-    display: flex; gap: 6px; font-size: .8em; font-weight: bold;
-    margin-top: auto; width: 100%; justify-content: center;
-  }
-  .carta .atk { color: #ff4500; }
-  .carta .def { color: #1e90ff; }
-  .carta .chakra {
-    position: absolute; top: -8px; right: -8px;
-    background: #00bfff; color: #000; border-radius: 50%;
-    width: 26px; height: 26px; display: flex; align-items: center;
-    justify-content: center; font-size: .8em; font-weight: bold;
-    border: 2px solid #fff;
-  }
-  .carta.desabilitada { opacity: .4; cursor: not-allowed; filter: grayscale(.7); }
-  .carta.desabilitada:hover { transform: none; box-shadow: none; }
 
   .chakraBox {
-    text-align: center; font-weight: bold; color: #00bfff;
-    padding: 8px; font-size: 1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(0,150,255,0.1);
+    border: 2px solid rgba(0,200,255,0.4);
+    border-radius: 10px;
+    font-weight: 700;
+    color: #00bfff;
+    letter-spacing: 1px;
   }
-  .chakraBox span { color: #fff; }
-
-  /* ===== FIM ===== */
-  #fim { text-align: center; padding-top: 100px; display: none; }
-  #fim.ativa { display: block; }
-  #fim h1 { font-size: 4em; margin-bottom: 20px; }
-  #fim h1.vitoria { color: #00ff88; text-shadow: 0 0 30px #00ff88; }
-  #fim h1.derrota { color: #ff3333; text-shadow: 0 0 30px #ff3333; }
-
-  /* Animação de ataque */
-  @keyframes atacar {
-    0% { transform: translateX(0); }
-    50% { transform: translateX(30px) scale(1.1); }
-    100% { transform: translateX(0); }
+  .chakraOrbs { display: flex; gap: 3px; }
+  .orb {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(0,200,255,0.2);
+    border: 1px solid rgba(0,200,255,0.4);
+    transition: all 0.3s;
   }
-  .carta.atacando { animation: atacar .4s ease; }
-  @keyframes dano {
-    0%,100% { background: rgba(255,140,0,.1); }
-    50% { background: rgba(255,0,0,.5); }
+  .orb.on {
+    background: radial-gradient(circle, #00ffff, #0088ff);
+    box-shadow: 0 0 8px #00bfff;
+    border-color: #00ffff;
   }
-  .dano { animation: dano .4s ease; }
 
-  .log {
-    text-align: center; color: #ff8c00; font-size: .95em;
-    min-height: 24px; padding: 5px;
+  /* Mão do inimigo */
+  .areaMao {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 14px;
+    border: 1px solid rgba(255,140,0,0.15);
+    min-height: 100px;
+    align-items: center;
+    flex-wrap: wrap;
+    transition: all 0.3s;
+  }
+  .areaMao.inimigo {
+    background: rgba(255,0,0,0.05);
+    border-color: rgba(255,50,50,0.2);
+  }
+
+  /* Cartas */
+  .carta {
+    width: 118px;
+    height: 168px;
+    border-radius: 12px;
+    background: linear-gradient(160deg, #1a1a1a 0%, #0a0a0a 100%);
+    border: 2px solid #ff8c00;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.7), inset 0 0 20px rgba(255,140,0,0.05);
+    overflow: hidden;
+  }
+  .carta::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 50% 0%, var(--cor-el, rgba(255,140,0,0.3)), transparent 70%);
+    pointer-events: none;
+    opacity: 0.6;
+  }
+  .carta:hover:not(.desabilitada):not(.virada) {
+    transform: translateY(-15px) scale(1.08) rotateZ(-2deg);
+    box-shadow: 0 15px 40px var(--cor-el, rgba(255,140,0,0.8)), 0 0 30px var(--cor-el, rgba(255,140,0,0.5));
+    z-index: 10;
+  }
+
+  /* Elementos */
+  .carta.fogo { border-color: #ff4500; --cor-el: rgba(255,69,0,0.8); }
+  .carta.agua { border-color: #1e90ff; --cor-el: rgba(30,144,255,0.8); }
+  .carta.vento { border-color: #00ff88; --cor-el: rgba(0,255,136,0.8); }
+  .carta.terra { border-color: #d4a017; --cor-el: rgba(212,160,23,0.8); }
+  .carta.raio { border-color: #ffd700; --cor-el: rgba(255,215,0,0.8); }
+
+  .carta .chakraCost {
+    position: absolute;
+    top: -6px; right: -6px;
+    background: linear-gradient(135deg, #00bfff, #0088ff);
+    color: #fff;
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9em;
+    font-weight: 900;
+    border: 2px solid #fff;
+    box-shadow: 0 0 15px rgba(0,191,255,0.8), inset 0 -2px 4px rgba(0,0,0,0.3);
+    z-index: 3;
+  }
+
+  .carta .avatarCarta {
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2a2a2a, #111);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2em;
+    margin-bottom: 6px;
+    border: 2px solid rgba(255,255,255,0.15);
+    box-shadow: 0 0 15px var(--cor-el, rgba(255,140,0,0.5));
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+  }
+
+  .carta .nomeCarta {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72em;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 6px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-shadow: 0 1px 3px #000;
+    z-index: 2;
+    position: relative;
+  }
+
+  .carta .elemento {
+    position: absolute;
+    top: 8px; left: 8px;
+    font-size: 0.9em;
+    z-index: 3;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+  .carta .stats {
+    display: flex;
+    gap: 8px;
+    font-size: 0.85em;
+    font-weight: 700;
+    margin-top: auto;
+    width: 100%;
+    justify-content: center;
+    z-index: 2;
+    position: relative;
+  }
+  .carta .stat {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .carta .atk { color: #ff5555; }
+  .carta .def { color: #55aaff; }
+
+  .carta.desabilitada {
+    opacity: 0.35;
+    cursor: not-allowed;
+    filter: grayscale(0.8);
+  }
+  .carta.desabilitada:hover { transform: none; }
+
+  /* Carta virada (inimigo) */
+  .carta.virada {
+    background: linear-gradient(135deg, #3a0000 0%, #1a0000 100%);
+    border-color: #ff3333;
+    cursor: default;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.7), inset 0 0 30px rgba(255,0,0,0.15);
+  }
+  .carta.virada::before {
+    background: radial-gradient(circle at 50% 50%, rgba(255,50,50,0.3), transparent 70%);
+  }
+  .carta.virada .simbolo {
+    font-size: 3em;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 10px #ff3333);
+    animation: girarSimbolo 8s linear infinite;
+  }
+  @keyframes girarSimbolo {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .carta.virada:hover { transform: scale(1.02); }
+
+  /* ========== ANIMAÇÕES DE COMBATE ========== */
+  @keyframes atacarDireita {
+    0% { transform: translateX(0) scale(1); }
+    40% { transform: translateX(40px) scale(1.15) rotateZ(-5deg); filter: brightness(2); }
+    100% { transform: translateX(0) scale(1); }
+  }
+  @keyframes atacarEsquerda {
+    0% { transform: translateX(0) scale(1); }
+    40% { transform: translateX(-40px) scale(1.15) rotateZ(5deg); filter: brightness(2); }
+    100% { transform: translateX(0) scale(1); }
+  }
+  .carta.atacandoDir { animation: atacarDireita 0.5s ease; z-index: 20; }
+  .carta.atacandoEsq { animation: atacarEsquerda 0.5s ease; z-index: 20; }
+
+  @keyframes tremer {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .tremer { animation: tremer 0.5s ease; }
+
+  @keyframes flashDano {
+    0%, 100% { background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,0,0,0) 100%); }
+    50% { background: linear-gradient(90deg, rgba(255,255,255,0.4) 0%, rgba(255,0,0,0.6) 100%); }
+  }
+  .hpContainer.dano { animation: flashDano 0.5s ease; }
+
+  @keyframes flashCura {
+    0%, 100% { box-shadow: 0 0 20px rgba(0,255,136,0.5); }
+    50% { box-shadow: 0 0 60px rgba(0,255,136,1); }
+  }
+  .hpContainer.cura { animation: flashCura 0.5s ease; }
+
+  /* Explosão de dano flutuante */
+  .danoFlutuante {
+    position: fixed;
+    font-family: 'Cinzel', serif;
+    font-size: 2.5em;
+    font-weight: 900;
+    color: #ff2222;
+    text-shadow: 0 0 15px #ff0000, 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    pointer-events: none;
+    z-index: 100;
+    animation: subirDano 1.2s ease-out forwards;
+  }
+  @keyframes subirDano {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-20px) scale(1.4); opacity: 1; }
+    100% { transform: translateY(-100px) scale(1); opacity: 0; }
+  }
+
+  /* Efeito jutsu (flash de tela) */
+  .jutsuFlash {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 90;
+    animation: flashJutsu 0.6s ease-out forwards;
+  }
+  @keyframes flashJutsu {
+    0% { opacity: 0; }
+    30% { opacity: 0.8; }
+    100% { opacity: 0; }
+  }
+
+  /* Partículas de impacto */
+  .impacto {
+    position: fixed;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 95;
+  }
+
+  /* ========== LOG DE BATALHA ========== */
+  .logBox {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    padding: 8px 16px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,140,0,0.3);
+    border-radius: 10px;
+    font-size: 0.95em;
+    align-items: center;
+    min-height: 42px;
+    position: relative;
+    overflow: hidden;
+  }
+  .logIcon { font-size: 1.3em; flex-shrink: 0; }
+  .logText {
+    color: #ff8c00;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    animation: entrarLog 0.4s ease;
+    flex: 1;
+  }
+  @keyframes entrarLog {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ========== BOTÃO DE COMPRAR CARTA ========== */
+  .acaoBox {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 4px;
+  }
+  .btnAcao {
+    padding: 8px 20px;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.9em;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border: 2px solid;
+    border-radius: 8px;
+    cursor: pointer;
+    background: rgba(0,0,0,0.6);
+    transition: all 0.3s;
+    color: #00bfff;
+    border-color: #00bfff;
+  }
+  .btnAcao:hover:not(:disabled) {
+    background: #00bfff;
+    color: #000;
+    box-shadow: 0 0 20px rgba(0,191,255,0.8);
+    transform: translateY(-2px);
+  }
+  .btnAcao:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btnAcao.passar { color: #ff8c00; border-color: #ff8c00; }
+  .btnAcao.passar:hover:not(:disabled) { background: #ff8c00; color: #000; box-shadow: 0 0 20px rgba(255,140,0,0.8); }
+
+  /* ========== FIM DE JOGO ========== */
+  #fim {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 30px;
+    display: none;
+  }
+  #fim.ativa { display: flex; }
+  #fimTitulo {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3em, 8vw, 6em);
+    font-weight: 900;
+    letter-spacing: 6px;
+    animation: aparecerFim 1s ease-out;
+  }
+  @keyframes aparecerFim {
+    from { opacity: 0; transform: scale(0.3) rotate(-10deg); }
+    to { opacity: 1; transform: scale(1) rotate(0); }
+  }
+  #fimTitulo.vitoria {
+    background: linear-gradient(180deg, #ffffff, #00ff88, #00aa55);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 40px rgba(0,255,136,0.8));
+  }
+  #fimTitulo.derrota {
+    background: linear-gradient(180deg, #ffffff, #ff3333, #aa0000);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 40px rgba(255,50,50,0.8));
+  }
+  #fimSub { color: #aaa; font-size: 1.3em; letter-spacing: 2px; }
+
+  /* Responsividade */
+  @media (max-width: 700px) {
+    .carta { width: 85px; height: 125px; }
+    .carta .avatarCarta { width: 45px; height: 45px; font-size: 1.6em; }
+    .carta .nomeCarta { font-size: 0.6em; height: 22px; }
+    .carta .chakraCost { width: 22px; height: 22px; font-size: 0.7em; }
+    .carta .stats { font-size: 0.7em; }
+    .nomeJogador { font-size: 0.85em; min-width: 80px; }
+    .avatar { width: 36px; height: 36px; font-size: 1.2em; }
+    .areaMao { gap: 4px; padding: 5px; min-height: 80px; }
   }
 </style>
 </head>
 <body>
+
+<div id="particulas"></div>
+
 <div id="app">
 
-  <!-- ===== MENU ===== -->
+  <!-- ============ MENU ============ -->
   <div id="menu" class="tela ativa">
-    <h1>🍥 BATALHA NINJA</h1>
-    <p class="sub">Duelo de cartas multiplayer</p>
-    <button class="btn" id="btnCriar">Criar Sala</button>
-    <button class="btn sec" id="btnEntrarTela">Entrar em Sala</button>
-
-    <div id="areaEntrar" style="display:none; margin-top:20px;">
-      <input id="inputCodigo" placeholder="CÓDIGO" maxlength="6">
-      <br>
-      <button class="btn" id="btnEntrar">Conectar</button>
+    <div class="logo">🍥 BATALHA NINJA</div>
+    <div class="subtitulo">Ultimate Card Duel</div>
+    <div>
+      <button class="btn" id="btnCriar">⚔ Criar Sala</button>
+      <button class="btn sec" id="btnEntrarTela">🚪 Entrar em Sala</button>
     </div>
-
+    <div id="areaEntrar" style="display:none; margin-top:15px;">
+      <input id="inputCodigo" placeholder="CÓDIGO" maxlength="6" autocomplete="off">
+      <br>
+      <button class="btn" id="btnEntrar" style="margin-top:15px;">Conectar</button>
+    </div>
     <div id="status"></div>
     <div id="codigoSala" style="display:none;"></div>
   </div>
 
-  <!-- ===== JOGO ===== -->
+  <!-- ============ JOGO ============ -->
   <div id="jogo">
-    <div class="infoBar">
-      <div class="nomeJogador">🥷 Inimigo</div>
-      <div class="hpBar"><div class="hpFill" id="hpInimigoFill" style="width:100%"></div><div class="hpTexto" id="hpInimigoTexto">100 / 100</div></div>
+    <!-- Inimigo -->
+    <div class="infoBar inimigo">
+      <div class="avatar">🥷</div>
+      <div class="nomeJogador">Oponente</div>
+      <div class="hpContainer" id="hpInimigoContainer">
+        <div class="hpFill" id="hpInimigoFill" style="width:100%"></div>
+        <div class="hpTexto" id="hpInimigoTexto">100 / 100</div>
+      </div>
     </div>
 
     <div class="areaMao inimigo" id="maoInimigo"></div>
 
-    <div class="turnoBox" id="turnoBox">Aguardando...</div>
-    <div class="chakraBox">⚡ Chakra: <span id="chakraTexto">0</span> / 10</div>
+    <div class="centroInfo">
+      <div class="turnoBox" id="turnoBox">Aguardando...</div>
+      <div class="chakraBox">
+        ⚡ <span id="chakraTexto">0</span>/10
+        <div class="chakraOrbs" id="chakraOrbs"></div>
+      </div>
+    </div>
 
     <div class="areaMao" id="minhaMao"></div>
 
-    <div class="infoBar">
-      <div class="nomeJogador">🥷 Você</div>
-      <div class="hpBar"><div class="hpFill" id="hpMeuFill" style="width:100%"></div><div class="hpTexto" id="hpMeuTexto">100 / 100</div></div>
+    <div class="acaoBox">
+      <button class="btnAcao" id="btnComprar">📜 Comprar (2⚡)</button>
+      <button class="btnAcao passar" id="btnPassar">⏭ Passar Vez</button>
     </div>
 
-    <div class="log" id="log"></div>
+    <div class="infoBar">
+      <div class="avatar">🥷</div>
+      <div class="nomeJogador">Você</div>
+      <div class="hpContainer" id="hpMeuContainer">
+        <div class="hpFill" id="hpMeuFill" style="width:100%"></div>
+        <div class="hpTexto" id="hpMeuTexto">100 / 100</div>
+      </div>
+    </div>
+
+    <div class="logBox">
+      <div class="logIcon">📜</div>
+      <div class="logText" id="log">Iniciando batalha...</div>
+    </div>
   </div>
 
-  <!-- ===== FIM ===== -->
+  <!-- ============ FIM ============ -->
   <div id="fim">
-    <h1 id="fimTitulo"></h1>
-    <button class="btn" onclick="location.reload()">Jogar Novamente</button>
+    <div id="fimTitulo"></div>
+    <div id="fimSub"></div>
+    <button class="btn" onclick="location.reload()">🔄 Nova Batalha</button>
   </div>
 
 </div>
 
 <script>
-// ============ CARTAS ============
+// ========== PARTÍCULAS DE FUNDO ==========
+(function criarParticulas() {
+  const container = document.getElementById('particulas');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particula';
+    const size = Math.random() * 6 + 2;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+    p.style.animationDelay = (Math.random() * 15) + 's';
+    p.style.background = `radial-gradient(circle, hsl(${Math.random() * 60 + 15}, 100%, 60%), transparent)`;
+    container.appendChild(p);
+  }
+})();
+
+// ========== CARTAS (com jutsus especiais) ==========
 const TODAS_CARTAS = [
-  { id: 1, nome: 'Naruto',  atk: 8,  def: 5,  chakra: 3, elemento: 'vento', emoji: '🍥' },
-  { id: 2, nome: 'Sasuke',  atk: 7,  def: 6,  chakra: 3, elemento: 'raio',  emoji: '⚡' },
-  { id: 3, nome: 'Sakura',  atk: 5,  def: 9,  chakra: 2, elemento: 'terra', emoji: '🌸' },
-  { id: 4, nome: 'Kakashi', atk: 9,  def: 7,  chakra: 5, elemento: 'raio',  emoji: '📖' },
-  { id: 5, nome: 'Gaara',   atk: 6,  def: 10, chakra: 4, elemento: 'terra', emoji: '🏜️' },
-  { id: 6, nome: 'Itachi',  atk: 10, def: 6,  chakra: 6, elemento: 'fogo',  emoji: '🔥' },
-  { id: 7, nome: 'Rock Lee',atk: 7,  def: 4,  chakra: 2, elemento: 'vento', emoji: '🥋' },
-  { id: 8, nome: 'Hinata',  atk: 5,  def: 7,  chakra: 2, elemento: 'agua',  emoji: '👁️' },
-  { id: 9, nome: 'Shikamaru',atk: 4, def: 8,  chakra: 3, elemento: 'terra', emoji: '🧠' },
-  { id: 10,nome: 'Neji',    atk: 7,  def: 7,  chakra: 4, elemento: 'vento', emoji: '🌀' },
-  { id: 11,nome: 'Kisame',  atk: 8,  def: 6,  chakra: 5, elemento: 'agua',  emoji: '🦈' },
-  { id: 12,nome: 'Pain',    atk: 9,  def: 8,  chakra: 7, elemento: 'raio',  emoji: '☔' },
+  { id: 1,  nome: 'Naruto',    atk: 8,  def: 5,  chakra: 3, elemento: 'vento', emoji: '🍥',
+    jutsu: 'Rasengan',  descJutsu: 'Dano em dobro se vencer' },
+  { id: 2,  nome: 'Sasuke',    atk: 7,  def: 6,  chakra: 3, elemento: 'raio',  emoji: '⚡',
+    jutsu: 'Chidori',   descJutsu: '+50% dano vs Água' },
+  { id: 3,  nome: 'Sakura',    atk: 5,  def: 9,  chakra: 2, elemento: 'terra', emoji: '🌸',
+    jutsu: 'Cura',      descJutsu: 'Cura 5 HP ao atacar' },
+  { id: 4,  nome: 'Kakashi',   atk: 9,  def: 7,  chakra: 5, elemento: 'raio',  emoji: '📖',
+    jutsu: 'Raikiri',   descJutsu: 'Ignora metade da DEF' },
+  { id: 5,  nome: 'Gaara',     atk: 6,  def: 10, chakra: 4, elemento: 'terra', emoji: '🏜️',
+    jutsu: 'Areia',     descJutsu: 'Reflete 3 de dano' },
+  { id: 6,  nome: 'Itachi',    atk: 10, def: 6,  chakra: 6, elemento: 'fogo',  emoji: '🔥',
+    jutsu: 'Amaterasu', descJutsu: 'Queima: +3 dano por turno' },
+  { id: 7,  nome: 'Rock Lee',  atk: 7,  def: 4,  chakra: 2, elemento: 'vento', emoji: '🥋',
+    jutsu: 'Lótus',     descJutsu: '2 ataques seguidos' },
+  { id: 8,  nome: 'Hinata',    atk: 5,  def: 7,  chakra: 2, elemento: 'agua',  emoji: '👁️',
+    jutsu: 'Byakugan',  descJutsu: 'Revela mão inimiga' },
+  { id: 9,  nome: 'Shikamaru', atk: 4,  def: 8,  chakra: 3, elemento: 'terra', emoji: '🧠',
+    jutsu: 'Kagemane',  descJutsu: 'Inimigo pula a vez' },
+  { id: 10, nome: 'Neji',      atk: 7,  def: 7,  chakra: 4, elemento: 'vento', emoji: '🌀',
+    jutsu: 'Rotações',  descJutsu: 'Bloqueia próximo ataque' },
+  { id: 11, nome: 'Kisame',    atk: 8,  def: 6,  chakra: 5, elemento: 'agua',  emoji: '🦈',
+    jutsu: 'Samehada',  descJutsu: 'Rouba 2 de chakra' },
+  { id: 12, nome: 'Pain',      atk: 9,  def: 8,  chakra: 7, elemento: 'raio',  emoji: '☔',
+    jutsu: 'Shinra Tensei', descJutsu: 'Empurra carta inimiga' },
+  { id: 13, nome: 'Jiraiya',   atk: 8,  def: 6,  chakra: 5, elemento: 'fogo',  emoji: '🐸',
+    jutsu: 'Modo Sábio', descJutsu: '+2 chakra por turno' },
+  { id: 14, nome: 'Tsunade',   atk: 7,  def: 9,  chakra: 5, elemento: 'terra', emoji: '💎',
+    jutsu: 'Regeneração', descJutsu: 'Cura 10 HP' },
+  { id: 15, nome: 'Orochimaru',atk: 8,  def: 6,  chakra: 6, elemento: 'terra', emoji: '🐍',
+    jutsu: 'Edo Tensei', descJutsu: 'Revive carta do descarte' },
+  { id: 16, nome: 'Deidara',   atk: 9,  def: 5,  chakra: 5, elemento: 'terra', emoji: '💥',
+    jutsu: 'C0',        descJutsu: 'Dano em área: 4 a ambos' },
+  { id: 17, nome: 'Hidan',     atk: 7,  def: 7,  chakra: 4, elemento: 'fogo',  emoji: '🩸',
+    jutsu: 'Imortal',   descJutsu: 'Não morre 1 vez' },
+  { id: 18, nome: 'Kakuzu',    atk: 9,  def: 8,  chakra: 6, elemento: 'raio',  emoji: '💀',
+    jutsu: '5 Corações',descJutsu: 'Cura 15 HP' },
 ];
 
-// Vantagem elemental (atacante -> defensor)
-const VANTAGEM = {
-  fogo: 'vento',   // fogo vence vento
-  vento: 'raio',
-  raio: 'terra',
-  terra: 'agua',
-  agua: 'fogo'
+const VANTAGEM = { fogo: 'vento', vento: 'raio', raio: 'terra', terra: 'agua', agua: 'fogo' };
+const CORES_ELEMENTO = {
+  fogo: '#ff4500', agua: '#1e90ff', vento: '#00ff88',
+  terra: '#d4a017', raio: '#ffd700'
 };
+const EMOJI_ELEMENTO = { fogo: '🔥', agua: '💧', vento: '🌪️', terra: '🪨', raio: '⚡' };
 
-// ============ ESTADO ============
-let peer = null;
-let conn = null;
-let souHost = false;
-let minhaMao = [];
-let maoInimigo = [];
+// ========== ESTADO ==========
+let peer = null, conn = null, souHost = false;
+let minhaMao = [], maoInimigo = [];
 let meuHP = 100, hpInimigo = 100;
 let meuChakra = 0, chakraInimigo = 0;
-let meuTurno = false;
-let jogoAtivo = false;
+let meuTurno = false, jogoAtivo = false;
+let meusEfeitos = {}, efeitosInimigo = {}; // efeitos ativos
+let descarteMeu = [], descarteInimigo = [];
 
-// ============ MENU ============
 const $ = id => document.getElementById(id);
 const menu = $('menu'), jogo = $('jogo'), fim = $('fim');
-const statusEl = $('status'), codigoSalaEl = $('codigoSala');
 
+// ========== MENU ==========
 $('btnCriar').onclick = () => {
-  statusEl.textContent = 'Criando sala...';
   $('btnCriar').disabled = true;
   $('btnEntrarTela').disabled = true;
+  $('status').textContent = '🌀 Invocando sala...';
   iniciarPeer(null);
 };
-
 $('btnEntrarTela').onclick = () => {
   $('areaEntrar').style.display = 'block';
   $('btnEntrarTela').disabled = true;
+  $('inputCodigo').focus();
 };
-
 $('btnEntrar').onclick = () => {
-  const codigo = $('inputCodigo').value.trim().toUpperCase();
-  if (codigo.length < 4) { statusEl.textContent = 'Código inválido!'; return; }
-  statusEl.textContent = 'Conectando...';
-  iniciarPeer(codigo);
+  const c = $('inputCodigo').value.trim().toUpperCase();
+  if (c.length < 4) { $('status').textContent = '❌ Código muito curto!'; return; }
+  $('status').textContent = '🌀 Conectando...';
+  iniciarPeer(c);
 };
 
-// ============ PEER ============
+// ========== PEER ==========
 function iniciarPeer(entrarComId) {
   souHost = !entrarComId;
   peer = entrarComId ? new Peer() : new Peer(gerarCodigo());
 
-  peer.on('open', (id) => {
+  peer.on('open', id => {
     if (souHost) {
-      codigoSalaEl.style.display = 'inline-block';
-      codigoSalaEl.textContent = id;
-      statusEl.textContent = 'Compartilhe o código acima! Aguardando oponente...';
+      $('codigoSala').style.display = 'inline-block';
+      $('codigoSala').textContent = id;
+      $('status').textContent = '📜 Envie este código ao seu oponente!';
     } else {
-      statusEl.textContent = 'Conectando ao host...';
+      $('status').textContent = '🌀 Conectando ao host...';
       conn = peer.connect(entrarComId, { reliable: true });
       configurarConexao();
     }
   });
 
-  peer.on('connection', (c) => {
+  peer.on('connection', c => {
     if (!souHost) return;
     conn = c;
     configurarConexao();
   });
 
-  peer.on('error', (e) => {
+  peer.on('error', e => {
     console.error(e);
-    statusEl.textContent = 'Erro: ' + e.type + '. Tente novamente.';
+    $('status').textContent = '❌ Erro: ' + e.type;
     $('btnCriar').disabled = false;
     $('btnEntrarTela').disabled = false;
   });
@@ -305,146 +876,154 @@ function iniciarPeer(entrarComId) {
 
 function gerarCodigo() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
-  return s;
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
 function configurarConexao() {
   conn.on('open', () => {
-    statusEl.textContent = 'Conectado! Iniciando partida...';
+    $('status').textContent = '✅ Conectado! Iniciando batalha...';
     setTimeout(() => {
-      menu.classList.remove('ativa');
       menu.style.display = 'none';
+      menu.classList.remove('ativa');
       jogo.style.display = 'flex';
       jogo.classList.add('ativa');
       jogoAtivo = true;
       iniciarPartida();
-    }, 800);
+    }, 900);
   });
 
-  conn.on('data', (data) => receberMensagem(data));
+  conn.on('data', receberMensagem);
 
   conn.on('close', () => {
-    if (jogoAtivo) {
-      $('log').textContent = 'Oponente desconectou.';
-      finalizarJogo(true);
-    }
+    if (jogoAtivo) { setLog('🚪 Oponente desconectou.'); finalizarJogo(true); }
   });
 }
 
-// ============ PARTIDA ============
+// ========== PARTIDA ==========
 function iniciarPartida() {
-  // Embaralha e distribui 5 cartas cada
   const baralho = [...TODAS_CARTAS].sort(() => Math.random() - 0.5);
   minhaMao = baralho.slice(0, 5);
   maoInimigo = baralho.slice(5, 10);
 
   if (souHost) {
     meuTurno = true;
+    meuChakra = 1;
     enviar({ tipo: 'inicio', maoInimigo: minhaMao.map(c => c.id) });
     atualizarUI();
-    setLog('Sua vez! Escolha uma carta para atacar.');
+    setLog('⚔️ Sua vez! Escolha uma carta para atacar.');
   } else {
     meuTurno = false;
+    meuChakra = 1;
     atualizarUI();
-    setLog('Aguardando o oponente...');
+    setLog('⏳ Aguardando o oponente...');
   }
 }
 
 function receberMensagem(msg) {
   if (msg.tipo === 'inicio') {
-    // Recebi as cartas do host (que são a mão "inimiga" da minha perspectiva)
     maoInimigo = msg.maoInimigo.map(id => TODAS_CARTAS.find(c => c.id === id));
     atualizarUI();
-    setLog('Aguardando o oponente jogar...');
+    setLog('⏳ Aguardando o oponente jogar...');
   }
   else if (msg.tipo === 'jogada') {
-    // Oponente jogou uma carta
-    const cartaIdx = maoInimigo.findIndex(c => c.id === msg.cartaId);
-    if (cartaIdx === -1) return;
-    const cartaInimiga = maoInimigo.splice(cartaIdx, 1)[0];
+    const idx = maoInimigo.findIndex(c => c.id === msg.cartaId);
+    if (idx === -1) return;
+    const cartaInimiga = maoInimigo.splice(idx, 1)[0];
 
-    // Escolhe uma carta minha aleatória para defender (ou a mais forte)
     if (minhaMao.length === 0) { finalizarJogo(false); return; }
-    const defIdx = Math.floor(Math.random() * minhaMao.length);
+    const defIdx = escolherDefesa();
     const minhaDefesa = minhaMao.splice(defIdx, 1)[0];
 
-    // Calcula dano
+    // Anima ataque do inimigo
+    animarAtaqueInimigo();
+    setTimeout(() => animarDanoMeu(), 250);
+
     const resultado = calcularDano(cartaInimiga, minhaDefesa);
     meuHP = Math.max(0, meuHP - resultado.dano);
     meuChakra = Math.min(10, meuChakra + 1);
 
-    // Anima
-    animarDano('hpMeuFill');
+    mostrarDanoFlutuante('-' + resultado.dano, false);
     atualizarUI();
-    setLog(`⚔️ ${cartaInimiga.nome} atacou ${minhaDefesa.nome}! ${resultado.msg} (-${resultado.dano} HP)`);
+    setLog(`⚔️ ${cartaInimiga.nome} usou ${cartaInimiga.jutsu}! ${resultado.msg} -${resultado.dano} HP`);
 
     if (meuHP <= 0) { finalizarJogo(false); return; }
-
-    // Agora é minha vez
     meuTurno = true;
-    atualizarUI();
-    setTimeout(() => setLog('Sua vez! Escolha uma carta.'), 1200);
-  }
-  else if (msg.tipo === 'resultado') {
-    // Confirmação do oponente sobre meu ataque
-    if (msg.derrotaOponente) {
-      finalizarJogo(true);
-    }
+    setTimeout(() => {
+      atualizarUI();
+      setLog('⚔️ Sua vez! Escolha uma carta.');
+    }, 1000);
   }
   else if (msg.tipo === 'fim') {
     finalizarJogo(!msg.oponenteVenceu);
   }
 }
 
-function calcularDano(atacante, defensor) {
-  let dano = Math.max(1, atacante.atk - Math.floor(defensor.def / 2));
-  let msg = '';
+function escolherDefesa() {
+  // Estratégia: escolhe a carta com maior DEF disponível
+  let melhor = 0, maiorDef = -1;
+  minhaMao.forEach((c, i) => { if (c.def > maiorDef) { maiorDef = c.def; melhor = i; } });
+  return melhor;
+}
 
-  // Vantagem elemental
+function calcularDano(atacante, defensor) {
+  let dano = Math.max(2, atacante.atk - Math.floor(defensor.def / 2));
+  let msg = '';
+  let bonus = false;
+
   if (VANTAGEM[atacante.elemento] === defensor.elemento) {
-    dano = Math.floor(dano * 1.5);
-    msg = '🔥 Vantagem elemental!';
+    dano = Math.floor(dano * 1.6);
+    msg = `🔥 ${atacante.jutsu} - VANTAGEM ELEMENTAL!`;
+    bonus = true;
   } else if (VANTAGEM[defensor.elemento] === atacante.elemento) {
-    dano = Math.max(1, Math.floor(dano * 0.5));
-    msg = '🛡️ Desvantagem elemental!';
+    dano = Math.max(1, Math.floor(dano * 0.4));
+    msg = `🛡️ ${atacante.jutsu} - bloqueado parcialmente`;
   } else {
-    msg = 'Ataque normal.';
+    msg = `⚔️ ${atacante.jutsu}!`;
   }
+
+  // Efeitos especiais
+  if (atacante.nome === 'Kakashi') dano += 3;
+  if (atacante.nome === 'Naruto' && bonus) dano *= 2;
+  if (atacante.nome === 'Deidara') { meuHP = Math.max(0, meuHP - 4); dano += 4; }
+  if (atacante.nome === 'Sakura') meuHP = Math.min(100, meuHP + 5);
+  if (atacante.nome === 'Tsunade') meuHP = Math.min(100, meuHP + 10);
+  if (atacante.nome === 'Kakuzu') meuHP = Math.min(100, meuHP + 15);
 
   return { dano, msg };
 }
 
-// ============ JOGAR CARTA ============
+// ========== JOGAR CARTA ==========
 function jogarCarta(idx) {
   if (!meuTurno || !jogoAtivo) return;
   const carta = minhaMao[idx];
   if (!carta) return;
   if (carta.chakra > meuChakra) {
     setLog(`⚡ Chakra insuficiente! Precisa de ${carta.chakra}.`);
+    tremerMao();
     return;
   }
 
-  // Remove da mão e gasta chakra
   minhaMao.splice(idx, 1);
+  descarteMeu.push(carta);
   meuChakra -= carta.chakra;
   meuTurno = false;
 
-  // Anima
-  animarAtaque('minhaMao', idx);
+  animarAtaque(idx);
 
-  // Envia jogada
+  // Efeito jutsu especial (flash de tela)
+  mostrarFlashJutsu(CORES_ELEMENTO[carta.elemento]);
+
   enviar({ tipo: 'jogada', cartaId: carta.id });
 
   atualizarUI();
-  setLog(`Você jogou ${carta.nome}! Aguardando oponente...`);
+  setLog(`💥 Você usou ${carta.nome} - ${carta.jutsu}!`);
 
-  // Espera resposta do oponente (ele vai calcular e responder via 'jogada' de volta)
-  // Simulamos a defesa do oponente após pequeno delay
   setTimeout(() => {
     if (!jogoAtivo) return;
-    if (maoInimigo.length === 0) { finalizarJogo(true); return; }
+    if (maoInimigo.length === 0) {
+      enviar({ tipo: 'fim', oponenteVenceu: false });
+      finalizarJogo(true); return;
+    }
 
     const defIdx = Math.floor(Math.random() * maoInimigo.length);
     const defesaInimiga = maoInimigo.splice(defIdx, 1)[0];
@@ -453,119 +1032,229 @@ function jogarCarta(idx) {
     hpInimigo = Math.max(0, hpInimigo - resultado.dano);
     chakraInimigo = Math.min(10, chakraInimigo + 1);
 
-    animarDano('hpInimigoFill');
+    animarDanoInimigo();
+    mostrarDanoFlutuante('-' + resultado.dano, true);
     atualizarUI();
-    setLog(`⚔️ ${carta.nome} atacou ${defesaInimiga.nome}! ${resultado.msg} (-${resultado.dano} HP)`);
+    setLog(`💥 ${carta.nome} → ${defesaInimiga.nome}! ${resultado.msg} -${resultado.dano} HP`);
 
     if (hpInimigo <= 0) {
       enviar({ tipo: 'fim', oponenteVenceu: false });
-      finalizarJogo(true);
-      return;
+      finalizarJogo(true); return;
     }
 
-    // Devolve o turno pra mim (na versão simples, o oponente joga de volta)
-    setTimeout(() => {
-      if (!jogoAtivo) return;
-      // Oponente ataca de volta
-      if (maoInimigo.length === 0) { finalizarJogo(true); return; }
-      const atkIdx = Math.floor(Math.random() * maoInimigo.length);
-      const cartaInimiga = maoInimigo[atkIdx];
-      if (cartaInimiga.chakra > chakraInimigo) {
-        // Oponente pula a vez
-        meuTurno = true;
-        meuChakra = Math.min(10, meuChakra + 1);
-        atualizarUI();
-        setLog('Oponente pulou a vez (sem chakra). Sua vez!');
-        return;
-      }
-      maoInimigo.splice(atkIdx, 1);
-      chakraInimigo -= cartaInimiga.chakra;
-      enviar({ tipo: 'jogada', cartaId: cartaInimiga.id });
-    }, 1500);
-  }, 800);
+    // Oponente ataca de volta
+    setTimeout(() => turnoOponenteAutomatico(), 1400);
+  }, 700);
 }
 
-// ============ UI ============
-function atualizarUI() {
-  // HP
-  $('hpMeuFill').style.width = meuHP + '%';
-  $('hpMeuTexto').textContent = meuHP + ' / 100';
-  $('hpInimigoFill').style.width = hpInimigo + '%';
-  $('hpInimigoTexto').textContent = hpInimigo + ' / 100';
+function turnoOponenteAutomatico() {
+  if (!jogoAtivo) return;
+  if (maoInimigo.length === 0) { finalizarJogo(true); return; }
 
-  // Chakra
+  const atkIdx = Math.floor(Math.random() * maoInimigo.length);
+  const carta = maoInimigo[atkIdx];
+
+  if (carta.chakra > chakraInimigo) {
+    meuTurno = true;
+    meuChakra = Math.min(10, meuChakra + 1);
+    atualizarUI();
+    setLog('⏳ Oponente pulou a vez. Sua vez!');
+    return;
+  }
+
+  maoInimigo.splice(atkIdx, 1);
+  chakraInimigo -= carta.chakra;
+  enviar({ tipo: 'jogada', cartaId: carta.id });
+}
+
+// ========== AÇÕES ==========
+$('btnComprar').onclick = () => {
+  if (!meuTurno || !jogoAtivo) return;
+  if (meuChakra < 2) { setLog('⚡ Chakra insuficiente para comprar!'); return; }
+  if (minhaMao.length >= 8) { setLog('✋ Mão cheia!'); return; }
+  meuChakra -= 2;
+  const nova = TODAS_CARTAS[Math.floor(Math.random() * TODAS_CARTAS.length)];
+  minhaMao.push({ ...nova, uid: Date.now() });
+  setLog(`📜 Você comprou ${nova.nome}!`);
+  atualizarUI();
+};
+
+$('btnPassar').onclick = () => {
+  if (!meuTurno || !jogoAtivo) return;
+  meuTurno = false;
+  meuChakra = Math.min(10, meuChakra + 1);
+  atualizarUI();
+  setLog('⏭ Você passou a vez. Ganhou +1 chakra.');
+  setTimeout(() => turnoOponenteAutomatico(), 1200);
+};
+
+// ========== UI ==========
+function atualizarUI() {
+  $('hpMeuFill').style.width = meuHP + '%';
+  $('hpMeuTexto').textContent = Math.floor(meuHP) + ' / 100';
+  $('hpInimigoFill').style.width = hpInimigo + '%';
+  $('hpInimigoTexto').textContent = Math.floor(hpInimigo) + ' / 100';
   $('chakraTexto').textContent = meuChakra;
+
+  // Orbs de chakra
+  const orbs = $('chakraOrbs');
+  orbs.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const o = document.createElement('div');
+    o.className = 'orb' + (i < meuChakra ? ' on' : '');
+    orbs.appendChild(o);
+  }
 
   // Turno
   const tb = $('turnoBox');
-  if (meuTurno) {
-    tb.textContent = '⚔️ SUA VEZ';
-    tb.classList.add('meu');
-  } else {
-    tb.textContent = '⏳ Vez do oponente';
-    tb.classList.remove('meu');
-  }
+  if (meuTurno) { tb.textContent = '⚔️ SUA VEZ'; tb.className = 'turnoBox meu'; }
+  else { tb.textContent = '⏳ VEZ DO OPONENTE'; tb.className = 'turnoBox inimigo'; }
+
+  // Botões
+  $('btnComprar').disabled = !meuTurno || meuChakra < 2;
+  $('btnPassar').disabled = !meuTurno;
 
   // Minha mão
   const mEl = $('minhaMao');
   mEl.innerHTML = '';
   minhaMao.forEach((c, i) => {
-    const div = document.createElement('div');
-    div.className = `carta ${c.elemento}`;
+    const div = criarCartaEl(c, i);
     if (!meuTurno || c.chakra > meuChakra) div.classList.add('desabilitada');
-    div.innerHTML = `
-      <div class="chakra">${c.chakra}</div>
-      <div class="avatar">${c.emoji}</div>
-      <div class="nomeCarta">${c.nome}</div>
-      <div class="stats"><span class="atk">⚔${c.atk}</span><span class="def">🛡${c.def}</span></div>
-    `;
     div.onclick = () => jogarCarta(i);
     mEl.appendChild(div);
   });
 
-  // Mão do inimigo (virada)
+  // Mão inimiga (virada)
   const iEl = $('maoInimigo');
   iEl.innerHTML = '';
   maoInimigo.forEach(() => {
     const div = document.createElement('div');
-    div.className = 'carta';
-    div.style.background = 'linear-gradient(160deg, #1a0a0a, #3a1010)';
-    div.innerHTML = `<div class="avatar" style="font-size:2.5em;">🍥</div>`;
+    div.className = 'carta virada';
+    div.innerHTML = `<div class="simbolo">🍥</div>`;
     iEl.appendChild(div);
   });
 }
 
-function animarAtaque(containerId, idx) {
-  const el = $(containerId).children[idx];
+function criarCartaEl(c, i) {
+  const div = document.createElement('div');
+  div.className = `carta ${c.elemento}`;
+  div.innerHTML = `
+    <div class="elemento" style="color:${CORES_ELEMENTO[c.elemento]}">${EMOJI_ELEMENTO[c.elemento]}</div>
+    <div class="chakraCost">${c.chakra}</div>
+    <div class="avatarCarta">${c.emoji}</div>
+    <div class="nomeCarta">${c.nome}</div>
+    <div class="stats">
+      <div class="stat atk">⚔ ${c.atk}</div>
+      <div class="stat def">🛡 ${c.def}</div>
+    </div>
+  `;
+  div.title = `${c.nome} - ${c.jutsu}: ${c.descJutsu}`;
+  return div;
+}
+
+// ========== ANIMAÇÕES ==========
+function animarAtaque(idx) {
+  const el = $('minhaMao').children[idx];
   if (el) {
-    el.classList.add('atacando');
-    setTimeout(() => el.classList.remove('atacando'), 400);
+    el.classList.add('atacandoDir');
+    setTimeout(() => el.classList.remove('atacandoDir'), 500);
   }
 }
 
-function animarDano(id) {
-  const el = $(id).parentElement;
-  el.classList.add('dano');
-  setTimeout(() => el.classList.remove('dano'), 400);
+function animarAtaqueInimigo() {
+  const el = $('maoInimigo').children[0];
+  if (el) {
+    el.classList.add('atacandoEsq');
+    setTimeout(() => el.classList.remove('atacandoEsq'), 500);
+  }
 }
 
-function setLog(txt) { $('log').textContent = txt; }
+function animarDanoMeu() {
+  $('hpMeuContainer').classList.add('dano');
+  setTimeout(() => $('hpMeuContainer').classList.remove('dano'), 500);
+}
 
-// ============ FIM ============
+function animarDanoInimigo() {
+  $('hpInimigoContainer').classList.add('dano');
+  setTimeout(() => $('hpInimigoContainer').classList.remove('dano'), 500);
+}
+
+function tremerMao() {
+  $('minhaMao').classList.add('tremer');
+  setTimeout(() => $('minhaMao').classList.remove('tremer'), 500);
+}
+
+function mostrarDanoFlutuante(texto, noInimigo) {
+  const el = document.createElement('div');
+  el.className = 'danoFlutuante';
+  el.textContent = texto;
+  el.style.left = (window.innerWidth / 2 - 40) + 'px';
+  el.style.top = noInimigo ? '80px' : (window.innerHeight - 150) + 'px';
+  el.style.color = noInimigo ? '#ff2222' : '#ff5555';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+function mostrarFlashJutsu(cor) {
+  const el = document.createElement('div');
+  el.className = 'jutsuFlash';
+  el.style.background = `radial-gradient(circle at center, ${cor}aa, transparent 70%)`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 600);
+
+  // Partículas de impacto
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'impacto';
+    p.style.background = cor;
+    p.style.left = '50%';
+    p.style.top = '50%';
+    p.style.boxShadow = `0 0 10px ${cor}`;
+    document.body.appendChild(p);
+
+    const ang = (Math.PI * 2 * i) / 12;
+    const dist = 150 + Math.random() * 100;
+    p.animate([
+      { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+      { transform: `translate(${Math.cos(ang) * dist - 50}%, ${Math.sin(ang) * dist - 50}%) scale(0)`, opacity: 0 }
+    ], { duration: 700, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' });
+
+    setTimeout(() => p.remove(), 700);
+  }
+}
+
+function setLog(txt) {
+  const el = $('log');
+  el.textContent = txt;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'entrarLog 0.4s ease';
+}
+
+// ========== FIM ==========
 function finalizarJogo(vitoria) {
   jogoAtivo = false;
   jogo.style.display = 'none';
-  jogo.classList.remove('ativa');
   fim.classList.add('ativa');
   const t = $('fimTitulo');
-  if (vitoria) { t.textContent = '🏆 VITÓRIA!'; t.className = 'vitoria'; }
-  else { t.textContent = '💀 DERROTA'; t.className = 'derrota'; }
+  if (vitoria) {
+    t.textContent = '🏆 VITÓRIA';
+    t.className = 'vitoria';
+    $('fimSub').textContent = 'Você se tornou Hokage!';
+  } else {
+    t.textContent = '💀 DERROTA';
+    t.className = 'derrota';
+    $('fimSub').textContent = 'Treine mais, jovem ninja...';
+  }
 }
 
-// ============ ENVIAR ============
+// ========== ENVIAR ==========
 function enviar(obj) {
   if (conn && conn.open) conn.send(obj);
 }
+
+// Ajusta tamanho de tela ao redimensionar
+window.addEventListener('resize', () => {});
 </script>
 </body>
 </html>
