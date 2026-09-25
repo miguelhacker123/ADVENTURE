@@ -1,719 +1,228 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🏀 Basket Colorido | Jogo de Arremesso</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-        }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(145deg, #1a0f2b, #2d1b4e, #1e3a5f);
-            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
-            padding: 16px;
-        }
-
-        .game-container {
-            background: linear-gradient(135deg, #ffd93d, #ff8c42, #ff4d6d, #9c89b8);
-            background-size: 300% 300%;
-            animation: gradientShift 6s ease infinite;
-            padding: 24px 24px 30px;
-            border-radius: 80px 80px 60px 60px;
-            box-shadow: 0 25px 30px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(255, 255, 200, 0.5);
-            border: 5px solid #fff9e6;
-        }
-
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            max-width: 750px;
-            height: auto;
-            border-radius: 40px;
-            background: radial-gradient(circle at 20% 30%, #b8e1ff, #7ec8e3, #4a9fd8);
-            box-shadow: inset 0 0 50px #ffffff80, 0 15px 20px #00000040;
-            cursor: grab;
-            touch-action: none;
-            border: 4px solid #ffeaa5;
-        }
-
-        canvas:active {
-            cursor: grabbing;
-        }
-
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 0 10px 18px 10px;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .score-box {
-            background: #1e1e2f;
-            border-radius: 80px;
-            padding: 12px 28px;
-            box-shadow: inset 0 -5px 0 #0a0a12, 0 10px 0 #0a0a12, 0 12px 18px black;
-            border: 3px solid #ffcf4a;
-        }
-
-        .score-box span {
-            font-size: 2.2rem;
-            font-weight: 900;
-            color: #f9ffb0;
-            text-shadow: 0 0 10px #ffd966, 0 0 20px #ffb347;
-            letter-spacing: 2px;
-        }
-
-        .score-box small {
-            font-size: 1rem;
-            color: #b0e0ff;
-            margin-left: 8px;
-            font-weight: 600;
-            text-shadow: 0 0 6px #3fa9f5;
-        }
-
-        button {
-            background: radial-gradient(circle at 30% 20%, #fff9c4, #ffb347);
-            border: none;
-            border-radius: 50px;
-            padding: 14px 32px;
-            font-size: 1.3rem;
-            font-weight: 900;
-            color: #3d2b1f;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 10px 0 #b45f1b, 0 8px 20px rgba(0, 0, 0, 0.5);
-            cursor: pointer;
-            transition: all 0.07s ease;
-            border: 3px solid #fff3cf;
-            transform: translateY(-2px);
-        }
-
-        button:active {
-            transform: translateY(6px);
-            box-shadow: 0 4px 0 #b45f1b, 0 8px 20px black;
-        }
-
-        .hint {
-            color: #fff9e6;
-            font-weight: 700;
-            font-size: 1rem;
-            text-shadow: 0 4px 8px black;
-            background: #221c3a90;
-            padding: 8px 18px;
-            border-radius: 50px;
-            backdrop-filter: blur(4px);
-            border: 1px solid #ffffb0;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Desvie dos Blocos!</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #111;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+  h1 { font-size: 20px; margin-bottom: 10px; color: #4af; }
+  #info { margin-bottom: 10px; font-size: 16px; }
+  canvas {
+    background: #222;
+    border: 2px solid #4af;
+    border-radius: 8px;
+    touch-action: none;
+  }
+  #overlay {
+    position: absolute;
+    background: rgba(0,0,0,0.85);
+    padding: 30px 40px;
+    border-radius: 12px;
+    text-align: center;
+    border: 2px solid #4af;
+    display: none;
+  }
+  #overlay h2 { margin-bottom: 15px; color: #4af; }
+  #overlay button {
+    padding: 10px 24px;
+    background: #4af;
+    color: #111;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #overlay button:hover { background: #6cf; }
+  .dica { margin-top: 10px; font-size: 12px; color: #888; }
+</style>
 </head>
 <body>
-    <div class="game-container">
-        <div class="top-bar">
-            <div class="score-box">
-                <span id="scoreDisplay">0</span><small>PONTOS</small>
-            </div>
-            <div class="hint">🎯 Arraste a bola e solte para arremessar</div>
-            <button id="resetButton">🔄 NOVO JOGO</button>
-        </div>
-        <canvas id="gameCanvas" width="750" height="500"></canvas>
-    </div>
-    <script>
-        (function(){
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            const scoreSpan = document.getElementById('scoreDisplay');
-            const resetBtn = document.getElementById('resetButton');
-
-            // Dimensões lógicas do canvas (750x500)
-            const CW = 750;
-            const CH = 500;
-
-            // ========== ESTADO DO JOGO ==========
-            let score = 0;
-
-            // Bola
-            let ball = {
-                x: 180,           // posição inicial
-                y: 380,
-                vx: 0,
-                vy: 0,
-                radius: 26,
-                isDragging: false,
-                dragX: 0,
-                dragY: 0,
-                active: true,      // ainda pode ser arremessada?
-                scored: false,     // se já pontuou nesse arremesso
-                inFlight: false    // se está em movimento (após soltar)
-            };
-
-            // Cesta (aro + rede) - posição fixa
-            const hoop = {
-                x: 590,            // centro X do aro
-                y: 230,            // altura Y do aro (parte de cima do aro)
-                width: 80,         // largura do aro
-                height: 10,        // espessura do aro
-                left: 590 - 40,    // 550
-                right: 590 + 40,   // 630
-                top: 230,
-                bottom: 240,
-                netDepth: 35,
-                // área de colisão para pontuação (um pouco mais generosa)
-                scoreXMin: 590 - 45,
-                scoreXMax: 590 + 45,
-                scoreYMin: 215,
-                scoreYMax: 265
-            };
-
-            // Força/gravidade
-            const GRAVITY = 0.45;
-            const FRICTION = 0.985;
-            const MIN_DRAG_DIST = 8;      // distância mínima para considerar arremesso
-
-            // Cores super coloridas
-            const COLORS = {
-                ball: '#FF8A3D',
-                ballStripes: '#D64B1E',
-                ballHighlight: '#FFD966',
-                net: '#F9F3E3',
-                netAccent: '#FFE484',
-                backboard: '#3A86FF',
-                backboardGlow: '#9BF6FF',
-                pole: '#6C757D',
-                poleLight: '#ADB5BD',
-                rim: '#FF5400',
-                rimLight: '#FFB347',
-                scoreText: '#FFF9B0'
-            };
-
-            // ========== FUNÇÕES AUXILIARES ==========
-            function updateScoreDisplay() {
-                scoreSpan.textContent = score;
-            }
-
-            // Reinicia a bola para o estado inicial (mantém a pontuação)
-            function resetBallPosition() {
-                ball.x = 180;
-                ball.y = 380;
-                ball.vx = 0;
-                ball.vy = 0;
-                ball.isDragging = false;
-                ball.active = true;
-                ball.scored = false;
-                ball.inFlight = false;
-            }
-
-            // Reset completo (zera pontuação e reinicia bola)
-            function resetGame() {
-                score = 0;
-                updateScoreDisplay();
-                resetBallPosition();
-            }
-
-            // Verifica se a bola passou pela cesta (método da área)
-            function checkScore() {
-                // Se já pontuou nesse arremesso, não faz nada
-                if (ball.scored) return;
-
-                // A bola só pode pontuar se estiver caindo (vy > 0) e dentro da área de pontuação
-                if (ball.vy > 0.5) {
-                    // Verifica se o centro da bola está dentro da zona de pontuação (um pouco maior que o aro)
-                    if (ball.x > hoop.scoreXMin && ball.x < hoop.scoreXMax &&
-                        ball.y > hoop.scoreYMin && ball.y < hoop.scoreYMax) {
-                        
-                        // Verifica se a bola realmente passou por dentro do aro (evitar pontuar de baixo pra cima)
-                        // Consideramos que a bola veio de cima: a posição y anterior era menor que o topo do aro
-                        // Mas para simplificar, apenas a área já garante um bom comportamento
-                        // E também evitamos que a bola esteja muito acima do aro
-                        if (ball.y > hoop.top - 15) {
-                            // Pontuou!
-                            score += 1;
-                            updateScoreDisplay();
-                            ball.scored = true;
-
-                            // Efeito visual: pequena explosão de cores? (desenharemos um flash)
-                            // Pode ser adicionado via animação, mas manteremos simples
-                            
-                            // Opcional: reposicionar a bola após um tempo? Não, ela continua caindo e depois reseta.
-                        }
-                    }
-                }
-            }
-
-            // ========== FÍSICA E ATUALIZAÇÃO ==========
-            function updatePhysics() {
-                // Se a bola está sendo arrastada, não aplica física
-                if (ball.isDragging) return;
-                if (!ball.active && !ball.inFlight) return; // bola parada e já pontuou/parou
-
-                // Aplica gravidade
-                ball.vy += GRAVITY;
-
-                // Aplica atrito (leve, para não parar instantaneamente)
-                ball.vx *= FRICTION;
-                ball.vy *= FRICTION;
-
-                // Atualiza posição
-                ball.x += ball.vx;
-                ball.y += ball.vy;
-
-                // Colisão com o chão (limite inferior)
-                const floorY = CH - ball.radius - 2;
-                if (ball.y > floorY) {
-                    ball.y = floorY;
-                    ball.vy *= -0.4; // quica um pouco
-                    ball.vx *= 0.95;
-                    // Se a velocidade for muito baixa, para
-                    if (Math.abs(ball.vy) < 1.2 && Math.abs(ball.vx) < 1.2) {
-                        ball.vx = 0;
-                        ball.vy = 0;
-                        ball.inFlight = false;
-                    }
-                }
-
-                // Colisão com paredes laterais
-                if (ball.x - ball.radius < 0) {
-                    ball.x = ball.radius;
-                    ball.vx *= -0.5;
-                }
-                if (ball.x + ball.radius > CW) {
-                    ball.x = CW - ball.radius;
-                    ball.vx *= -0.5;
-                }
-
-                // Colisão com o teto (opcional)
-                if (ball.y - ball.radius < 0) {
-                    ball.y = ball.radius;
-                    ball.vy *= -0.5;
-                }
-
-                // Verifica pontuação após atualizar posição
-                checkScore();
-
-                // Se a bola estiver em movimento e a velocidade for baixa, considera parada
-                if (ball.inFlight && Math.abs(ball.vx) < 0.5 && Math.abs(ball.vy) < 0.5 && ball.y >= floorY - 2) {
-                    ball.inFlight = false;
-                    ball.vx = 0;
-                    ball.vy = 0;
-                }
-
-                // Se a bola parou no chão e não está mais em vôo, mas ainda está ativa, 
-                // permite que ela seja pega novamente? Mas para simplificar, após parar completamente,
-                // ela fica parada e o jogador pode clicar e arrastar novamente (desde que ball.active = true)
-                // Porém, se ela já pontuou, ela continua ativa (pode ser arremessada de novo? sim, mas vamos resetar a posição após um tempo)
-                // Estratégia: Se a bola parou e scored = true, resetamos a posição após 800ms para manter o fluxo
-                // Mas isso pode ser chato. Vamos permitir que o jogador arraste a bola mesmo depois de pontuar.
-                // Apenas se a bola parar completamente no chão, ela continua arrastável.
-                // Para melhorar a jogabilidade, quando a bola para e scored = true, resetamos automaticamente? Não, 
-                // o reset manual é chato. Vou fazer: após 1 segundo que a bola parou E scored = true, reposiciona.
-                // Usaremos um temporizador.
-            }
-
-            // Temporizador para resetar bola após pontuar
-            let resetTimer = null;
-
-            function checkAutoReset() {
-                if (ball.scored && !ball.isDragging && !ball.inFlight) {
-                    // Verifica se a bola está praticamente parada
-                    const speed = Math.hypot(ball.vx, ball.vy);
-                    if (speed < 0.8) {
-                        if (resetTimer === null) {
-                            resetTimer = setTimeout(() => {
-                                resetBallPosition();
-                                resetTimer = null;
-                            }, 900);
-                        }
-                    } else {
-                        if (resetTimer) {
-                            clearTimeout(resetTimer);
-                            resetTimer = null;
-                        }
-                    }
-                } else {
-                    if (resetTimer) {
-                        clearTimeout(resetTimer);
-                        resetTimer = null;
-                    }
-                }
-            }
-
-            // ========== DESENHO ==========
-            function drawBackground() {
-                // Fundo gradiente com bolinhas coloridas
-                const grad = ctx.createLinearGradient(0, 0, CW, CH);
-                grad.addColorStop(0, '#B3E5FC');
-                grad.addColorStop(0.3, '#81D4FA');
-                grad.addColorStop(0.7, '#4FC3F7');
-                grad.addColorStop(1, '#0288D1');
-                ctx.fillStyle = grad;
-                ctx.fillRect(0, 0, CW, CH);
-
-                // Bolinhas decorativas
-                for (let i = 0; i < 25; i++) {
-                    const x = (i * 37) % CW;
-                    const y = (i * 73) % CH;
-                    ctx.beginPath();
-                    ctx.arc(x, y, 8 + (i % 5) * 3, 0, Math.PI * 2);
-                    ctx.fillStyle = `hsla(${i * 25}, 80%, 70%, 0.2)`;
-                    ctx.fill();
-                }
-
-                // Linha do chão (quadra)
-                ctx.fillStyle = '#7E5A3A';
-                ctx.fillRect(0, CH - 35, CW, 35);
-                ctx.fillStyle = '#A57C5C';
-                ctx.fillRect(0, CH - 35, CW, 8);
-                // Linhas da quadra
-                ctx.strokeStyle = '#FFFFFF70';
-                ctx.lineWidth = 5;
-                ctx.beginPath();
-                ctx.moveTo(40, CH - 20);
-                ctx.lineTo(CW - 40, CH - 20);
-                ctx.stroke();
-            }
-
-            function drawHoop() {
-                // Poste / estrutura
-                ctx.fillStyle = COLORS.pole;
-                ctx.shadowColor = '#00000060';
-                ctx.shadowBlur = 10;
-                ctx.fillRect(hoop.x - 10, hoop.y - 90, 20, 200);
-                ctx.shadowBlur = 0;
-
-                // Detalhe do poste
-                ctx.fillStyle = COLORS.poleLight;
-                ctx.fillRect(hoop.x - 6, hoop.y - 80, 8, 180);
-
-                // Tabela (backboard)
-                ctx.fillStyle = COLORS.backboard;
-                ctx.shadowColor = COLORS.backboardGlow;
-                ctx.shadowBlur = 18;
-                ctx.beginPath();
-                ctx.roundRect(hoop.x - 60, hoop.y - 90, 120, 100, 16);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
-                // Borda da tabela
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 6;
-                ctx.beginPath();
-                ctx.roundRect(hoop.x - 60, hoop.y - 90, 120, 100, 16);
-                ctx.stroke();
-
-                // Quadrado interno (marca de arremesso)
-                ctx.strokeStyle = '#FFF9C4';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(hoop.x - 28, hoop.y - 55, 56, 45);
-
-                // Aro (aro laranja)
-                ctx.fillStyle = COLORS.rim;
-                ctx.shadowColor = '#FF8C00';
-                ctx.shadowBlur = 20;
-                ctx.beginPath();
-                ctx.ellipse(hoop.x, hoop.y, hoop.width/2, 12, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
-                // Brilho do aro
-                ctx.fillStyle = COLORS.rimLight;
-                ctx.beginPath();
-                ctx.ellipse(hoop.x - 5, hoop.y - 4, 20, 5, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Rede (linhas)
-                ctx.strokeStyle = COLORS.net;
-                ctx.lineWidth = 3;
-                ctx.shadowColor = '#FFFFFF80';
-                ctx.shadowBlur = 8;
-
-                const netLeft = hoop.x - hoop.width/2 + 2;
-                const netRight = hoop.x + hoop.width/2 - 2;
-                const netTopY = hoop.y + 6;
-                const netBottomY = hoop.y + hoop.netDepth + 10;
-
-                // Linhas verticais
-                for (let i = 0; i <= 6; i++) {
-                    const t = i / 6;
-                    const startX = netLeft + (netRight - netLeft) * t;
-                    const endX = hoop.x - 20 + 40 * t;
-                    ctx.beginPath();
-                    ctx.moveTo(startX, netTopY);
-                    ctx.lineTo(endX, netBottomY);
-                    ctx.strokeStyle = i % 2 === 0 ? '#FFFFFF' : '#FFF3C9';
-                    ctx.stroke();
-                }
-
-                // Linhas horizontais (entrelaçado)
-                for (let j = 0; j < 4; j++) {
-                    const yOffset = netTopY + (netBottomY - netTopY) * (j / 3);
-                    const leftX = netLeft + (hoop.x - 20 - netLeft) * (j / 3);
-                    const rightX = netRight + (hoop.x + 20 - netRight) * (j / 3);
-                    ctx.beginPath();
-                    ctx.moveTo(leftX, yOffset);
-                    ctx.lineTo(rightX, yOffset);
-                    ctx.strokeStyle = '#FFF3C9';
-                    ctx.lineWidth = 2.5;
-                    ctx.stroke();
-                }
-                ctx.shadowBlur = 0;
-            }
-
-            function drawBall() {
-                // Sombra da bola
-                ctx.shadowColor = '#00000070';
-                ctx.shadowBlur = 18;
-                ctx.shadowOffsetY = 6;
-
-                // Bola base
-                const gradient = ctx.createRadialGradient(
-                    ball.x - 10, ball.y - 10, 5,
-                    ball.x, ball.y, ball.radius + 5
-                );
-                gradient.addColorStop(0, '#FFB56B');
-                gradient.addColorStop(0.6, COLORS.ball);
-                gradient.addColorStop(1, '#B34E1A');
-
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-                ctx.fillStyle = gradient;
-                ctx.fill();
-
-                // Linhas da bola (estilo basquete)
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetY = 0;
-                ctx.strokeStyle = COLORS.ballStripes;
-                ctx.lineWidth = 3.5;
-
-                // Linha vertical
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, ball.radius - 2, 0.2, Math.PI - 0.2);
-                ctx.stroke();
-
-                // Linha horizontal
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, ball.radius - 2, -1.2, 1.2);
-                ctx.stroke();
-
-                // Cruzado
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, ball.radius - 2, 2.2, 4.0);
-                ctx.stroke();
-
-                // Brilho
-                ctx.shadowBlur = 0;
-                ctx.beginPath();
-                ctx.arc(ball.x - 8, ball.y - 8, 6, 0, Math.PI * 2);
-                ctx.fillStyle = COLORS.ballHighlight + 'C0';
-                ctx.fill();
-
-                // Se estiver sendo arrastada, mostra linha de mira
-                if (ball.isDragging) {
-                    ctx.beginPath();
-                    ctx.moveTo(ball.x, ball.y);
-                    ctx.lineTo(ball.dragX, ball.dragY);
-                    ctx.strokeStyle = '#FFFFFFCC';
-                    ctx.lineWidth = 5;
-                    ctx.setLineDash([12, 12]);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-
-                    // Pequena seta
-                    const angle = Math.atan2(ball.dragY - ball.y, ball.dragX - ball.x);
-                    const arrowX = ball.x + Math.cos(angle) * (ball.radius + 25);
-                    const arrowY = ball.y + Math.sin(angle) * (ball.radius + 25);
-                    ctx.beginPath();
-                    ctx.moveTo(arrowX, arrowY);
-                    ctx.lineTo(arrowX - 12 * Math.cos(angle - 0.5), arrowY - 12 * Math.sin(angle - 0.5));
-                    ctx.lineTo(arrowX - 12 * Math.cos(angle + 0.5), arrowY - 12 * Math.sin(angle + 0.5));
-                    ctx.fillStyle = '#FFF9B0';
-                    ctx.fill();
-                }
-
-                // Reset sombras
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetY = 0;
-            }
-
-            function drawScoreEffect() {
-                // Se a bola pontuou, mostra um flash colorido na cesta
-                if (ball.scored) {
-                    ctx.shadowBlur = 35;
-                    ctx.shadowColor = '#FFD966';
-                    ctx.beginPath();
-                    ctx.arc(hoop.x, hoop.y + 10, 60, 0, Math.PI * 2);
-                    ctx.fillStyle = '#FFF9B030';
-                    ctx.fill();
-                    ctx.shadowBlur = 0;
-                }
-            }
-
-            function draw() {
-                ctx.clearRect(0, 0, CW, CH);
-                drawBackground();
-                drawHoop();
-                drawBall();
-                drawScoreEffect();
-
-                // Desenha a pontuação flutuante (apenas decorativo)
-                ctx.font = 'bold 28px "Segoe UI", "Poppins", sans-serif';
-                ctx.fillStyle = '#FFF9E6';
-                ctx.shadowColor = '#000000AA';
-                ctx.shadowBlur = 12;
-                ctx.shadowOffsetX = 4;
-                ctx.shadowOffsetY = 4;
-                ctx.fillText('🏀 CESTA COLORIDA', 30, 65);
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
-            }
-
-            // ========== LOOP PRINCIPAL ==========
-            function gameLoop() {
-                updatePhysics();
-                checkAutoReset();
-                draw();
-                requestAnimationFrame(gameLoop);
-            }
-
-            // ========== CONTROLES (MOUSE / TOUCH) ==========
-            function getCanvasCoords(e) {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = CW / rect.width;
-                const scaleY = CH / rect.height;
-
-                let clientX, clientY;
-
-                if (e.touches) {
-                    clientX = e.touches[0].clientX;
-                    clientY = e.touches[0].clientY;
-                    e.preventDefault();
-                } else {
-                    clientX = e.clientX;
-                    clientY = e.clientY;
-                }
-
-                const canvasX = (clientX - rect.left) * scaleX;
-                const canvasY = (clientY - rect.top) * scaleY;
-                return { x: canvasX, y: canvasY };
-            }
-
-            function onPointerDown(e) {
-                e.preventDefault();
-                const { x, y } = getCanvasCoords(e);
-
-                // Verifica se clicou na bola (com margem de tolerância)
-                const dist = Math.hypot(x - ball.x, y - ball.y);
-                if (dist <= ball.radius + 15 && !ball.inFlight) {
-                    // Pode arrastar apenas se a bola não estiver em movimento
-                    ball.isDragging = true;
-                    ball.dragX = x;
-                    ball.dragY = y;
-                    // Reseta o scored? Não, mantém. Se ela já pontuou e está parada, pode arremessar de novo.
-                    // Mas se ela já pontuou e não foi resetada, ela ainda pode ser arremessada e pontuar de novo? 
-                    // Isso poderia gerar múltiplos pontos com a mesma bola, o que é estranho.
-                    // Solução: Se a bola já pontuou, ela não pode pontuar novamente até ser resetada. 
-                    // Portanto, mantemos ball.scored = true, e a função checkScore ignora se já scored.
-                    // Assim o jogador pode arremessar de novo mas não ganha ponto. Para evitar frustração, 
-                    // quando o jogador pega a bola novamente, resetamos o scored? 
-                    // Se resetarmos, ele pode pontuar de novo com a mesma bola, o que é ok? 
-                    // Melhor: Ao pegar a bola, resetamos scored = false, pois é um novo arremesso.
-                    // Porém, se a bola ainda não passou pela cesta, não tem problema.
-                    // Vou resetar o scored ao iniciar um novo arrasto, para permitir pontuar novamente.
-                    if (ball.scored) {
-                        ball.scored = false; // Permite pontuar novamente
-                    }
-                    // Também cancelamos qualquer timer de reset pendente
-                    if (resetTimer) {
-                        clearTimeout(resetTimer);
-                        resetTimer = null;
-                    }
-                }
-            }
-
-            function onPointerMove(e) {
-                e.preventDefault();
-                if (!ball.isDragging) return;
-
-                const { x, y } = getCanvasCoords(e);
-                ball.dragX = x;
-                ball.dragY = y;
-            }
-
-            function onPointerUp(e) {
-                e.preventDefault();
-                if (!ball.isDragging) return;
-
-                const { x, y } = getCanvasCoords(e);
-
-                // Calcula vetor de arremesso (do ponto de arrasto para a bola, ou o contrário? 
-                // Queremos que o jogador puxe para trás e solte para arremessar a bola na direção oposta.
-                // Exemplo: arrasta para baixo e para esquerda -> bola vai para cima e direita.
-                // Então: velocidade = (ball.x - dragX, ball.y - dragY) * fator
-                const dx = ball.x - x;
-                const dy = ball.y - y;
-                const dist = Math.hypot(dx, dy);
-
-                if (dist > MIN_DRAG_DIST) {
-                    // Normaliza e aplica força
-                    const power = Math.min(dist * 0.22, 28); // limita a força máxima
-                    const angle = Math.atan2(dy, dx);
-                    ball.vx = Math.cos(angle) * power;
-                    ball.vy = Math.sin(angle) * power;
-
-                    // Ativa o estado de vôo
-                    ball.inFlight = true;
-                    ball.active = true;
-                    // Pequeno ajuste para não ficar com velocidade zero
-                    if (Math.abs(ball.vx) < 0.5 && Math.abs(ball.vy) < 0.5) {
-                        ball.vy = -5;
-                        ball.vx = 5;
-                    }
-                } else {
-                    // Se foi apenas um clique, não faz nada (apenas solta)
-                }
-
-                ball.isDragging = false;
-            }
-
-            // ========== EVENT LISTENERS ==========
-            canvas.addEventListener('mousedown', onPointerDown);
-            window.addEventListener('mousemove', onPointerMove);
-            window.addEventListener('mouseup', onPointerUp);
-
-            canvas.addEventListener('touchstart', onPointerDown, { passive: false });
-            window.addEventListener('touchmove', onPointerMove, { passive: false });
-            window.addEventListener('touchend', onPointerUp);
-            window.addEventListener('touchcancel', onPointerUp);
-
-            // Evitar menu de contexto no canvas
-            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-            // Botão de reset
-            resetBtn.addEventListener('click', resetGame);
-
-            // Inicialização
-            resetGame();
-            updateScoreDisplay();
-            gameLoop();
-
-            // Redimensionamento do canvas não é necessário, mantemos fixo.
-        })();
-    </script>
+  <h1>🎮 Desvie dos Blocos!</h1>
+  <div id="info">Pontos: <span id="score">0</span> | Recorde: <span id="best">0</span></div>
+  <canvas id="game" width="400" height="500"></canvas>
+  <div class="dica">Use ← → ou A/D (ou toque e arraste no celular)</div>
+
+  <div id="overlay">
+    <h2 id="ovTitle">Fim de Jogo!</h2>
+    <p id="ovMsg" style="margin-bottom:15px">Pontuação: 0</p>
+    <button id="ovBtn">Jogar Novamente</button>
+  </div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const bestEl = document.getElementById('best');
+const overlay = document.getElementById('overlay');
+const ovTitle = document.getElementById('ovTitle');
+const ovMsg = document.getElementById('ovMsg');
+const ovBtn = document.getElementById('ovBtn');
+
+const W = canvas.width, H = canvas.height;
+
+let player, obstacles, score, speed, spawnTimer, running, keys, best;
+best = parseInt(localStorage.getItem('melhorPontos') || '0');
+bestEl.textContent = best;
+
+function reset() {
+  player = { x: W/2 - 20, y: H - 60, w: 40, h: 20, vx: 0 };
+  obstacles = [];
+  score = 0;
+  speed = 2;
+  spawnTimer = 0;
+  running = true;
+  keys = { left: false, right: false };
+  scoreEl.textContent = 0;
+  overlay.style.display = 'none';
+}
+
+function spawn() {
+  const w = 40 + Math.random() * 60;
+  const x = Math.random() * (W - w);
+  obstacles.push({ x, y: -30, w, h: 25 });
+}
+
+function gameOver() {
+  running = false;
+  if (score > best) {
+    best = score;
+    localStorage.setItem('melhorPontos', best);
+    bestEl.textContent = best;
+    ovTitle.textContent = '🏆 Novo Recorde!';
+  } else {
+    ovTitle.textContent = '💥 Fim de Jogo!';
+  }
+  ovMsg.textContent = 'Pontuação: ' + score;
+  overlay.style.display = 'block';
+}
+
+function update() {
+  if (!running) return;
+
+  // Movimento do jogador
+  const accel = 0.8, maxV = 7;
+  if (keys.left) player.vx -= accel;
+  if (keys.right) player.vx += accel;
+  if (!keys.left && !keys.right) player.vx *= 0.85;
+  player.vx = Math.max(-maxV, Math.min(maxV, player.vx));
+  player.x += player.vx;
+  if (player.x < 0) { player.x = 0; player.vx = 0; }
+  if (player.x + player.w > W) { player.x = W - player.w; player.vx = 0; }
+
+  // Spawnar obstáculos
+  spawnTimer++;
+  const intervalo = Math.max(20, 50 - Math.floor(score / 5));
+  if (spawnTimer > intervalo) {
+    spawn();
+    spawnTimer = 0;
+  }
+
+  // Mover obstáculos
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.y += speed;
+    if (o.y > H) {
+      obstacles.splice(i, 1);
+      score++;
+      scoreEl.textContent = score;
+      speed = 2 + score * 0.08;
+    }
+    // Colisão
+    if (o.x < player.x + player.w && o.x + o.w > player.x &&
+        o.y < player.y + player.h && o.y + o.h > player.y) {
+      gameOver();
+    }
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#222';
+  ctx.fillRect(0, 0, W, H);
+
+  // Linhas decorativas
+  ctx.strokeStyle = '#2a2a2a';
+  for (let y = 0; y < H; y += 40) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
+
+  // Jogador
+  ctx.fillStyle = '#4af';
+  ctx.shadowColor = '#4af';
+  ctx.shadowBlur = 15;
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  ctx.shadowBlur = 0;
+
+  // Obstáculos
+  ctx.fillStyle = '#f44';
+  ctx.shadowColor = '#f44';
+  ctx.shadowBlur = 10;
+  for (const o of obstacles) {
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+  }
+  ctx.shadowBlur = 0;
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// Controles teclado
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+  if (!running && (e.key === 'Enter' || e.key === ' ')) reset();
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+  if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+});
+
+// Controles touch (mobile)
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect();
+  const touchX = e.touches[0].clientX - r.left;
+  const centroPlayer = player.x + player.w / 2;
+  if (touchX < centroPlayer) keys.left = true;
+  else keys.right = true;
+}, { passive: false });
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect();
+  const touchX = e.touches[0].clientX - r.left;
+  const centroPlayer = player.x + player.w / 2;
+  keys.left = touchX < centroPlayer;
+  keys.right = touchX > centroPlayer;
+}, { passive: false });
+canvas.addEventListener('touchend', () => {
+  keys.left = false;
+  keys.right = false;
+});
+
+ovBtn.addEventListener('click', reset);
+
+// Iniciar
+reset();
+loop();
+</script>
 </body>
 </html>
