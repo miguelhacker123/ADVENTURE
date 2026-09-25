@@ -1,463 +1,571 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Squish Squish - Aperte o Bichinho</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            user-select: none;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Batalha Ninja - Cartas Naruto</title>
+<script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    background: radial-gradient(circle at 50% 0%, #2a1a0a 0%, #0d0d0d 70%);
+    color: #fff; min-height: 100vh; overflow-x: hidden;
+  }
+  #app { max-width: 1100px; margin: 0 auto; padding: 15px; }
 
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            cursor: pointer;
-        }
+  /* ===== TELAS ===== */
+  .tela { display: none; }
+  .tela.ativa { display: block; }
 
-        h1 {
-            color: #fff;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
-            animation: pulse 2s infinite;
-        }
+  /* ===== MENU ===== */
+  #menu { text-align: center; padding-top: 60px; }
+  #menu h1 {
+    font-size: 3.5em; color: #ff8c00;
+    text-shadow: 0 0 20px #ff4500, 0 0 40px #ff4500;
+    margin-bottom: 10px; letter-spacing: 3px;
+  }
+  #menu p.sub { color: #bbb; margin-bottom: 40px; font-size: 1.1em; }
+  .btn {
+    background: linear-gradient(135deg, #ff8c00, #ff4500);
+    color: #fff; border: none; padding: 15px 35px; font-size: 1.1em;
+    border-radius: 10px; cursor: pointer; margin: 10px; font-weight: bold;
+    transition: transform .2s, box-shadow .2s;
+    box-shadow: 0 4px 15px rgba(255,69,0,.4);
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(255,69,0,.7); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.sec { background: linear-gradient(135deg, #444, #222); box-shadow: none; }
+  #inputCodigo {
+    padding: 15px; font-size: 1.1em; border-radius: 10px; border: 2px solid #ff8c00;
+    background: #1a1a1a; color: #fff; width: 260px; text-align: center;
+    letter-spacing: 3px; text-transform: uppercase; margin-top: 15px;
+  }
+  #status { margin-top: 20px; color: #ff8c00; font-size: 1.1em; min-height: 25px; }
+  #codigoSala {
+    display: inline-block; background: #1a1a1a; padding: 15px 30px;
+    border-radius: 10px; border: 2px dashed #ff8c00; margin-top: 15px;
+    font-size: 1.6em; letter-spacing: 5px; color: #ff8c00; font-weight: bold;
+  }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
+  /* ===== JOGO ===== */
+  #jogo { display: none; }
+  #jogo.ativa { display: flex; flex-direction: column; gap: 10px; }
 
-        .subtitulo {
-            color: #ffb6c1;
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-            opacity: 0.9;
-        }
+  .infoBar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(255,140,0,.1); border: 1px solid rgba(255,140,0,.3);
+    padding: 10px 20px; border-radius: 10px;
+  }
+  .hpBar {
+    flex: 1; max-width: 300px; height: 22px; background: #222;
+    border-radius: 11px; overflow: hidden; border: 1px solid #555;
+    position: relative; margin: 0 10px;
+  }
+  .hpFill {
+    height: 100%; background: linear-gradient(90deg, #ff0000, #ff8c00);
+    transition: width .5s ease; border-radius: 11px;
+  }
+  .hpTexto {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8em; font-weight: bold; text-shadow: 1px 1px 2px #000;
+  }
+  .nomeJogador { font-weight: bold; color: #ff8c00; min-width: 90px; }
 
-        .contador {
-            color: #fff;
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            background: rgba(255, 105, 180, 0.3);
-            padding: 10px 30px;
-            border-radius: 50px;
-            border: 2px solid #ff69b4;
-            box-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
-        }
+  .turnoBox {
+    text-align: center; font-size: 1.1em; padding: 8px;
+    background: rgba(0,0,0,.4); border-radius: 8px;
+    border: 1px solid #333; color: #ff8c00; font-weight: bold;
+  }
+  .turnoBox.meu { border-color: #00ff88; color: #00ff88; box-shadow: 0 0 15px rgba(0,255,136,.3); }
 
-        .contador span {
-            color: #ff69b4;
-            font-weight: bold;
-            font-size: 1.8rem;
-        }
+  .areaMao {
+    display: flex; justify-content: center; gap: 8px; min-height: 200px;
+    padding: 15px; background: rgba(0,0,0,.3); border-radius: 12px;
+    border: 1px solid rgba(255,140,0,.15); flex-wrap: wrap; align-items: center;
+  }
+  .areaMao.inimigo { min-height: 130px; }
+  .areaMao.inimigo .carta { transform: scale(.75); opacity: .85; }
 
-        .squish-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.1s ease;
-        }
+  .carta {
+    width: 120px; height: 170px; border-radius: 10px;
+    background: linear-gradient(160deg, #1a1a1a, #2a2a2a);
+    border: 2px solid #ff8c00; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 8px; transition: transform .2s, box-shadow .2s;
+    position: relative; user-select: none;
+  }
+  .carta:hover {
+    transform: translateY(-12px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(255,140,0,.6);
+  }
+  .carta.fogo { border-color: #ff4500; }
+  .carta.agua { border-color: #1e90ff; }
+  .carta.vento { border-color: #00ff88; }
+  .carta.terra { border-color: #8b4513; }
+  .carta.raio { border-color: #ffd700; }
+  .carta .avatar {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: #333; display: flex; align-items: center; justify-content: center;
+    font-size: 2em; margin-bottom: 5px; border: 2px solid #555;
+  }
+  .carta .nomeCarta {
+    font-size: .78em; font-weight: bold; text-align: center;
+    margin-bottom: 5px; height: 28px; display: flex; align-items: center;
+  }
+  .carta .stats {
+    display: flex; gap: 6px; font-size: .8em; font-weight: bold;
+    margin-top: auto; width: 100%; justify-content: center;
+  }
+  .carta .atk { color: #ff4500; }
+  .carta .def { color: #1e90ff; }
+  .carta .chakra {
+    position: absolute; top: -8px; right: -8px;
+    background: #00bfff; color: #000; border-radius: 50%;
+    width: 26px; height: 26px; display: flex; align-items: center;
+    justify-content: center; font-size: .8em; font-weight: bold;
+    border: 2px solid #fff;
+  }
+  .carta.desabilitada { opacity: .4; cursor: not-allowed; filter: grayscale(.7); }
+  .carta.desabilitada:hover { transform: none; box-shadow: none; }
 
-        .squish-container:active {
-            transform: scale(0.95);
-        }
+  .chakraBox {
+    text-align: center; font-weight: bold; color: #00bfff;
+    padding: 8px; font-size: 1em;
+  }
+  .chakraBox span { color: #fff; }
 
-        .squish {
-            width: 220px;
-            height: 220px;
-            background: radial-gradient(circle at 35% 30%, #ff9ec7, #ff69b4 40%, #e91e8c 100%);
-            border-radius: 50% 50% 45% 45%;
-            position: relative;
-            box-shadow: 
-                0 20px 40px rgba(255, 105, 180, 0.6),
-                inset -20px -20px 40px rgba(0, 0, 0, 0.2),
-                inset 15px 15px 30px rgba(255, 255, 255, 0.4);
-            transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-            animation: flutuar 3s ease-in-out infinite;
-        }
+  /* ===== FIM ===== */
+  #fim { text-align: center; padding-top: 100px; display: none; }
+  #fim.ativa { display: block; }
+  #fim h1 { font-size: 4em; margin-bottom: 20px; }
+  #fim h1.vitoria { color: #00ff88; text-shadow: 0 0 30px #00ff88; }
+  #fim h1.derrota { color: #ff3333; text-shadow: 0 0 30px #ff3333; }
 
-        @keyframes flutuar {
-            0%, 100% { transform: translateY(0) rotate(-2deg); }
-            50% { transform: translateY(-15px) rotate(2deg); }
-        }
+  /* Animação de ataque */
+  @keyframes atacar {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(30px) scale(1.1); }
+    100% { transform: translateX(0); }
+  }
+  .carta.atacando { animation: atacar .4s ease; }
+  @keyframes dano {
+    0%,100% { background: rgba(255,140,0,.1); }
+    50% { background: rgba(255,0,0,.5); }
+  }
+  .dano { animation: dano .4s ease; }
 
-        .squish.apertado {
-            transform: scale(1.3, 0.7) rotate(0deg) !important;
-            box-shadow: 
-                0 30px 60px rgba(255, 105, 180, 0.9),
-                inset -30px -10px 40px rgba(0, 0, 0, 0.3),
-                inset 20px 10px 30px rgba(255, 255, 255, 0.6);
-            animation: none;
-        }
-
-        /* Olhos */
-        .olho {
-            position: absolute;
-            width: 45px;
-            height: 55px;
-            background: #fff;
-            border-radius: 50%;
-            top: 70px;
-            box-shadow: inset 0 5px 10px rgba(0, 0, 0, 0.2);
-            transition: all 0.15s ease;
-        }
-
-        .olho.esquerdo { left: 45px; }
-        .olho.direito { right: 45px; }
-
-        .pupila {
-            position: absolute;
-            width: 25px;
-            height: 30px;
-            background: #1a1a2e;
-            border-radius: 50%;
-            top: 12px;
-            left: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .pupila::after {
-            content: '';
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #fff;
-            border-radius: 50%;
-            top: 3px;
-            left: 3px;
-        }
-
-        /* Bochechas */
-        .bochecha {
-            position: absolute;
-            width: 35px;
-            height: 20px;
-            background: rgba(255, 50, 100, 0.5);
-            border-radius: 50%;
-            top: 130px;
-            transition: all 0.3s ease;
-        }
-
-        .bochecha.esquerda { left: 30px; }
-        .bochecha.direita { right: 30px; }
-
-        /* Boca */
-        .boca {
-            position: absolute;
-            width: 50px;
-            height: 25px;
-            border: 4px solid #8b0044;
-            border-top: none;
-            border-radius: 0 0 50px 50px;
-            bottom: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            transition: all 0.15s ease;
-        }
-
-        .boca.aberta {
-            width: 60px;
-            height: 45px;
-            background: #8b0044;
-            border-radius: 50%;
-            border: 4px solid #8b0044;
-        }
-
-        /* Braços */
-        .braco {
-            position: absolute;
-            width: 50px;
-            height: 25px;
-            background: radial-gradient(circle, #ff9ec7, #ff69b4);
-            border-radius: 50px;
-            top: 110px;
-            transition: all 0.15s ease;
-        }
-
-        .braco.esquerdo {
-            left: -25px;
-            transform-origin: right center;
-            transform: rotate(20deg);
-        }
-
-        .braco.direito {
-            right: -25px;
-            transform-origin: left center;
-            transform: rotate(-20deg);
-        }
-
-        /* Pernas */
-        .perna {
-            position: absolute;
-            width: 40px;
-            height: 30px;
-            background: radial-gradient(circle, #ff9ec7, #ff69b4);
-            border-radius: 50px;
-            bottom: -10px;
-            transition: all 0.15s ease;
-        }
-
-        .perna.esquerda { left: 50px; }
-        .perna.direita { right: 50px; }
-
-        /* Partículas */
-        .particula {
-            position: absolute;
-            pointer-events: none;
-            font-size: 1.5rem;
-            animation: subirParticula 0.8s ease-out forwards;
-            z-index: 100;
-        }
-
-        @keyframes subirParticula {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(-100px) scale(1.5);
-            }
-        }
-
-        /* Ripple */
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            border: 3px solid #ff69b4;
-            pointer-events: none;
-            animation: expandir 0.6s ease-out forwards;
-        }
-
-        @keyframes expandir {
-            0% {
-                width: 50px;
-                height: 50px;
-                opacity: 1;
-                transform: translate(-50%, -50%);
-            }
-            100% {
-                width: 300px;
-                height: 300px;
-                opacity: 0;
-                transform: translate(-50%, -50%);
-            }
-        }
-
-        .instrucao {
-            color: #aaa;
-            margin-top: 40px;
-            font-size: 0.95rem;
-            animation: piscar 1.5s infinite;
-        }
-
-        @keyframes piscar {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        /* Estrelas de fundo */
-        .estrela {
-            position: absolute;
-            width: 3px;
-            height: 3px;
-            background: #fff;
-            border-radius: 50%;
-            animation: twinkle 3s infinite;
-        }
-
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.2; }
-            50% { opacity: 1; }
-        }
-    </style>
+  .log {
+    text-align: center; color: #ff8c00; font-size: .95em;
+    min-height: 24px; padding: 5px;
+  }
+</style>
 </head>
 <body>
+<div id="app">
 
-    <h1>🩷 Squish Squish 🩷</h1>
-    <p class="subtitulo">Aperte o bichinho fofo!</p>
+  <!-- ===== MENU ===== -->
+  <div id="menu" class="tela ativa">
+    <h1>🍥 BATALHA NINJA</h1>
+    <p class="sub">Duelo de cartas multiplayer</p>
+    <button class="btn" id="btnCriar">Criar Sala</button>
+    <button class="btn sec" id="btnEntrarTela">Entrar em Sala</button>
 
-    <div class="contador">Apertos: <span id="contador">0</span></div>
-
-    <div class="squish-container" id="container">
-        <div class="squish" id="squish">
-            <div class="olho esquerdo"><div class="pupila"></div></div>
-            <div class="olho direito"><div class="pupila"></div></div>
-            <div class="bochecha esquerda"></div>
-            <div class="bochecha direita"></div>
-            <div class="boca" id="boca"></div>
-            <div class="braco esquerdo"></div>
-            <div class="braco direito"></div>
-            <div class="perna esquerda"></div>
-            <div class="perna direita"></div>
-        </div>
+    <div id="areaEntrar" style="display:none; margin-top:20px;">
+      <input id="inputCodigo" placeholder="CÓDIGO" maxlength="6">
+      <br>
+      <button class="btn" id="btnEntrar">Conectar</button>
     </div>
 
-    <p class="instrucao">Clique no bichinho para apertar!</p>
+    <div id="status"></div>
+    <div id="codigoSala" style="display:none;"></div>
+  </div>
 
-    <script>
-        const squish = document.getElementById('squish');
-        const boca = document.getElementById('boca');
-        const contadorEl = document.getElementById('contador');
-        const container = document.getElementById('container');
+  <!-- ===== JOGO ===== -->
+  <div id="jogo">
+    <div class="infoBar">
+      <div class="nomeJogador">🥷 Inimigo</div>
+      <div class="hpBar"><div class="hpFill" id="hpInimigoFill" style="width:100%"></div><div class="hpTexto" id="hpInimigoTexto">100 / 100</div></div>
+    </div>
 
-        let contador = 0;
-        let audioCtx = null;
+    <div class="areaMao inimigo" id="maoInimigo"></div>
 
-        // Emojis de partículas
-        const emojis = ['💕', '✨', '💖', '⭐', '🌸', '💗', '🎀', '💫'];
+    <div class="turnoBox" id="turnoBox">Aguardando...</div>
+    <div class="chakraBox">⚡ Chakra: <span id="chakraTexto">0</span> / 10</div>
 
-        // Inicializa áudio
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
+    <div class="areaMao" id="minhaMao"></div>
 
-        // Toca som de squish
-        function tocarSom() {
-            initAudio();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
+    <div class="infoBar">
+      <div class="nomeJogador">🥷 Você</div>
+      <div class="hpBar"><div class="hpFill" id="hpMeuFill" style="width:100%"></div><div class="hpTexto" id="hpMeuTexto">100 / 100</div></div>
+    </div>
 
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
+    <div class="log" id="log"></div>
+  </div>
 
-            osc.type = 'sine';
-            const freq = 300 + Math.random() * 200;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(freq * 0.5, audioCtx.currentTime + 0.15);
+  <!-- ===== FIM ===== -->
+  <div id="fim">
+    <h1 id="fimTitulo"></h1>
+    <button class="btn" onclick="location.reload()">Jogar Novamente</button>
+  </div>
 
-            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+</div>
 
-            osc.start(audioCtx.currentTime);
-            osc.stop(audioCtx.currentTime + 0.2);
-        }
+<script>
+// ============ CARTAS ============
+const TODAS_CARTAS = [
+  { id: 1, nome: 'Naruto',  atk: 8,  def: 5,  chakra: 3, elemento: 'vento', emoji: '🍥' },
+  { id: 2, nome: 'Sasuke',  atk: 7,  def: 6,  chakra: 3, elemento: 'raio',  emoji: '⚡' },
+  { id: 3, nome: 'Sakura',  atk: 5,  def: 9,  chakra: 2, elemento: 'terra', emoji: '🌸' },
+  { id: 4, nome: 'Kakashi', atk: 9,  def: 7,  chakra: 5, elemento: 'raio',  emoji: '📖' },
+  { id: 5, nome: 'Gaara',   atk: 6,  def: 10, chakra: 4, elemento: 'terra', emoji: '🏜️' },
+  { id: 6, nome: 'Itachi',  atk: 10, def: 6,  chakra: 6, elemento: 'fogo',  emoji: '🔥' },
+  { id: 7, nome: 'Rock Lee',atk: 7,  def: 4,  chakra: 2, elemento: 'vento', emoji: '🥋' },
+  { id: 8, nome: 'Hinata',  atk: 5,  def: 7,  chakra: 2, elemento: 'agua',  emoji: '👁️' },
+  { id: 9, nome: 'Shikamaru',atk: 4, def: 8,  chakra: 3, elemento: 'terra', emoji: '🧠' },
+  { id: 10,nome: 'Neji',    atk: 7,  def: 7,  chakra: 4, elemento: 'vento', emoji: '🌀' },
+  { id: 11,nome: 'Kisame',  atk: 8,  def: 6,  chakra: 5, elemento: 'agua',  emoji: '🦈' },
+  { id: 12,nome: 'Pain',    atk: 9,  def: 8,  chakra: 7, elemento: 'raio',  emoji: '☔' },
+];
 
-        // Cria partícula
-        function criarParticula(x, y) {
-            const particula = document.createElement('div');
-            particula.className = 'particula';
-            particula.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-            particula.style.left = x + 'px';
-            particula.style.top = y + 'px';
-            particula.style.position = 'fixed';
-            document.body.appendChild(particula);
-            setTimeout(() => particula.remove(), 800);
-        }
+// Vantagem elemental (atacante -> defensor)
+const VANTAGEM = {
+  fogo: 'vento',   // fogo vence vento
+  vento: 'raio',
+  raio: 'terra',
+  terra: 'agua',
+  agua: 'fogo'
+};
 
-        // Cria ripple
-        function criarRipple(x, y) {
-            const ripple = document.createElement('div');
-            ripple.className = 'ripple';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            ripple.style.position = 'fixed';
-            document.body.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 600);
-        }
+// ============ ESTADO ============
+let peer = null;
+let conn = null;
+let souHost = false;
+let minhaMao = [];
+let maoInimigo = [];
+let meuHP = 100, hpInimigo = 100;
+let meuChakra = 0, chakraInimigo = 0;
+let meuTurno = false;
+let jogoAtivo = false;
 
-        // Função de apertar
-        function apertar(e) {
-            e.preventDefault();
-            
-            contador++;
-            contadorEl.textContent = contador;
-            contadorEl.style.transform = 'scale(1.3)';
-            setTimeout(() => contadorEl.style.transform = 'scale(1)', 150);
+// ============ MENU ============
+const $ = id => document.getElementById(id);
+const menu = $('menu'), jogo = $('jogo'), fim = $('fim');
+const statusEl = $('status'), codigoSalaEl = $('codigoSala');
 
-            // Animação de apertar
-            squish.classList.add('apertado');
-            boca.classList.add('aberta');
+$('btnCriar').onclick = () => {
+  statusEl.textContent = 'Criando sala...';
+  $('btnCriar').disabled = true;
+  $('btnEntrarTela').disabled = true;
+  iniciarPeer(null);
+};
 
-            // Som
-            tocarSom();
+$('btnEntrarTela').onclick = () => {
+  $('areaEntrar').style.display = 'block';
+  $('btnEntrarTela').disabled = true;
+};
 
-            // Partículas
-            const rect = squish.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
+$('btnEntrar').onclick = () => {
+  const codigo = $('inputCodigo').value.trim().toUpperCase();
+  if (codigo.length < 4) { statusEl.textContent = 'Código inválido!'; return; }
+  statusEl.textContent = 'Conectando...';
+  iniciarPeer(codigo);
+};
 
-            for (let i = 0; i < 3; i++) {
-                setTimeout(() => {
-                    const offsetX = (Math.random() - 0.5) * 150;
-                    const offsetY = (Math.random() - 0.5) * 100;
-                    criarParticula(centerX + offsetX, centerY + offsetY);
-                }, i * 50);
-            }
+// ============ PEER ============
+function iniciarPeer(entrarComId) {
+  souHost = !entrarComId;
+  peer = entrarComId ? new Peer() : new Peer(gerarCodigo());
 
-            // Ripple
-            criarRipple(centerX, centerY);
+  peer.on('open', (id) => {
+    if (souHost) {
+      codigoSalaEl.style.display = 'inline-block';
+      codigoSalaEl.textContent = id;
+      statusEl.textContent = 'Compartilhe o código acima! Aguardando oponente...';
+    } else {
+      statusEl.textContent = 'Conectando ao host...';
+      conn = peer.connect(entrarComId, { reliable: true });
+      configurarConexao();
+    }
+  });
 
-            // Vibração em mobile
-            if (navigator.vibrate) {
-                navigator.vibrate(30);
-            }
+  peer.on('connection', (c) => {
+    if (!souHost) return;
+    conn = c;
+    configurarConexao();
+  });
 
-            // Reset
-            setTimeout(() => {
-                squish.classList.remove('apertado');
-                boca.classList.remove('aberta');
-            }, 150);
-        }
+  peer.on('error', (e) => {
+    console.error(e);
+    statusEl.textContent = 'Erro: ' + e.type + '. Tente novamente.';
+    $('btnCriar').disabled = false;
+    $('btnEntrarTela').disabled = false;
+  });
+}
 
-        // Eventos
-        squish.addEventListener('mousedown', apertar);
-        squish.addEventListener('touchstart', apertar, { passive: false });
+function gerarCodigo() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
 
-        // Movimento dos olhos seguindo o mouse
-        document.addEventListener('mousemove', (e) => {
-            const pupilas = document.querySelectorAll('.pupila');
-            const rect = squish.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-            const dist = Math.min(8, Math.hypot(e.clientX - centerX, e.clientY - centerY) / 20);
-            
-            pupilas.forEach(pupila => {
-                pupila.style.transform = `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px)`;
-            });
-        });
+function configurarConexao() {
+  conn.on('open', () => {
+    statusEl.textContent = 'Conectado! Iniciando partida...';
+    setTimeout(() => {
+      menu.classList.remove('ativa');
+      menu.style.display = 'none';
+      jogo.style.display = 'flex';
+      jogo.classList.add('ativa');
+      jogoAtivo = true;
+      iniciarPartida();
+    }, 800);
+  });
 
-        // Cria estrelas de fundo
-        for (let i = 0; i < 50; i++) {
-            const estrela = document.createElement('div');
-            estrela.className = 'estrela';
-            estrela.style.left = Math.random() * 100 + '%';
-            estrela.style.top = Math.random() * 100 + '%';
-            estrela.style.animationDelay = Math.random() * 3 + 's';
-            document.body.appendChild(estrela);
-        }
+  conn.on('data', (data) => receberMensagem(data));
 
-        // Efeito de digitar no teclado (espaço também aperta)
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                const rect = squish.getBoundingClientRect();
-                const fakeEvent = {
-                    preventDefault: () => {},
-                    clientX: rect.left + rect.width / 2,
-                    clientY: rect.top + rect.height / 2
-                };
-                apertar(fakeEvent);
-            }
-        });
-    </script>
+  conn.on('close', () => {
+    if (jogoAtivo) {
+      $('log').textContent = 'Oponente desconectou.';
+      finalizarJogo(true);
+    }
+  });
+}
+
+// ============ PARTIDA ============
+function iniciarPartida() {
+  // Embaralha e distribui 5 cartas cada
+  const baralho = [...TODAS_CARTAS].sort(() => Math.random() - 0.5);
+  minhaMao = baralho.slice(0, 5);
+  maoInimigo = baralho.slice(5, 10);
+
+  if (souHost) {
+    meuTurno = true;
+    enviar({ tipo: 'inicio', maoInimigo: minhaMao.map(c => c.id) });
+    atualizarUI();
+    setLog('Sua vez! Escolha uma carta para atacar.');
+  } else {
+    meuTurno = false;
+    atualizarUI();
+    setLog('Aguardando o oponente...');
+  }
+}
+
+function receberMensagem(msg) {
+  if (msg.tipo === 'inicio') {
+    // Recebi as cartas do host (que são a mão "inimiga" da minha perspectiva)
+    maoInimigo = msg.maoInimigo.map(id => TODAS_CARTAS.find(c => c.id === id));
+    atualizarUI();
+    setLog('Aguardando o oponente jogar...');
+  }
+  else if (msg.tipo === 'jogada') {
+    // Oponente jogou uma carta
+    const cartaIdx = maoInimigo.findIndex(c => c.id === msg.cartaId);
+    if (cartaIdx === -1) return;
+    const cartaInimiga = maoInimigo.splice(cartaIdx, 1)[0];
+
+    // Escolhe uma carta minha aleatória para defender (ou a mais forte)
+    if (minhaMao.length === 0) { finalizarJogo(false); return; }
+    const defIdx = Math.floor(Math.random() * minhaMao.length);
+    const minhaDefesa = minhaMao.splice(defIdx, 1)[0];
+
+    // Calcula dano
+    const resultado = calcularDano(cartaInimiga, minhaDefesa);
+    meuHP = Math.max(0, meuHP - resultado.dano);
+    meuChakra = Math.min(10, meuChakra + 1);
+
+    // Anima
+    animarDano('hpMeuFill');
+    atualizarUI();
+    setLog(`⚔️ ${cartaInimiga.nome} atacou ${minhaDefesa.nome}! ${resultado.msg} (-${resultado.dano} HP)`);
+
+    if (meuHP <= 0) { finalizarJogo(false); return; }
+
+    // Agora é minha vez
+    meuTurno = true;
+    atualizarUI();
+    setTimeout(() => setLog('Sua vez! Escolha uma carta.'), 1200);
+  }
+  else if (msg.tipo === 'resultado') {
+    // Confirmação do oponente sobre meu ataque
+    if (msg.derrotaOponente) {
+      finalizarJogo(true);
+    }
+  }
+  else if (msg.tipo === 'fim') {
+    finalizarJogo(!msg.oponenteVenceu);
+  }
+}
+
+function calcularDano(atacante, defensor) {
+  let dano = Math.max(1, atacante.atk - Math.floor(defensor.def / 2));
+  let msg = '';
+
+  // Vantagem elemental
+  if (VANTAGEM[atacante.elemento] === defensor.elemento) {
+    dano = Math.floor(dano * 1.5);
+    msg = '🔥 Vantagem elemental!';
+  } else if (VANTAGEM[defensor.elemento] === atacante.elemento) {
+    dano = Math.max(1, Math.floor(dano * 0.5));
+    msg = '🛡️ Desvantagem elemental!';
+  } else {
+    msg = 'Ataque normal.';
+  }
+
+  return { dano, msg };
+}
+
+// ============ JOGAR CARTA ============
+function jogarCarta(idx) {
+  if (!meuTurno || !jogoAtivo) return;
+  const carta = minhaMao[idx];
+  if (!carta) return;
+  if (carta.chakra > meuChakra) {
+    setLog(`⚡ Chakra insuficiente! Precisa de ${carta.chakra}.`);
+    return;
+  }
+
+  // Remove da mão e gasta chakra
+  minhaMao.splice(idx, 1);
+  meuChakra -= carta.chakra;
+  meuTurno = false;
+
+  // Anima
+  animarAtaque('minhaMao', idx);
+
+  // Envia jogada
+  enviar({ tipo: 'jogada', cartaId: carta.id });
+
+  atualizarUI();
+  setLog(`Você jogou ${carta.nome}! Aguardando oponente...`);
+
+  // Espera resposta do oponente (ele vai calcular e responder via 'jogada' de volta)
+  // Simulamos a defesa do oponente após pequeno delay
+  setTimeout(() => {
+    if (!jogoAtivo) return;
+    if (maoInimigo.length === 0) { finalizarJogo(true); return; }
+
+    const defIdx = Math.floor(Math.random() * maoInimigo.length);
+    const defesaInimiga = maoInimigo.splice(defIdx, 1)[0];
+
+    const resultado = calcularDano(carta, defesaInimiga);
+    hpInimigo = Math.max(0, hpInimigo - resultado.dano);
+    chakraInimigo = Math.min(10, chakraInimigo + 1);
+
+    animarDano('hpInimigoFill');
+    atualizarUI();
+    setLog(`⚔️ ${carta.nome} atacou ${defesaInimiga.nome}! ${resultado.msg} (-${resultado.dano} HP)`);
+
+    if (hpInimigo <= 0) {
+      enviar({ tipo: 'fim', oponenteVenceu: false });
+      finalizarJogo(true);
+      return;
+    }
+
+    // Devolve o turno pra mim (na versão simples, o oponente joga de volta)
+    setTimeout(() => {
+      if (!jogoAtivo) return;
+      // Oponente ataca de volta
+      if (maoInimigo.length === 0) { finalizarJogo(true); return; }
+      const atkIdx = Math.floor(Math.random() * maoInimigo.length);
+      const cartaInimiga = maoInimigo[atkIdx];
+      if (cartaInimiga.chakra > chakraInimigo) {
+        // Oponente pula a vez
+        meuTurno = true;
+        meuChakra = Math.min(10, meuChakra + 1);
+        atualizarUI();
+        setLog('Oponente pulou a vez (sem chakra). Sua vez!');
+        return;
+      }
+      maoInimigo.splice(atkIdx, 1);
+      chakraInimigo -= cartaInimiga.chakra;
+      enviar({ tipo: 'jogada', cartaId: cartaInimiga.id });
+    }, 1500);
+  }, 800);
+}
+
+// ============ UI ============
+function atualizarUI() {
+  // HP
+  $('hpMeuFill').style.width = meuHP + '%';
+  $('hpMeuTexto').textContent = meuHP + ' / 100';
+  $('hpInimigoFill').style.width = hpInimigo + '%';
+  $('hpInimigoTexto').textContent = hpInimigo + ' / 100';
+
+  // Chakra
+  $('chakraTexto').textContent = meuChakra;
+
+  // Turno
+  const tb = $('turnoBox');
+  if (meuTurno) {
+    tb.textContent = '⚔️ SUA VEZ';
+    tb.classList.add('meu');
+  } else {
+    tb.textContent = '⏳ Vez do oponente';
+    tb.classList.remove('meu');
+  }
+
+  // Minha mão
+  const mEl = $('minhaMao');
+  mEl.innerHTML = '';
+  minhaMao.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = `carta ${c.elemento}`;
+    if (!meuTurno || c.chakra > meuChakra) div.classList.add('desabilitada');
+    div.innerHTML = `
+      <div class="chakra">${c.chakra}</div>
+      <div class="avatar">${c.emoji}</div>
+      <div class="nomeCarta">${c.nome}</div>
+      <div class="stats"><span class="atk">⚔${c.atk}</span><span class="def">🛡${c.def}</span></div>
+    `;
+    div.onclick = () => jogarCarta(i);
+    mEl.appendChild(div);
+  });
+
+  // Mão do inimigo (virada)
+  const iEl = $('maoInimigo');
+  iEl.innerHTML = '';
+  maoInimigo.forEach(() => {
+    const div = document.createElement('div');
+    div.className = 'carta';
+    div.style.background = 'linear-gradient(160deg, #1a0a0a, #3a1010)';
+    div.innerHTML = `<div class="avatar" style="font-size:2.5em;">🍥</div>`;
+    iEl.appendChild(div);
+  });
+}
+
+function animarAtaque(containerId, idx) {
+  const el = $(containerId).children[idx];
+  if (el) {
+    el.classList.add('atacando');
+    setTimeout(() => el.classList.remove('atacando'), 400);
+  }
+}
+
+function animarDano(id) {
+  const el = $(id).parentElement;
+  el.classList.add('dano');
+  setTimeout(() => el.classList.remove('dano'), 400);
+}
+
+function setLog(txt) { $('log').textContent = txt; }
+
+// ============ FIM ============
+function finalizarJogo(vitoria) {
+  jogoAtivo = false;
+  jogo.style.display = 'none';
+  jogo.classList.remove('ativa');
+  fim.classList.add('ativa');
+  const t = $('fimTitulo');
+  if (vitoria) { t.textContent = '🏆 VITÓRIA!'; t.className = 'vitoria'; }
+  else { t.textContent = '💀 DERROTA'; t.className = 'derrota'; }
+}
+
+// ============ ENVIAR ============
+function enviar(obj) {
+  if (conn && conn.open) conn.send(obj);
+}
+</script>
 </body>
 </html>
