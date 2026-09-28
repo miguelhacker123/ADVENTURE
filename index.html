@@ -3,82 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Bus Simulator Pro — Realistic Driving</title>
+<title>Bus Simulator Pro — Manual Transmission</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
     overflow: hidden; background: #000;
     font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
     user-select: none; touch-action: none;
-    width: 100%; height: 100%;
-    color: #fff;
+    width: 100%; height: 100%; color: #fff;
   }
   canvas { display: block; }
 
   /* ============ TOP HUD ============ */
   #topHud {
-    position: fixed; top: 20px; left: 50%;
+    position: fixed; top: 18px; left: 50%;
     transform: translateX(-50%);
-    display: flex; gap: 12px; align-items: center;
+    display: flex; gap: 10px; align-items: center;
     z-index: 30; pointer-events: none;
   }
   .chip {
-    background: rgba(8,12,18,0.6);
+    background: rgba(8,12,18,0.62);
     backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 40px;
-    padding: 9px 22px;
-    color: #e6f0ff; font-weight: 600; font-size: 13px;
-    letter-spacing: 1.5px;
+    padding: 8px 18px;
+    color: #e6f0ff; font-weight: 600; font-size: 12px;
+    letter-spacing: 1.4px;
     box-shadow: 0 6px 28px rgba(0,0,0,0.45);
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 8px;
   }
-  .chip svg { width: 14px; height: 14px; }
 
-  /* ============ RIGHT HUD (dash + pedals) ============ */
+  /* ============ RIGHT HUD ============ */
   #rightHud {
-    position: fixed; right: 24px; bottom: 24px;
-    display: flex; flex-direction: column; gap: 12px;
+    position: fixed; right: 22px; bottom: 22px;
+    display: flex; flex-direction: column; gap: 10px;
     align-items: flex-end; z-index: 25;
   }
 
-  /* Dashboard */
   .dashboard {
-    background: linear-gradient(145deg, rgba(8,12,18,0.75), rgba(4,6,10,0.75));
+    background: linear-gradient(145deg, rgba(8,12,18,0.78), rgba(4,6,10,0.78));
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 26px;
-    padding: 16px 24px;
-    display: flex; align-items: center; gap: 26px;
+    border-radius: 24px;
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 22px;
     box-shadow: 0 14px 50px rgba(0,0,0,0.7),
-                inset 0 1px 0 rgba(255,255,255,0.08),
-                inset 0 -1px 0 rgba(0,0,0,0.5);
+                inset 0 1px 0 rgba(255,255,255,0.08);
   }
 
   .speedo {
     display: flex; flex-direction: column; align-items: center;
-    min-width: 100px;
+    min-width: 92px;
   }
   .speedo .val {
-    font-size: 46px; font-weight: 900; line-height: 0.9;
+    font-size: 42px; font-weight: 900; line-height: 0.9;
     color: #d4f6ff; letter-spacing: -1px;
-    text-shadow: 0 0 22px rgba(90,200,255,0.85), 0 0 8px rgba(255,255,255,0.3);
+    text-shadow: 0 0 22px rgba(90,200,255,0.9), 0 0 8px rgba(255,255,255,0.4);
     font-variant-numeric: tabular-nums;
-    font-feature-settings: 'tnum';
   }
   .speedo .unit {
-    font-size: 10px; color: #7fa8c4; letter-spacing: 3px;
+    font-size: 9px; color: #7fa8c4; letter-spacing: 3px;
     margin-top: 4px; font-weight: 700;
   }
 
-  /* RPM barra */
   .rpm-wrap {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
-    min-width: 90px;
+    min-width: 80px;
   }
   .rpm-bar {
-    width: 80px; height: 8px; border-radius: 6px;
-    background: rgba(0,0,0,0.6);
+    width: 74px; height: 7px; border-radius: 6px;
+    background: rgba(0,0,0,0.65);
     overflow: hidden;
     box-shadow: inset 0 1px 3px #000;
     border: 1px solid rgba(255,255,255,0.08);
@@ -87,57 +81,79 @@
     height: 100%; width: 0%;
     background: linear-gradient(90deg, #3aa0ff 0%, #58d68d 45%, #f4d03f 75%, #e74c3c 100%);
     border-radius: 6px;
-    transition: width 0.08s linear;
-    box-shadow: 0 0 10px rgba(255,120,80,0.6);
+    transition: width 0.06s linear;
+    box-shadow: 0 0 10px rgba(255,120,80,0.7);
   }
   .rpm-label {
-    font-size: 9px; color: #7fa8c4; letter-spacing: 2px; font-weight: 700;
+    font-size: 9px; color: #7fa8c4; letter-spacing: 1.5px; font-weight: 700;
   }
 
-  /* Marchas */
-  .gearbox {
-    display: grid; grid-template-columns: repeat(2, 1fr);
-    gap: 4px;
+  /* ====== CAIXA DE MARCHA ====== */
+  .gear-section {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
   }
-  .gear-item {
-    width: 30px; height: 30px; border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 800;
-    color: #394a58;
-    background: rgba(0,0,0,0.35);
-    border: 1px solid rgba(255,255,255,0.06);
-    transition: all 0.15s;
-    letter-spacing: 0;
+  .gear-display {
+    width: 64px; height: 58px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, #0a0d12, #04060a);
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(255,180,60,0.15);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    position: relative;
   }
-  .gear-item.active {
+  .gear-num {
+    font-size: 30px; font-weight: 900; line-height: 1;
     color: #ffbe4a;
-    background: linear-gradient(145deg, rgba(255,190,74,0.2), rgba(255,140,30,0.1));
-    border-color: rgba(255,190,74,0.6);
-    box-shadow: 0 0 18px rgba(255,180,60,0.65), inset 0 0 8px rgba(255,180,60,0.3);
-    text-shadow: 0 0 10px rgba(255,190,74,1);
+    text-shadow: 0 0 18px rgba(255,180,60,0.95), 0 0 6px rgba(255,200,120,1);
+    font-variant-numeric: tabular-nums;
   }
-  .gear-item.active.rev {
-    color: #ff6b5a;
-    background: linear-gradient(145deg, rgba(255,90,70,0.22), rgba(200,40,30,0.1));
-    border-color: rgba(255,90,70,0.65);
-    box-shadow: 0 0 18px rgba(255,80,60,0.65);
+  .gear-num.rev { color: #ff6b5a; text-shadow: 0 0 18px rgba(255,90,70,0.95); }
+  .gear-num.neutral { color: #7fa8c4; text-shadow: 0 0 12px rgba(120,170,200,0.6); }
+  .gear-num.auto { color: #5ddc7a; text-shadow: 0 0 18px rgba(90,220,120,0.9); }
+  .gear-sub {
+    font-size: 8px; color: #6f8ea8; letter-spacing: 2px; font-weight: 700;
+    margin-top: 2px;
   }
 
-  /* Pedais */
+  .gear-buttons {
+    display: flex; gap: 6px;
+  }
+  .gear-btn {
+    width: 34px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(160deg, #1a2028, #0a0e14);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #cfd8e3; font-weight: 900; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; touch-action: none;
+    box-shadow: 0 3px 0 #05080c, 0 6px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    transition: all 0.06s;
+    user-select: none;
+  }
+  .gear-btn:active, .gear-btn.active {
+    transform: translateY(3px);
+    box-shadow: 0 0px 0 #05080c, 0 2px 6px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.2);
+    background: linear-gradient(160deg, #2a3a4a, #14202c);
+  }
+  .gear-btn.up { color: #5ddc7a; }
+  .gear-btn.down { color: #ff9a6a; }
+
+  /* ====== PEDAIS ====== */
   .pedals {
-    display: flex; gap: 14px; padding: 16px 20px;
-    background: linear-gradient(145deg, rgba(8,12,18,0.75), rgba(4,6,10,0.75));
+    display: flex; gap: 14px; padding: 14px 18px;
+    background: linear-gradient(145deg, rgba(8,12,18,0.78), rgba(4,6,10,0.78));
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 30px;
+    border-radius: 28px;
     box-shadow: 0 14px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08);
   }
   .pedal {
-    width: 78px; height: 78px; border-radius: 50%;
+    width: 74px; height: 74px; border-radius: 50%;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    font-weight: 800; font-size: 11px; color: #dfe9f2;
-    letter-spacing: 1.4px;
+    font-weight: 800; font-size: 10px; color: #dfe9f2;
+    letter-spacing: 1.2px;
     background: radial-gradient(circle at 50% 25%, #2a3240, #0f131a 70%);
     border: 1px solid rgba(255,255,255,0.1);
     box-shadow: 0 8px 0 #05080c, 0 14px 30px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.08);
@@ -148,12 +164,10 @@
   .pedal::before {
     content: ''; position: absolute; inset: 6px;
     border-radius: 50%;
-    background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent 60%);
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 60%);
     pointer-events: none;
   }
-  .pedal .ico {
-    font-size: 20px; line-height: 1; margin-bottom: 2px;
-  }
+  .pedal .ico { font-size: 18px; line-height: 1; margin-bottom: 2px; }
   .pedal.active {
     transform: translateY(8px);
     box-shadow: 0 0px 0 #05080c, 0 4px 14px rgba(0,0,0,0.7), inset 0 0 25px rgba(255,255,255,0.2);
@@ -163,22 +177,20 @@
   #pedalAccel { background: radial-gradient(circle at 50% 25%, #1f5c34, #08210f 70%); }
   #pedalAccel.active { background: radial-gradient(circle at 50% 25%, #35c46a, #1f5c34 70%); }
 
-  /* Freio de mão */
   .handbrake {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: center; gap: 10px;
     background: linear-gradient(145deg, rgba(8,12,18,0.8), rgba(4,6,10,0.8));
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 40px; padding: 13px 26px;
-    color: #cfd8e3; font-weight: 700; font-size: 13px;
-    letter-spacing: 1.6px; cursor: pointer;
+    border-radius: 40px; padding: 12px 22px;
+    color: #cfd8e3; font-weight: 700; font-size: 12px;
+    letter-spacing: 1.4px; cursor: pointer;
     box-shadow: 0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
     transition: all 0.2s; touch-action: none;
-    position: relative;
   }
   .hb-dot {
-    width: 12px; height: 12px; border-radius: 50%;
-    background: #333; box-shadow: inset 0 1px 3px #000, 0 0 0 rgba(255,80,60,0);
+    width: 11px; height: 11px; border-radius: 50%;
+    background: #333; box-shadow: inset 0 1px 3px #000;
     transition: all 0.25s;
   }
   .handbrake.on {
@@ -194,8 +206,8 @@
 
   /* ============ VOLANTE ============ */
   #wheelWrap {
-    position: fixed; left: 26px; bottom: 26px;
-    width: 260px; height: 260px;
+    position: fixed; left: 24px; bottom: 24px;
+    width: 250px; height: 250px;
     z-index: 26; touch-action: none;
     cursor: grab;
     filter: drop-shadow(0 18px 32px rgba(0,0,0,0.7));
@@ -208,7 +220,6 @@
     transition: transform 0.016s linear;
   }
 
-  /* Alerta */
   #alertMsg {
     position: fixed; top: 50%; left: 50%;
     transform: translate(-50%,-50%);
@@ -219,45 +230,57 @@
     transition: opacity 0.3s;
   }
 
+  /* Indicador de marcha recomendada */
+  #shiftHint {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, 60px);
+    color: #ffdd44; font-size: 16px; font-weight: 800;
+    letter-spacing: 2px; opacity: 0;
+    pointer-events: none; z-index: 100;
+    text-shadow: 0 0 12px rgba(255,200,60,0.9);
+    transition: opacity 0.2s;
+  }
+
   @media (max-width: 820px) {
-    #wheelWrap { width: 180px; height: 180px; left: 14px; bottom: 14px; }
-    #rightHud { right: 12px; bottom: 12px; gap: 8px; }
-    .pedal { width: 60px; height: 60px; font-size: 10px; }
-    .pedal .ico { font-size: 16px; }
-    .pedals { padding: 12px 14px; gap: 10px; border-radius: 24px; }
-    .dashboard { padding: 12px 16px; gap: 16px; border-radius: 20px; }
-    .speedo .val { font-size: 32px; }
-    .speedo { min-width: 70px; }
-    .rpm-wrap { min-width: 60px; }
-    .rpm-bar { width: 55px; height: 6px; }
-    .gear-item { width: 24px; height: 24px; font-size: 11px; }
-    .handbrake { padding: 10px 16px; font-size: 11px; letter-spacing: 1px; gap: 8px; }
-    .chip { padding: 6px 14px; font-size: 11px; letter-spacing: 1px; }
+    #wheelWrap { width: 170px; height: 170px; left: 12px; bottom: 12px; }
+    #rightHud { right: 10px; bottom: 10px; gap: 8px; }
+    .pedal { width: 58px; height: 58px; font-size: 9px; }
+    .pedal .ico { font-size: 15px; }
+    .pedals { padding: 10px 12px; gap: 8px; border-radius: 22px; }
+    .dashboard { padding: 10px 14px; gap: 14px; border-radius: 18px; }
+    .speedo .val { font-size: 30px; }
+    .speedo { min-width: 66px; }
+    .rpm-wrap { min-width: 52px; }
+    .rpm-bar { width: 46px; height: 6px; }
+    .gear-display { width: 50px; height: 46px; }
+    .gear-num { font-size: 22px; }
+    .gear-btn { width: 28px; height: 24px; font-size: 15px; }
+    .handbrake { padding: 9px 14px; font-size: 10px; letter-spacing: 1px; gap: 7px; }
+    .chip { padding: 6px 12px; font-size: 10px; letter-spacing: 1px; }
   }
   @media (max-width: 520px) {
-    #wheelWrap { width: 140px; height: 140px; }
-    .pedal { width: 50px; height: 50px; font-size: 9px; }
-    .pedal .ico { font-size: 14px; }
-    .speedo .val { font-size: 24px; }
-    .speedo { min-width: 56px; }
-    .gearbox { grid-template-columns: repeat(2, 1fr); gap: 3px; }
-    .gear-item { width: 20px; height: 20px; font-size: 10px; }
+    #wheelWrap { width: 130px; height: 130px; }
+    .pedal { width: 48px; height: 48px; font-size: 8px; }
+    .pedal .ico { font-size: 12px; }
+    .speedo .val { font-size: 22px; }
+    .gear-display { width: 42px; height: 38px; }
+    .gear-num { font-size: 18px; }
+    .gear-btn { width: 24px; height: 20px; font-size: 13px; }
+    .rpm-wrap { display: none; }
   }
 </style>
 </head>
 <body>
 
-<!-- Alert -->
 <div id="alertMsg">⚠ FRENAGEM DE EMERGÊNCIA</div>
+<div id="shiftHint"></div>
 
-<!-- HUD Topo -->
 <div id="topHud">
   <div class="chip" id="timeChip">☀ 08:30</div>
   <div class="chip" id="distChip">0.00 km</div>
   <div class="chip" id="fpsChip">60 FPS</div>
 </div>
 
-<!-- Painel direito -->
 <div id="rightHud">
   <div class="dashboard">
     <div class="speedo">
@@ -266,17 +289,17 @@
     </div>
     <div class="rpm-wrap">
       <div class="rpm-bar"><div class="rpm-fill" id="rpmFill"></div></div>
-      <div class="rpm-label" id="rpmLabel">RPM</div>
+      <div class="rpm-label" id="rpmLabel">800 RPM</div>
     </div>
-    <div class="gearbox" id="gearBox">
-      <div class="gear-item" data-g="1">1</div>
-      <div class="gear-item" data-g="2">2</div>
-      <div class="gear-item" data-g="3">3</div>
-      <div class="gear-item" data-g="4">4</div>
-      <div class="gear-item" data-g="5">5</div>
-      <div class="gear-item" data-g="6">6</div>
-      <div class="gear-item" data-g="N">N</div>
-      <div class="gear-item rev" data-g="R">R</div>
+    <div class="gear-section">
+      <div class="gear-display">
+        <div class="gear-num" id="gearNum">N</div>
+        <div class="gear-sub">MARCHA</div>
+      </div>
+      <div class="gear-buttons">
+        <div class="gear-btn down" id="gearDown">▼</div>
+        <div class="gear-btn up" id="gearUp">▲</div>
+      </div>
     </div>
   </div>
 
@@ -294,7 +317,6 @@
   </div>
 </div>
 
-<!-- Volante -->
 <div id="wheelWrap">
   <svg id="wheelSvg" viewBox="0 0 240 240">
     <defs>
@@ -311,14 +333,12 @@
     <circle cx="120" cy="120" r="108" fill="none" stroke="url(#rimGrad)" stroke-width="24"/>
     <circle cx="120" cy="120" r="108" fill="none" stroke="#4d5666" stroke-width="1.5" opacity="0.6"/>
     <circle cx="120" cy="120" r="90" fill="none" stroke="#1a1f27" stroke-width="3"/>
-
     <g stroke="#1a1f27" stroke-width="18" stroke-linecap="round">
       <line x1="120" y1="30" x2="120" y2="72"/>
       <line x1="120" y1="168" x2="120" y2="210"/>
       <line x1="30" y1="120" x2="72" y2="120"/>
       <line x1="168" y1="120" x2="210" y2="120"/>
     </g>
-
     <circle cx="120" cy="120" r="38" fill="url(#centerGrad)" stroke="#3a4250" stroke-width="3"/>
     <circle cx="120" cy="120" r="24" fill="none" stroke="#2a323d" stroke-width="2"/>
     <path d="M120 106 L128 120 L120 134 L112 120 Z" fill="#c9a24a" opacity="0.95"/>
@@ -354,11 +374,33 @@ document.body.appendChild(renderer.domElement);
    CENA + CÂMERA
 ========================================================= */
 const scene = new THREE.Scene();
-const FOG_COLOR_DAY = new THREE.Color(0xaac4dd);
-scene.fog = new THREE.Fog(FOG_COLOR_DAY, 60, 380);
+scene.fog = new THREE.Fog(0xaac4dd, 60, 380);
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1200);
 camera.rotation.order = 'YXZ';
+
+/* =========================================================
+   RETROVISORES FUNCIONAIS (Render Targets)
+   Cada espelho tem uma câmera própria que renderiza a cena
+   de trás. Depois projetamos no vidro do espelho.
+========================================================= */
+const mirrorRenderTargetL = new THREE.WebGLRenderTarget(320, 160, {
+  minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat
+});
+const mirrorRenderTargetR = new THREE.WebGLRenderTarget(320, 160, {
+  minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat
+});
+const mirrorRenderTargetInt = new THREE.WebGLRenderTarget(320, 90, {
+  minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat
+});
+
+const mirrorCamL = new THREE.PerspectiveCamera(55, 2.0, 0.5, 500);
+const mirrorCamR = new THREE.PerspectiveCamera(55, 2.0, 0.5, 500);
+const mirrorCamInt = new THREE.PerspectiveCamera(50, 3.55, 0.5, 300);
+
+scene.add(mirrorCamL);
+scene.add(mirrorCamR);
+scene.add(mirrorCamInt);
 
 /* =========================================================
    ILUMINAÇÃO
@@ -384,13 +426,12 @@ const ambient = new THREE.AmbientLight(0x404a5a, 0.4);
 scene.add(ambient);
 
 /* =========================================================
-   COCKPIT — 1ª pessoa
+   COCKPIT
 ========================================================= */
 const cockpit = new THREE.Group();
 camera.add(cockpit);
 scene.add(camera);
 
-// === Materiais do cockpit ===
 const matBlack  = new THREE.MeshStandardMaterial({ color: 0x08090c, roughness: 0.95, metalness: 0.1 });
 const matDash   = new THREE.MeshStandardMaterial({ color: 0x14181e, roughness: 0.75, metalness: 0.15 });
 const matPlastic= new THREE.MeshStandardMaterial({ color: 0x1e242c, roughness: 0.6,  metalness: 0.25 });
@@ -399,22 +440,21 @@ const matRubber = new THREE.MeshStandardMaterial({ color: 0x0d1015, roughness: 0
 const matLed    = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x33dd66, emissiveIntensity: 1.2 });
 const matLedRed = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff3322, emissiveIntensity: 1.2 });
 
-// === Painel superior (visor/parasol) ===
+// Visor / parasol
 const visor = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.16, 0.7), matBlack);
 visor.position.set(0, 0.82, -1.45);
 cockpit.add(visor);
 
-// Borda inferior do visor
 const visorLip = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.06, 0.05), matRubber);
 visorLip.position.set(0, 0.72, -1.12);
 cockpit.add(visorLip);
 
-// === Teto ===
+// Teto
 const roof = new THREE.Mesh(new THREE.BoxGeometry(2.95, 0.12, 2.0), matDash);
 roof.position.set(0, 0.92, -0.5);
 cockpit.add(roof);
 
-// === Pilares A ===
+// Pilares A
 const pillarGeo = new THREE.BoxGeometry(0.12, 1.2, 0.14);
 const pilL = new THREE.Mesh(pillarGeo, matBlack);
 pilL.position.set(-1.42, 0.25, -1.55);
@@ -423,44 +463,40 @@ const pilR = new THREE.Mesh(pillarGeo, matBlack);
 pilR.position.set(1.42, 0.25, -1.55);
 cockpit.add(pilR);
 
-// Travessa superior (topo da janela)
+// Travessa superior
 const trav = new THREE.Mesh(new THREE.BoxGeometry(2.95, 0.14, 0.16), matBlack);
 trav.position.set(0, 0.82, -1.55);
 cockpit.add(trav);
 
-// === Painel inferior (dashboard principal) ===
+// Painel
 const dashMain = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.5, 1.2), matDash);
 dashMain.position.set(0, -0.55, -1.25);
 cockpit.add(dashMain);
 
-// Console central do volante (túnel)
+// Console central
 const consoleC = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.35, 1.0), matBlack);
 consoleC.position.set(0, -0.42, -0.9);
 cockpit.add(consoleC);
 
-// Tampa superior do console (com brilho)
 const consoleTop = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.05, 1.0), matChrome);
 consoleTop.position.set(0, -0.25, -0.9);
 cockpit.add(consoleTop);
 
-// === Instrumentação digital no dashboard (fundo escuro com LEDs) ===
+// Painel digital
 const screenMat = new THREE.MeshStandardMaterial({ color: 0x050810, emissive: 0x001122, emissiveIntensity: 0.7 });
 const screen = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.28, 0.04), screenMat);
 screen.position.set(0, -0.45, -0.68);
 screen.rotation.x = 0.15;
 cockpit.add(screen);
 
-// LED verde pequeno
 const ledG = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.01), matLed);
 ledG.position.set(-0.28, -0.38, -0.66);
 cockpit.add(ledG);
 
-// LED vermelho
 const ledR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.01), matLedRed);
 ledR.position.set(-0.20, -0.38, -0.66);
 cockpit.add(ledR);
 
-// === Botões (pequenos) ===
 for (let i=0; i<4; i++) {
   const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.02, 12), matPlastic);
   btn.rotation.x = Math.PI/2;
@@ -468,35 +504,28 @@ for (let i=0; i<4; i++) {
   cockpit.add(btn);
 }
 
-// === Volante 3D ===
+// === VOLANTE 3D ===
 const wheelGroup = new THREE.Group();
 wheelGroup.position.set(0, -0.32, -0.82);
 wheelGroup.rotation.x = -0.4;
 cockpit.add(wheelGroup);
 
-// Aro externo
 const wRim = new THREE.Mesh(
   new THREE.TorusGeometry(0.21, 0.028, 14, 44),
   new THREE.MeshStandardMaterial({ color: 0x10141a, roughness: 0.45, metalness: 0.3 })
 );
 wheelGroup.add(wRim);
 
-// Aro decorativo
-const wRim2 = new THREE.Mesh(
-  new THREE.TorusGeometry(0.21, 0.008, 8, 44),
-  matChrome
-);
+const wRim2 = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.008, 8, 44), matChrome);
 wRim2.position.z = 0.015;
 wheelGroup.add(wRim2);
 
-// Raios
 for (let i=0; i<3; i++){
   const sp = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.36, 0.025), matPlastic);
   sp.rotation.z = (i * Math.PI * 2) / 3 + Math.PI/2;
   wheelGroup.add(sp);
 }
 
-// Cubo
 const wHub = new THREE.Mesh(
   new THREE.CylinderGeometry(0.055, 0.055, 0.04, 20),
   new THREE.MeshStandardMaterial({ color: 0x0a0d12, roughness: 0.4, metalness: 0.6 })
@@ -504,52 +533,83 @@ const wHub = new THREE.Mesh(
 wHub.rotation.x = Math.PI/2;
 wheelGroup.add(wHub);
 
-// Logo
 const wLogo = new THREE.Mesh(new THREE.CircleGeometry(0.025, 20), matChrome);
 wLogo.position.z = 0.021;
 wheelGroup.add(wLogo);
 
-// === Alavanca de marcha (lado direito, embaixo) ===
-const shifter = new THREE.Group();
-shifter.position.set(0.55, -0.32, -0.75);
-cockpit.add(shifter);
-
-const shifterBase = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, 0.1), matBlack);
-shifterBase.position.y = -0.05;
-shifter.add(shifterBase);
-
-const shifterRod = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.22, 8), matChrome);
-shifterRod.position.y = 0.06;
-shifter.add(shifterRod);
-
-const shifterKnob = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), matBlack);
-shifterKnob.position.y = 0.19;
-shifter.add(shifterKnob);
-
-// === Espelhos retrovisores ===
-function makeMirror(x, y, z) {
+/* =========================================================
+   ESPELHOS RETROVISORES FUNCIONAIS
+   Cada espelho renderiza o que está atrás. Igual Slow Roads.
+========================================================= */
+function makeRealMirror(side) {
   const g = new THREE.Group();
-  // Braço
-  const armMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.45, 8), matBlack);
-  armMesh.rotation.z = Math.PI/2;
-  armMesh.position.x = 0.22 * Math.sign(x);
-  g.add(armMesh);
-  // Caixa suporte
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.07), matBlack);
-  body.position.x = 0.45 * Math.sign(x);
-  g.add(body);
-  // Vidro do espelho
-  const mirror = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.28, 0.14),
-    new THREE.MeshStandardMaterial({ color: 0x88a0b8, roughness: 0.05, metalness: 0.95 })
-  );
-  mirror.position.set(0.45 * Math.sign(x), 0, -0.038);
-  g.add(mirror);
-  g.position.set(x, y, z);
+  const sgn = side === 'left' ? -1 : 1;
+
+  // Braço de suporte
+  const arm1 = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5, 8), matBlack);
+  arm1.rotation.z = Math.PI/2;
+  arm1.position.set(sgn * 0.25, 0, 0.05);
+  g.add(arm1);
+
+  // Segundo braço (junção)
+  const arm2 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 8), matBlack);
+  arm2.rotation.x = Math.PI/2;
+  arm2.position.set(sgn * 0.45, 0, 0.1);
+  g.add(arm2);
+
+  // Caixa do espelho
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.08), matBlack);
+  box.position.set(sgn * 0.5, 0, 0.15);
+  box.castShadow = true;
+  g.add(box);
+
+  // Moldura de borracha
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.22, 0.02), matRubber);
+  frame.position.set(sgn * 0.5, 0, 0.19);
+  g.add(frame);
+
+  // ============ VIDRO DO ESPELHO COM RENDER TARGET ============
+  const mirrorMat = new THREE.MeshBasicMaterial({
+    map: side === 'left' ? mirrorRenderTargetL.texture : mirrorRenderTargetR.texture,
+    toneMapped: false
+  });
+  // Espelho virado para o motorista (levemente inclinado)
+  const mirrorPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.14), mirrorMat);
+  mirrorPlane.position.set(sgn * 0.5, 0, 0.19);
+  mirrorPlane.rotation.y = sgn > 0 ? -Math.PI : 0; // vira para o motorista
+  // Ajuste fino do ângulo para o motorista ver
+  mirrorPlane.rotation.y += sgn > 0 ? 0.35 : -0.35;
+  g.add(mirrorPlane);
+
+  // Posiciona no cockpit
+  g.position.set(sgn * 1.55, 0.32, -1.35);
   return g;
 }
-cockpit.add(makeMirror(-1.5, 0.35, -1.35));
-cockpit.add(makeMirror(1.5, 0.35, -1.35));
+cockpit.add(makeRealMirror('left'));
+cockpit.add(makeRealMirror('right'));
+
+/* =========================================================
+   RETROVISOR INTERNO (também com render target)
+========================================================= */
+const interiorMirrorGroup = new THREE.Group();
+interiorMirrorGroup.position.set(0, 0.75, -1.32);
+cockpit.add(interiorMirrorGroup);
+
+// Moldura
+const intMirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.12, 0.03), matBlack);
+interiorMirrorGroup.add(intMirrorFrame);
+
+// Vidro com render target
+const intMirrorMat = new THREE.MeshBasicMaterial({ map: mirrorRenderTargetInt.texture, toneMapped: false });
+const intMirrorGlass = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.1), intMirrorMat);
+intMirrorGlass.position.z = 0.017;
+intMirrorGlass.rotation.y = Math.PI; // vira para o motorista
+interiorMirrorGroup.add(intMirrorGlass);
+
+// Suporte
+const intMirrorArm = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.12, 6), matBlack);
+intMirrorArm.position.set(0, 0.1, 0);
+interiorMirrorGroup.add(intMirrorArm);
 
 // === Vidro do para-brisa ===
 const glass = new THREE.Mesh(
@@ -563,14 +623,6 @@ const glass = new THREE.Mesh(
 glass.position.set(0, 0.22, -1.58);
 cockpit.add(glass);
 
-// === Retrovisor interno (acima) ===
-const mirrorInt = new THREE.Mesh(
-  new THREE.BoxGeometry(0.34, 0.09, 0.03),
-  matBlack
-);
-mirrorInt.position.set(0, 0.75, -1.3);
-cockpit.add(mirrorInt);
-
 /* =========================================================
    TEXTURAS PROCEDURAIS
 ========================================================= */
@@ -578,13 +630,11 @@ function makeAsphaltTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 512;
   const ctx = c.getContext('2d');
   ctx.fillStyle = '#2a2d33'; ctx.fillRect(0,0,512,512);
-  // grão
   for (let i=0; i<12000; i++){
     const v = 25 + Math.random()*55;
     ctx.fillStyle = `rgba(${v},${v},${v+4},${Math.random()*0.6})`;
     ctx.fillRect(Math.random()*512, Math.random()*512, 1.5, 1.5);
   }
-  // fissuras
   ctx.strokeStyle = 'rgba(20,20,22,0.5)';
   ctx.lineWidth = 1;
   for (let i=0; i<10; i++){
@@ -602,7 +652,6 @@ function makeAsphaltTexture() {
   t.anisotropy = 8;
   return t;
 }
-
 function makeGrassTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 512;
   const ctx = c.getContext('2d');
@@ -621,7 +670,6 @@ function makeGrassTexture() {
   t.anisotropy = 8;
   return t;
 }
-
 const asphaltTex = makeAsphaltTexture();
 const grassTex = makeGrassTexture();
 
@@ -629,7 +677,7 @@ const grassTex = makeGrassTexture();
    CHÃO
 ========================================================= */
 const groundMat = new THREE.MeshStandardMaterial({
-  map: grassTex, color: 0x9bb98a, roughness: 1, metalness: 0
+  map: grassTex, color: 0x9bb98a, roughness: 1
 });
 grassTex.repeat.set(200, 200);
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000, 1, 1), groundMat);
@@ -639,12 +687,11 @@ ground.receiveShadow = true;
 scene.add(ground);
 
 /* =========================================================
-   ESTRADA PROCEDURAL INFINITA — Física tipo Slow Roads
+   ESTRADA PROCEDURAL INFINITA
 ========================================================= */
 const world = new THREE.Group();
 scene.add(world);
 
-// Curva da estrada — combinação de senoides (nunca repete visualmente)
 function roadOffsetX(z) {
   return (
     Math.sin(z * 0.0045) * 55 +
@@ -661,14 +708,12 @@ function roadOffsetXPrime(z) {
     Math.cos(z * 0.00045 - 2.1) * 200 * 0.00045
   );
 }
-function roadTangent(z) {
-  return Math.atan(roadOffsetXPrime(z));
-}
+function roadTangent(z) { return Math.atan(roadOffsetXPrime(z)); }
 
 const CHUNK_LEN = 32;
 const ROAD_W = 15;
 const VIEW_AHEAD = 700;
-const VIEW_BEHIND = 100;
+const VIEW_BEHIND = 250; // aumentei para o retrovisor ver mais
 
 const roadMatBase = new THREE.MeshStandardMaterial({
   map: asphaltTex, color: 0x9aa0a8, roughness: 0.85, metalness: 0.05
@@ -695,7 +740,6 @@ function buildRoadChunk(index) {
   const zStart = index * CHUNK_LEN;
   const zMid = zStart + CHUNK_LEN / 2;
 
-  // === Pista (grade triangulada em coordenadas mundiais) ===
   const NX = 3, NZ = 6;
   const geo = new THREE.BufferGeometry();
   const verts = [], uvs = [], indices = [];
@@ -713,10 +757,7 @@ function buildRoadChunk(index) {
   }
   for (let iz=0; iz<NZ; iz++){
     for (let ix=0; ix<NX; ix++){
-      const a = iz*(NX+1)+ix;
-      const b = a+1;
-      const c = a+(NX+1);
-      const d = c+1;
+      const a = iz*(NX+1)+ix, b = a+1, c = a+(NX+1), d = c+1;
       indices.push(a,b,c, b,d,c);
     }
   }
@@ -724,12 +765,11 @@ function buildRoadChunk(index) {
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geo.setIndex(indices);
   geo.computeVertexNormals();
-
   const roadMesh = new THREE.Mesh(geo, roadMatBase);
   roadMesh.receiveShadow = true;
   group.add(roadMesh);
 
-  // === Linhas centrais tracejadas ===
+  // Linhas centrais
   const numDashes = Math.floor(CHUNK_LEN / 6);
   for (let i=0; i<numDashes; i++){
     const tz = (i + 0.5) / numDashes;
@@ -744,7 +784,7 @@ function buildRoadChunk(index) {
     group.add(dash);
   }
 
-  // === Linhas laterais (bordas) ===
+  // Linhas laterais
   for (let side = -1; side <= 1; side += 2){
     const ev = [], ei = [];
     for (let iz=0; iz<=NZ; iz++){
@@ -768,7 +808,7 @@ function buildRoadChunk(index) {
     group.add(new THREE.Mesh(g, lineMatWhite));
   }
 
-  // === Acostamento (faixa cinza lateral) ===
+  // Acostamento
   for (let side = -1; side <= 1; side += 2){
     const ev = [], ei = [];
     for (let iz=0; iz<=NZ; iz++){
@@ -790,7 +830,7 @@ function buildRoadChunk(index) {
     group.add(new THREE.Mesh(g, shoulderMat));
   }
 
-  // === Props: árvores, pedras, placas ===
+  // Props
   const seedRandom = (s) => {
     const x = Math.sin(s * 12.9898) * 43758.5453;
     return x - Math.floor(x);
@@ -807,23 +847,18 @@ function buildRoadChunk(index) {
     const px = cx + side * (ROAD_W/2 + dist);
 
     if (r3 > 0.25){
-      // Árvore
       const scale = 0.7 + r1 * 1.0;
       const trunk = new THREE.Mesh(trunkGeo, treeTrunkMat);
       trunk.scale.setScalar(scale);
       trunk.position.set(px, 1.3*scale, worldZ);
-      trunk.castShadow = true;
-      trunk.receiveShadow = true;
+      trunk.castShadow = true; trunk.receiveShadow = true;
       group.add(trunk);
-
       const leafMat = r3 > 0.75 ? treeLeafMat3 : (r3 > 0.5 ? treeLeafMat2 : treeLeafMat);
       const leaf = new THREE.Mesh(leafGeo, leafMat);
       leaf.scale.setScalar(scale * (0.85 + r2*0.35));
       leaf.position.set(px, 2.7*scale + 0.5, worldZ);
       leaf.castShadow = true;
       group.add(leaf);
-
-      // segunda camada de folhas
       if (r1 > 0.4){
         const leaf2 = new THREE.Mesh(leafGeo, leafMat);
         leaf2.scale.setScalar(scale * 0.7);
@@ -832,26 +867,21 @@ function buildRoadChunk(index) {
         group.add(leaf2);
       }
     } else if (r3 > 0.15){
-      // Pedra
       const rock = new THREE.Mesh(rockGeo, new THREE.MeshStandardMaterial({
         color: 0x666a70, roughness: 1, flatShading: true
       }));
       rock.scale.setScalar(0.4 + r1 * 1.2);
       rock.position.set(px, 0.3, worldZ);
       rock.rotation.set(r1*3, r2*3, r3*3);
-      rock.castShadow = true;
-      rock.receiveShadow = true;
+      rock.castShadow = true; rock.receiveShadow = true;
       group.add(rock);
     } else if (r3 < 0.07){
-      // Sinal
       const sign = new THREE.Group();
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.0, 6), signPostMat);
-      post.position.y = 1.0;
-      post.castShadow = true;
+      post.position.y = 1.0; post.castShadow = true;
       sign.add(post);
       const face = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.05), signFaceMat);
-      face.position.y = 1.9;
-      face.castShadow = true;
+      face.position.y = 1.9; face.castShadow = true;
       sign.add(face);
       sign.position.set(px, 0, worldZ);
       sign.rotation.y = side > 0 ? -Math.PI/2 : Math.PI/2;
@@ -883,7 +913,7 @@ function ensureChunks(playerZ) {
 }
 
 /* =========================================================
-   MONTANHAS DE FUNDO
+   MONTANHAS
 ========================================================= */
 const mountains = new THREE.Group();
 scene.add(mountains);
@@ -908,14 +938,14 @@ createMountainRing(1300, 26, 190, mountainMat3);
 createMountainRing(1600, 20, 230, mountainMat2);
 
 /* =========================================================
-   ESTRELAS (aparecem à noite)
+   ESTRELAS
 ========================================================= */
 const starsGeo = new THREE.BufferGeometry();
 const starPositions = [];
 for (let i=0; i<1500; i++){
   const r = 900;
   const theta = Math.random() * Math.PI * 2;
-  const phi = Math.acos(Math.random() * 2 - 1) * 0.5; // só hemisfério superior
+  const phi = Math.acos(Math.random() * 2 - 1) * 0.5;
   starPositions.push(
     Math.cos(theta) * Math.sin(phi) * r,
     Math.cos(phi) * r * 0.6 + 100,
@@ -928,30 +958,27 @@ const stars = new THREE.Points(starsGeo, starsMat);
 scene.add(stars);
 
 /* =========================================================
-   FÍSICA DO ÔNIBUS — Transmissão com marchas reais
+   ESTADO DO ÔNIBUS — Transmissão MANUAL
 ========================================================= */
 const bus = {
   pos: new THREE.Vector3(0, 0, 0),
   yaw: 0,
-  speed: 0,           // m/s
-  // Transmissão
-  gear: 1,            // 0=N, 1-6, -1=R (numérico)
+  speed: 0,
+  // Transmissão MANUAL: N (0), 1..6, R (-1)
+  gear: 0,                 // 0 = N, 1-6 = frente, -1 = R
   gearLabel: 'N',
-  rpm: 800,           // rpm do motor
-  rpmIdle: 800,
-  rpmMax: 7000,
-  rpmRedline: 6200,
-  // Ratios (aproximado de ônibus urbano)
-  gearRatios: [0, 4.2, 2.5, 1.7, 1.25, 1.0, 0.82], // 1..6
+  // RPM
+  rpm: 800, rpmIdle: 800, rpmMax: 7000, rpmRedline: 6200,
+  gearRatios: [0, 4.2, 2.5, 1.7, 1.25, 1.0, 0.82],
   finalDrive: 4.5,
   wheelRadius: 0.5,
   // Física
-  throttle: 0,        // 0..1
-  brakeInput: 0,      // 0..1
+  throttle: 0,
+  brakeInput: 0,
   handbrake: false,
-  clutch: 1,          // 1=engatado, 0=embreagem
-  engineTorque: 700,  // Nm
-  mass: 12000,        // kg
+  clutch: 1,
+  engineTorque: 850,
+  mass: 12000,
   dragCoef: 0.65,
   rollingResistance: 0.015,
   // Direção
@@ -961,17 +988,12 @@ const bus = {
   // Visual
   wheelVisual: 0,
   cameraRoll: 0,
-  cameraPitch: 0,
   vibration: 0,
   distance: 0,
-  // Auto-transmissão
-  shiftTimer: 0,
-  // Assistência
-  absActive: false,
-  // Estado do motor
-  engineOn: true,
-  // Luzes
-  headlightsOn: false,
+  // Estado motor
+  engineStalled: false,
+  // Efeitos
+  shiftKick: 0,   // quando troca de marcha dá um tranco
 };
 
 /* =========================================================
@@ -980,27 +1002,29 @@ const bus = {
 const keys = {};
 addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
+  if (keys[k]) return; // evita repetição
   keys[k] = true;
   if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+
   if (k === ' ') toggleHandbrake();
-  if (k === 'l') bus.headlightsOn = !bus.headlightsOn;
-  if (k === 'shift') bus.clutch = 0; // embreagem manual
+  if (k === 'e') shiftUp();
+  if (k === 'q') shiftDown();
 });
 addEventListener('keyup', e => {
-  const k = e.key.toLowerCase();
-  keys[k] = false;
-  if (k === 'shift') bus.clutch = 1;
+  keys[e.key.toLowerCase()] = false;
 });
 
 const pedalAccelEl = document.getElementById('pedalAccel');
 const pedalBrakeEl = document.getElementById('pedalBrake');
 const handbrakeBtn = document.getElementById('handbrakeBtn');
+const gearUpBtn = document.getElementById('gearUp');
+const gearDownBtn = document.getElementById('gearDown');
 
 let touchAccel = 0, touchBrake = 0;
 
 function bindPedal(el, setter) {
-  const on = e => { e.preventDefault(); setter(true); el.classList.add('active'); };
-  const off = e => { e.preventDefault(); setter(false); el.classList.remove('active'); };
+  const on = e => { e.preventDefault(); setter(1); el.classList.add('active'); };
+  const off = e => { e.preventDefault(); setter(0); el.classList.remove('active'); };
   el.addEventListener('mousedown', on);
   el.addEventListener('mouseup', off);
   el.addEventListener('mouseleave', off);
@@ -1008,8 +1032,8 @@ function bindPedal(el, setter) {
   el.addEventListener('touchend', off);
   el.addEventListener('touchcancel', off);
 }
-bindPedal(pedalAccelEl, v => touchAccel = v ? 1 : 0);
-bindPedal(pedalBrakeEl, v => touchBrake = v ? 1 : 0);
+bindPedal(pedalAccelEl, v => touchAccel = v);
+bindPedal(pedalBrakeEl, v => touchBrake = v);
 
 function toggleHandbrake() {
   bus.handbrake = !bus.handbrake;
@@ -1018,8 +1042,33 @@ function toggleHandbrake() {
 handbrakeBtn.addEventListener('click', e => { e.preventDefault(); toggleHandbrake(); });
 handbrakeBtn.addEventListener('touchstart', e => { e.preventDefault(); toggleHandbrake(); }, { passive: false });
 
+// === BOTÕES DE TROCA DE MARCHA ===
+function shiftUp() {
+  if (bus.gear === -1) { bus.gear = 0; bus.shiftKick = 0.15; return; }
+  if (bus.gear === 0) { bus.gear = 1; bus.shiftKick = 0.2; return; }
+  if (bus.gear < 6) { bus.gear++; bus.shiftKick = 0.18; }
+}
+function shiftDown() {
+  if (bus.gear === 0) { bus.gear = -1; bus.shiftKick = 0.2; return; }
+  if (bus.gear === 1) { bus.gear = 0; bus.shiftKick = 0.15; return; }
+  if (bus.gear > 1) { bus.gear--; bus.shiftKick = 0.18; }
+}
+
+function bindGearBtn(el, fn) {
+  const on = e => {
+    e.preventDefault();
+    fn();
+    el.classList.add('active');
+    setTimeout(() => el.classList.remove('active'), 90);
+  };
+  el.addEventListener('mousedown', on);
+  el.addEventListener('touchstart', on, { passive: false });
+}
+bindGearBtn(gearUpBtn, shiftUp);
+bindGearBtn(gearDownBtn, shiftDown);
+
 /* =========================================================
-   VOLANTE SVG — arrasto com retorno natural
+   VOLANTE SVG
 ========================================================= */
 const wheelWrap = document.getElementById('wheelWrap');
 const wheelSvg = document.getElementById('wheelSvg');
@@ -1037,7 +1086,6 @@ function pointerAngle(e) {
   const y = (e.touches ? e.touches[0].clientY : e.clientY) - cy;
   return Math.atan2(y, x);
 }
-
 function wheelDown(e){
   e.preventDefault();
   dragging = true;
@@ -1068,39 +1116,33 @@ addEventListener('touchend', wheelUp);
 addEventListener('touchcancel', wheelUp);
 
 /* =========================================================
-   HUD ELEMENTS
+   HUD
 ========================================================= */
 const speedDisplay = document.getElementById('speedDisplay');
-const gearItems = document.querySelectorAll('.gear-item');
 const timeChip = document.getElementById('timeChip');
 const distChip = document.getElementById('distChip');
 const fpsChip = document.getElementById('fpsChip');
 const rpmFill = document.getElementById('rpmFill');
 const rpmLabel = document.getElementById('rpmLabel');
 const alertMsg = document.getElementById('alertMsg');
+const shiftHint = document.getElementById('shiftHint');
+const gearNum = document.getElementById('gearNum');
 
-/* =========================================================
-   CICLO DIA/NOITE
-========================================================= */
 let timeOfDay = 7.5;
-const DAY_DURATION = 480; // 8 min por dia
+const DAY_DURATION = 480;
 
 /* =========================================================
-   LOOP PRINCIPAL
+   FÍSICA + TRANSMISSÃO MANUAL
 ========================================================= */
-let last = performance.now();
-let fpsSmooth = 60;
-let alertTimer = 0;
-
 function updateBusPhysics(dt) {
-  // === INPUTS ===
   const accelInput = (keys['w'] || keys['arrowup'] || touchAccel) ? 1 : 0;
   const brakeInput = (keys['s'] || keys['arrowdown'] || touchBrake) ? 1 : 0;
 
+  bus.throttle = accelInput;
+  bus.brakeInput = brakeInput;
+
   // === DIREÇÃO ===
-  if (dragging) {
-    // steerTarget já definido pelo arrasto
-  } else {
+  if (!dragging) {
     if (keys['a'] || keys['arrowleft']) bus.steerTarget -= 1.8 * dt;
     if (keys['d'] || keys['arrowright']) bus.steerTarget += 1.8 * dt;
     if (!keys['a'] && !keys['arrowleft'] && !keys['d'] && !keys['arrowright']) {
@@ -1109,135 +1151,137 @@ function updateBusPhysics(dt) {
     }
   }
   bus.steerTarget = Math.max(-1, Math.min(1, bus.steerTarget));
-  const steerDiff = bus.steerTarget - bus.steer;
-  bus.steer += steerDiff * Math.min(1, 9 * dt);
+  bus.steer += (bus.steerTarget - bus.steer) * Math.min(1, 9 * dt);
 
-  // === TRANSMISSÃO AUTOMÁTICA ===
-  // Se velocidade muito baixa e acelerador, coloca em 1ª
-  if (bus.gear === 0 && accelInput > 0.1 && bus.speed >= 0) {
-    bus.gear = 1;
-  }
-  if (bus.speed < -0.3 && !brakeInput && accelInput < 0.1) {
-    // ainda ré
-  }
-  // Trocar para ré quando o carro está parado e o freio é segurado por tempo
-  // (simplificado: se brakeInput e velocidade ~ 0 por 0.5s, engata ré)
-  
-  // === TROCA DE MARCHAS AUTOMÁTICA (D) ===
-  if (bus.gear > 0 && bus.gear <= 6) {
-    const wheelRPM = (Math.abs(bus.speed) / (2 * Math.PI * bus.wheelRadius)) * 60;
-    const engineRPM = wheelRPM * bus.gearRatios[bus.gear] * bus.finalDrive;
-    bus.rpm = Math.max(bus.rpmIdle, Math.min(bus.rpmMax, engineRPM));
-    
-    // Up-shift
-    if (bus.rpm > 4200 && bus.gear < 6 && bus.shiftTimer <= 0) {
-      bus.gear++;
-      bus.shiftTimer = 0.35;
-      bus.rpm *= 0.65;
-    }
-    // Down-shift
-    else if (bus.rpm < 1500 && bus.gear > 1 && bus.shiftTimer <= 0 && bus.speed > 1) {
-      bus.gear--;
-      bus.shiftTimer = 0.3;
-    }
+  // === TRANSMISSÃO MANUAL: RPM baseado na velocidade e marcha ===
+  const wheelRPM = (Math.abs(bus.speed) / (2 * Math.PI * bus.wheelRadius)) * 60;
+
+  if (bus.gear === 0) {
+    // Neutro: motor livre
+    const targetRPM = bus.rpmIdle + accelInput * 4500;
+    bus.rpm += (targetRPM - bus.rpm) * Math.min(1, 4 * dt);
+    // no neutro o carro não é movido pelo motor
   } else if (bus.gear === -1) {
-    // Ré
-    const wheelRPM = (Math.abs(bus.speed) / (2 * Math.PI * bus.wheelRadius)) * 60;
-    bus.rpm = Math.max(bus.rpmIdle, Math.min(bus.rpmMax, wheelRPM * 3.8 * bus.finalDrive));
+    // Ré: ratio fixo 3.8
+    const targetRPM = Math.max(bus.rpmIdle, wheelRPM * 3.8 * bus.finalDrive);
+    bus.rpm += (targetRPM - bus.rpm) * Math.min(1, 6 * dt);
   } else {
-    // N / P
-    if (accelInput > 0.1) {
-      bus.rpm += (2200 - bus.rpm) * Math.min(1, 4*dt);
-    } else {
-      bus.rpm += (bus.rpmIdle - bus.rpm) * Math.min(1, 3*dt);
-    }
+    // Marcha 1..6
+    const ratio = bus.gearRatios[bus.gear];
+    const targetRPM = Math.max(bus.rpmIdle, wheelRPM * ratio * bus.finalDrive);
+    // Reduzir um pouco quando solta o acelerador (engine brake)
+    const drop = accelInput < 0.1 ? 500 : 0;
+    bus.rpm += ((targetRPM - drop) - bus.rpm) * Math.min(1, 6 * dt);
+  }
+  bus.rpm = Math.max(bus.rpmIdle, Math.min(bus.rpmMax, bus.rpm));
+
+  // === FORÇA MOTRIZ ===
+  let engineForce = 0;
+  if (bus.gear !== 0) {
+    const ratio = bus.gear > 0 ? bus.gearRatios[bus.gear] : -3.8;
+    const rpmRatio = Math.min(1, bus.rpm / bus.rpmMax);
+    // Torque máximo no meio da faixa de RPM
+    const torqueCurve = 0.5 + 0.7 * Math.sin(rpmRatio * Math.PI * 0.85);
+    let torque = bus.engineTorque * rpmRatio * torqueCurve;
+    // Não gera força se estiver acima do redline
+    if (bus.rpm > bus.rpmMax * 0.95) torque *= 0.2;
+    // Perde força em marchas altas em baixa RPM (evita arrancar em 6ª)
+    if (bus.gear >= 3 && bus.rpm < bus.rpmIdle * 1.5 && bus.speed < 2) torque *= 0.15;
+    if (bus.gear >= 5 && bus.speed < 5) torque *= 0.3;
+
+    engineForce = (torque * ratio * bus.finalDrive / bus.wheelRadius) * bus.throttle;
+    // Sentido do movimento baseado na marcha
+    if (bus.gear === -1) engineForce = -Math.abs(engineForce);
   }
 
-  // === FÍSICA ===
-  const wheelForce = (() => {
-    if (bus.gear === 0 && !brakeInput && Math.abs(bus.speed) < 0.5) return 0;
-    // Roda: força = torque * ratio * final / raio
-    const ratio = bus.gear > 0 ? bus.gearRatios[bus.gear] :
-                  bus.gear === -1 ? -3.8 : 0;
-    const rpmRatio = Math.min(1, bus.rpm / bus.rpmMax);
-    const torque = bus.engineTorque * rpmRatio * (0.6 + 0.4 * (1 - rpmRatio));
-    return (torque * ratio * bus.finalDrive / bus.wheelRadius) *
-           (accelInput > 0 || bus.speed > 0 ? 1 : -1);
-  })();
+  // === FREIO MOTOR ===
+  let engineBraking = 0;
+  if (bus.gear !== 0 && bus.throttle < 0.05 && Math.abs(bus.speed) > 0.5) {
+    const ratio = bus.gear > 0 ? bus.gearRatios[bus.gear] : 3.8;
+    engineBraking = -Math.sign(bus.speed) * 180 * ratio;
+  }
 
-  // Forças resistivas
+  // === RESISTÊNCIAS ===
   const drag = -0.5 * bus.dragCoef * bus.speed * Math.abs(bus.speed) * 1.2;
   const roll = -bus.rollingResistance * bus.mass * 9.81 * Math.sign(bus.speed) * (Math.abs(bus.speed) > 0.1 ? 1 : 0);
 
-  // Freio
+  // === FREIO ===
   let brakeForce = 0;
   if (brakeInput > 0.05) {
     if (bus.speed > 0.2) {
-      brakeForce = -brakeInput * 18000;
-      // ABS simulado: reduz força perto de 0
+      brakeForce = -brakeInput * 20000;
       if (Math.abs(bus.speed) < 1.5) brakeForce *= 0.5;
-    } else if (bus.speed <= 0.2) {
-      // ré
-      bus.gear = -1;
-      brakeForce = -brakeInput * 6000;
-      bus.gear = -1;
+    } else if (bus.speed > -0.5) {
+      // Parado: freio só segura
+      brakeForce = -Math.sign(bus.speed) * brakeInput * 8000;
+    } else {
+      // Ré
+      brakeForce = -brakeInput * 8000;
     }
   }
 
-  // Freio de mão
+  // === FREIO DE MÃO ===
   if (bus.handbrake) {
-    brakeForce -= Math.sign(bus.speed) * 25000;
-    // trava de mão só atua abaixo de 30 m/s
-    if (Math.abs(bus.speed) < 0.1) bus.speed = 0;
+    brakeForce -= Math.sign(bus.speed) * 28000;
+    if (Math.abs(bus.speed) < 0.15) bus.speed = 0;
   }
 
-  // Acelerador aplica força
-  const totalForce = wheelForce * accelInput + drag + roll + brakeForce;
-
-  // Aceleração
+  // === TOTAL ===
+  const totalForce = engineForce + engineBraking + drag + roll + brakeForce;
   const accel = totalForce / bus.mass;
   bus.speed += accel * dt;
 
   // Limites
-  const maxFwd = 32; // ~115 km/h
-  const maxRev = -9;
-  if (bus.speed > maxFwd) bus.speed = maxFwd;
-  if (bus.speed < maxRev) bus.speed = maxRev;
-  if (Math.abs(bus.speed) < 0.02 && (accelInput < 0.05 && brakeInput < 0.05)) bus.speed = 0;
+  if (bus.speed > 34) bus.speed = 34;
+  if (bus.speed < -9) bus.speed = -9;
+  if (Math.abs(bus.speed) < 0.03 && (bus.throttle < 0.05 && brakeInput < 0.05)) bus.speed = 0;
 
-  // Atualiza rótulo da marcha
+  // === STALL do motor: RPM abaixo do idle em marcha engatada e sem acelerar ===
+  // (simplificado — não deixa morrer, só avisa)
+
+  // === SHIFT KICK (tranco ao trocar marcha) ===
+  bus.shiftKick = Math.max(0, bus.shiftKick - dt * 3);
+
+  // === RÓTULO DE MARCHA ===
   let label = 'N';
   if (bus.gear === -1) label = 'R';
   else if (bus.gear >= 1 && bus.gear <= 6) label = String(bus.gear);
   bus.gearLabel = label;
 
-  // Reduz timer de troca
-  bus.shiftTimer = Math.max(0, bus.shiftTimer - dt);
-
-  // === MOVIMENTO ===
-  // Rotações apenas se estiver andando (física realista)
+  // === MOVIMENTO / ROTAÇÃO ===
   const speedFactor = Math.min(1, Math.abs(bus.speed) / 8);
   const turnRate = bus.steer * 1.9 * speedFactor * Math.sign(bus.speed || 1);
   bus.yaw += turnRate * dt * Math.min(1, Math.abs(bus.speed) * 0.35);
 
-  // Move
   const forward = new THREE.Vector3(-Math.sin(bus.yaw), 0, -Math.cos(bus.yaw));
   bus.pos.addScaledVector(forward, bus.speed * dt);
   bus.distance += Math.abs(bus.speed) * dt;
 
-  // === ALERTA DE EMERGÊNCIA ===
+  // === ALERTAS ===
   if (brakeInput > 0.9 && bus.speed > 10 && !bus.handbrake) {
-    alertTimer = 0.6;
+    alertMsg.style.opacity = 1;
+  } else {
+    alertMsg.style.opacity = 0;
   }
-  alertTimer = Math.max(0, alertTimer - dt);
-  alertMsg.style.opacity = alertTimer > 0 ? (alertTimer / 0.6) : 0;
+
+  // === HINT DE MARCHA ===
+  // Sugere subir quando RPM muito alta, descer quando muito baixa
+  let hint = '';
+  if (bus.gear > 0 && bus.gear < 6 && bus.rpm > 5000 && bus.throttle > 0.3) hint = '▲ SUBIR MARCHA';
+  else if (bus.gear > 1 && bus.rpm < 1400 && bus.speed > 1) hint = '▼ DESCER MARCHA';
+  shiftHint.textContent = hint;
+  shiftHint.style.opacity = hint ? 1 : 0;
 }
 
+/* =========================================================
+   VISUAL
+========================================================= */
 function updateBusVisual(dt) {
-  // === CÂMERA ===
   const speedAbs = Math.abs(bus.speed);
   const baseY = 3.05;
-  const vibAmp = Math.min(0.045, speedAbs * 0.0018);
+
+  // === VIBRAÇÃO ===
+  const vibAmp = Math.min(0.045, speedAbs * 0.0018) + bus.shiftKick * 0.12;
   const t = performance.now() * 0.001;
   const vx = Math.sin(t * 32) * vibAmp;
   const vy = Math.sin(t * 47 + 1.2) * vibAmp * 1.2;
@@ -1245,7 +1289,6 @@ function updateBusVisual(dt) {
 
   camera.position.set(bus.pos.x + vx, bus.pos.y + baseY + vy, bus.pos.z + vz);
 
-  // Direção da câmera
   const forward = new THREE.Vector3(-Math.sin(bus.yaw), 0, -Math.cos(bus.yaw));
   const lookTarget = new THREE.Vector3(
     bus.pos.x + forward.x * 12,
@@ -1254,43 +1297,86 @@ function updateBusVisual(dt) {
   );
   camera.lookAt(lookTarget);
 
-  // Roll dinâmico (curva) + pitch (aceleração/frenagem)
   const targetRoll = -bus.steer * 0.075 * Math.min(1, speedAbs / 12);
   bus.cameraRoll += (targetRoll - bus.cameraRoll) * Math.min(1, 5*dt);
   camera.rotateZ(bus.cameraRoll);
 
-  // === VOLANTE VISUAL ===
+  // === VOLANTE ===
   bus.wheelVisual += (bus.steer - bus.wheelVisual) * Math.min(1, 15*dt);
   const wheelDeg = bus.wheelVisual * MAX_WHEEL_ANGLE * (180/Math.PI);
   wheelSvg.style.transform = `rotate(${wheelDeg}deg)`;
-
-  // Volante 3D
   wheelGroup.rotation.z = -bus.wheelVisual * 1.6;
 
   // === HUD ===
-  const kmh = Math.round(speedAbs * 3.6);
-  speedDisplay.textContent = kmh;
-
-  // RPM
+  speedDisplay.textContent = Math.round(speedAbs * 3.6);
   const rpmPercent = (bus.rpm - bus.rpmIdle) / (bus.rpmMax - bus.rpmIdle);
   rpmFill.style.width = Math.max(0, Math.min(1, rpmPercent)) * 100 + '%';
   rpmLabel.textContent = Math.round(bus.rpm) + ' RPM';
 
-  // Marcha
-  gearItems.forEach(el => {
-    const active = el.dataset.g === bus.gearLabel;
-    el.classList.toggle('active', active);
-  });
+  // Número da marcha
+  gearNum.textContent = bus.gearLabel;
+  gearNum.classList.remove('rev', 'neutral', 'auto');
+  if (bus.gear === -1) gearNum.classList.add('rev');
+  else if (bus.gear === 0) gearNum.classList.add('neutral');
 
   // === MUNDO ===
   ground.position.x = bus.pos.x;
   ground.position.z = bus.pos.z;
   mountains.position.x = bus.pos.x;
   mountains.position.z = bus.pos.z;
-
   ensureChunks(bus.pos.z);
+
+  // === RETROVISORES: posicionar as câmeras ===
+  // Câmera esquerda: olha para trás-esquerda
+  const backDir = new THREE.Vector3(Math.sin(bus.yaw), 0, Math.cos(bus.yaw));
+  const rightDir = new THREE.Vector3(Math.cos(bus.yaw), 0, -Math.sin(bus.yaw));
+
+  // Espelho esquerdo (fica à esquerda do motorista, olhando para trás-esquerda)
+  const mLPos = new THREE.Vector3(
+    bus.pos.x - rightDir.x * 1.5 + forward.x * 0.5,
+    bus.pos.y + 3.3,
+    bus.pos.z - rightDir.z * 1.5 + forward.z * 0.5
+  );
+  mirrorCamL.position.copy(mLPos);
+  const mLTarget = new THREE.Vector3(
+    bus.pos.x + backDir.x * 15 - rightDir.x * 3,
+    bus.pos.y + 3.0,
+    bus.pos.z + backDir.z * 15 - rightDir.z * 3
+  );
+  mirrorCamL.lookAt(mLTarget);
+
+  // Espelho direito
+  const mRPos = new THREE.Vector3(
+    bus.pos.x + rightDir.x * 1.5 + forward.x * 0.5,
+    bus.pos.y + 3.3,
+    bus.pos.z + rightDir.z * 1.5 + forward.z * 0.5
+  );
+  mirrorCamR.position.copy(mRPos);
+  const mRTarget = new THREE.Vector3(
+    bus.pos.x + backDir.x * 15 + rightDir.x * 3,
+    bus.pos.y + 3.0,
+    bus.pos.z + backDir.z * 15 + rightDir.z * 3
+  );
+  mirrorCamR.lookAt(mRTarget);
+
+  // Espelho interno: centro, olha para trás
+  const mIPos = new THREE.Vector3(
+    bus.pos.x + forward.x * -2.5,
+    bus.pos.y + 3.5,
+    bus.pos.z + forward.z * -2.5
+  );
+  mirrorCamInt.position.copy(mIPos);
+  const mITarget = new THREE.Vector3(
+    bus.pos.x + backDir.x * 30,
+    bus.pos.y + 3.2,
+    bus.pos.z + backDir.z * 30
+  );
+  mirrorCamInt.lookAt(mITarget);
 }
 
+/* =========================================================
+   DIA/NOITE
+========================================================= */
 function updateDayNight(dt) {
   timeOfDay = (timeOfDay + (24 / DAY_DURATION) * dt) % 24;
   const sunAngle = ((timeOfDay - 6) / 24) * Math.PI * 2;
@@ -1310,7 +1396,6 @@ function updateDayNight(dt) {
   hemi.intensity = 0.2 + dayFactor * 0.9;
   ambient.intensity = 0.12 + dayFactor * 0.45;
 
-  // Cor do céu
   const skyColor = new THREE.Color();
   if (sunHeight > 0.3) {
     skyColor.setHSL(0.58, 0.5, 0.5 + dayFactor * 0.22);
@@ -1320,19 +1405,16 @@ function updateDayNight(dt) {
   } else {
     skyColor.setHex(0x06060f);
   }
-
   scene.background = skyColor;
   scene.fog.color.copy(skyColor);
   scene.fog.near = 60 + dayFactor * 40;
   scene.fog.far = 220 + dayFactor * 380;
 
-  // Estrelas
   const nightFactor = Math.max(0, -sunHeight * 1.5);
   starsMat.opacity = Math.min(1, nightFactor * 2.5);
   stars.position.x = bus.pos.x;
   stars.position.z = bus.pos.z;
 
-  // HUD Tempo
   const hh = Math.floor(timeOfDay).toString().padStart(2,'0');
   const mm = Math.floor((timeOfDay%1)*60).toString().padStart(2,'0');
   const icon = sunHeight > 0.15 ? '☀' : (sunHeight > -0.1 ? '🌅' : '🌙');
@@ -1340,12 +1422,51 @@ function updateDayNight(dt) {
   distChip.textContent = (bus.distance/1000).toFixed(3) + ' km';
 }
 
+/* =========================================================
+   RENDER FINAL + ESPELHOS
+========================================================= */
+function renderMirrors() {
+  // Salva estado
+  const oldBg = scene.background;
+  const oldFog = scene.fog;
+
+  // Esconde o cockpit dos espelhos (ele não deve aparecer refletido)
+  cockpit.visible = false;
+
+  // Esquerdo
+  renderer.setRenderTarget(mirrorRenderTargetL);
+  renderer.clear();
+  renderer.render(scene, mirrorCamL);
+
+  // Direito
+  renderer.setRenderTarget(mirrorRenderTargetR);
+  renderer.clear();
+  renderer.render(scene, mirrorCamR);
+
+  // Interno
+  renderer.setRenderTarget(mirrorRenderTargetInt);
+  renderer.clear();
+  renderer.render(scene, mirrorCamInt);
+
+  // Volta ao normal
+  renderer.setRenderTarget(null);
+  cockpit.visible = true;
+
+  scene.background = oldBg;
+  scene.fog = oldFog;
+}
+
+/* =========================================================
+   LOOP
+========================================================= */
+let last = performance.now();
+let fpsSmooth = 60;
+
 function loop() {
   const now = performance.now();
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
 
-  // FPS
   fpsSmooth += (1/Math.max(dt, 0.0001) - fpsSmooth) * 0.05;
   fpsChip.textContent = Math.round(fpsSmooth) + ' FPS';
 
@@ -1353,7 +1474,12 @@ function loop() {
   updateBusVisual(dt);
   updateDayNight(dt);
 
+  // Renderiza espelhos (custa um pouco mas vale a pena pelo realismo)
+  renderMirrors();
+
+  // Render principal
   renderer.render(scene, camera);
+
   requestAnimationFrame(loop);
 }
 
