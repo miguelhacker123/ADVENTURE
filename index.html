@@ -1,409 +1,906 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Slow Roads Bus Simulator 3D</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    body {
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      background-color: #87ceeb;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    #canvas-container {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-    }
-    /* Dashboard Overlay UI */
-    #ui-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 20px;
-    }
-    .hud-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(8px);
-      padding: 12px 24px;
-      border-radius: 16px;
-      color: #fff;
-      font-weight: 600;
-      width: fit-content;
-      margin: 0 auto;
-    }
-    .hud-stat {
-      margin: 0 15px;
-      font-size: 18px;
-    }
-    .hud-stat span {
-      color: #4facfe;
-      font-size: 24px;
-    }
-    /* Controls Area */
-    .hud-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      width: 100%;
-      pointer-events: auto;
-    }
-    /* Steering Wheel */
-    #wheel-container {
-      width: 180px;
-      height: 180px;
-      background: radial-gradient(circle, #333 40%, #111 90%);
-      border: 8px solid #444;
-      border-radius: 50%;
-      position: relative;
-      cursor: grab;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-      transition: transform 0.1s linear;
-    }
-    #wheel-container:active {
-      cursor: grabbing;
-    }
-    .wheel-spoke-h {
-      position: absolute;
-      top: 50%;
-      left: 10%;
-      width: 80%;
-      height: 12px;
-      background: #222;
-      transform: translateY(-50%);
-      border-radius: 6px;
-    }
-    .wheel-spoke-v {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 12px;
-      height: 40%;
-      background: #222;
-      transform: translateX(-50%);
-      border-radius: 6px;
-    }
-    .wheel-center {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 50px;
-      height: 50px;
-      background: #4facfe;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      font-size: 12px;
-      box-shadow: inset 0 2px 5px rgba(255,255,255,0.4);
-    }
-    /* Pedals Container */
-    .pedals-container {
-      display: flex;
-      gap: 15px;
-      align-items: flex-end;
-    }
-    .btn-control {
-      width: 70px;
-      height: 110px;
-      background: linear-gradient(180deg, #444 0%, #222 100%);
-      border: 2px solid #555;
-      border-radius: 12px;
-      color: #fff;
-      font-weight: bold;
-      font-size: 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
-      transition: transform 0.05s, background 0.1s;
-    }
-    .btn-control:active, .btn-control.active {
-      transform: translateY(6px);
-      background: linear-gradient(180deg, #222 0%, #111 100%);
-      border-color: #4facfe;
-    }
-    .btn-handbrake {
-      width: 80px;
-      height: 60px;
-      background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
-      border-radius: 10px;
-      font-size: 12px;
-    }
-    .btn-handbrake.active {
-      background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
-    }
-  </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Bus Simulator – Slow Roads Style</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            background: #000;
+            user-select: none;
+            touch-action: none;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        #hud {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 20;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        /* Painel de instrumentos (velocímetro / marcha) */
+        .dashboard {
+            background: rgba(20, 25, 30, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 30px;
+            padding: 12px 28px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            pointer-events: auto;
+            color: white;
+        }
+        .speedo {
+            text-align: center;
+            min-width: 90px;
+        }
+        .speedo .value {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
+            color: #d0f0ff;
+        }
+        .speedo .unit {
+            font-size: 14px;
+            opacity: 0.7;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+        .gear {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            padding: 8px 18px;
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffaa00;
+            text-shadow: 0 0 12px rgba(255, 170, 0, 0.5);
+            border: 1px solid rgba(255, 170, 0, 0.3);
+            letter-spacing: 2px;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        /* Controles direita (pedais + handbrake) */
+        .controls-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
+            pointer-events: auto;
+        }
+        .pedal-panel {
+            display: flex;
+            gap: 20px;
+            background: rgba(20, 25, 30, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 18px 22px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .pedal {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+            background: rgba(40, 45, 55, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 5px 0 #111, 0 8px 15px rgba(0,0,0,0.5);
+            transition: all 0.08s ease;
+            cursor: pointer;
+            user-select: none;
+            touch-action: none;
+            text-shadow: 0 2px 4px black;
+            letter-spacing: 1px;
+        }
+        .pedal.active {
+            transform: translateY(5px);
+            box-shadow: 0 2px 0 #111, 0 5px 15px rgba(0,0,0,0.5);
+            background: #2a6f9c;
+        }
+        #pedalAccel { background: #1e5a3a; }
+        #pedalAccel.active { background: #2d8a4e; }
+        #pedalBrake { background: #7a2e2e; }
+        #pedalBrake.active { background: #b13e3e; }
+
+        .handbrake-btn {
+            background: rgba(20, 25, 30, 0.7);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 40px;
+            padding: 12px 30px;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+            touch-action: none;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .handbrake-btn.active {
+            background: #c0392b;
+            border-color: #ff6b5e;
+            box-shadow: 0 0 25px rgba(255, 80, 60, 0.8);
+            color: #fff;
+        }
+        .handbrake-indicator {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #444;
+            box-shadow: inset 0 1px 3px black;
+            transition: all 0.2s;
+        }
+        .handbrake-btn.active .handbrake-indicator {
+            background: #ff4d3a;
+            box-shadow: 0 0 15px #ff4d3a;
+        }
+
+        /* Volante */
+        .steering-container {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 220px;
+            height: 220px;
+            pointer-events: auto;
+            touch-action: none;
+            z-index: 25;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+        }
+        #steeringWheel {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            transform-origin: center center;
+            transition: filter 0.1s;
+        }
+        #steeringWheel:active {
+            cursor: grabbing;
+        }
+        .wheel-bg {
+            fill: #1e2228;
+            stroke: #4a5568;
+            stroke-width: 3;
+        }
+        .wheel-rim {
+            fill: none;
+            stroke: #2d3748;
+            stroke-width: 16;
+            stroke-linecap: round;
+        }
+        .wheel-rim-inner {
+            fill: none;
+            stroke: #4a5568;
+            stroke-width: 6;
+        }
+        .wheel-spoke {
+            stroke: #2d3748;
+            stroke-width: 10;
+            stroke-linecap: round;
+        }
+        .wheel-center {
+            fill: #1a202c;
+            stroke: #4a5568;
+            stroke-width: 3;
+        }
+        .wheel-logo {
+            fill: #ffaa00;
+            font-size: 24px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+        }
+
+        /* Responsividade */
+        @media (max-width: 700px) {
+            .steering-container { width: 150px; height: 150px; bottom: 15px; left: 15px; }
+            .pedal { width: 60px; height: 60px; font-size: 14px; }
+            .pedal-panel { padding: 12px 16px; gap: 12px; }
+            .dashboard { padding: 8px 18px; gap: 15px; }
+            .speedo .value { font-size: 32px; }
+            .gear { font-size: 22px; padding: 5px 12px; }
+            #hud { padding: 0 15px; bottom: 15px; }
+            .handbrake-btn { padding: 8px 18px; font-size: 14px; }
+        }
+        @media (max-width: 500px) {
+            .controls-right { gap: 8px; }
+            .pedal-panel { padding: 8px 12px; gap: 8px; }
+            .pedal { width: 50px; height: 50px; font-size: 12px; }
+            .steering-container { width: 120px; height: 120px; }
+            .dashboard { padding: 6px 12px; gap: 10px; }
+            .speedo .value { font-size: 24px; }
+            .gear { font-size: 18px; }
+        }
+    </style>
 </head>
 <body>
+    <div id="info">🚌 BUS SIMULATOR • WASD / Setas • Arraste o volante • Espaço = Freio de mão</div>
 
-  <div id="canvas-container"></div>
+    <!-- HUD inferior -->
+    <div id="hud">
+        <!-- Volante fica fora do hud para posicionamento absoluto, mas dentro da área interativa -->
+        <div class="dashboard">
+            <div class="speedo">
+                <div class="value" id="speedDisplay">0</div>
+                <div class="unit">KM/H</div>
+            </div>
+            <div class="gear" id="gearDisplay">P</div>
+        </div>
 
-  <div id="ui-container">
-    <div class="hud-top">
-      <div class="hud-stat">VELOCIDADE: <span id="speed-val">0</span> KM/H</div>
-      <div class="hud-stat">MARCHA: <span id="gear-val">N</span></div>
+        <div class="controls-right">
+            <button class="handbrake-btn" id="handbrakeBtn">
+                <span class="handbrake-indicator"></span>
+                FREIO MÃO
+            </button>
+            <div class="pedal-panel">
+                <div class="pedal" id="pedalBrake">RÉ</div>
+                <div class="pedal" id="pedalAccel">ACEL</div>
+            </div>
+        </div>
     </div>
 
-    <div class="hud-bottom">
-      <!-- Volante -->
-      <div id="wheel-container">
-        <div class="wheel-spoke-h"></div>
-        <div class="wheel-spoke-v"></div>
-        <div class="wheel-center">BUS</div>
-      </div>
-
-      <!-- Pedais e Freio de Mão -->
-      <div class="pedals-container">
-        <button class="btn-control btn-handbrake" id="btn-handbrake">FREIO MÃO</button>
-        <button class="btn-control" id="btn-reverse">RÉ</button>
-        <button class="btn-control" id="btn-gas">ACELERA</button>
-      </div>
+    <!-- Volante SVG (posicionado absoluto no canto inferior esquerdo) -->
+    <div class="steering-container">
+        <svg id="steeringWheel" viewBox="0 0 200 200">
+            <circle class="wheel-bg" cx="100" cy="100" r="90" />
+            <circle class="wheel-rim" cx="100" cy="100" r="80" />
+            <circle class="wheel-rim-inner" cx="100" cy="100" r="66" />
+            <line class="wheel-spoke" x1="100" y1="20" x2="100" y2="60" />
+            <line class="wheel-spoke" x1="100" y1="140" x2="100" y2="180" />
+            <line class="wheel-spoke" x1="20" y1="100" x2="60" y2="100" />
+            <line class="wheel-spoke" x1="140" y1="100" x2="180" y2="100" />
+            <circle class="wheel-center" cx="100" cy="100" r="18" />
+            <text class="wheel-logo" x="100" y="102">⏣</text>
+        </svg>
     </div>
-  </div>
 
-  <script>
-    // --- Configuração da Cena 3D ---
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87ceeb);
-    scene.fog = new THREE.FogExp2(0x87ceeb, 0.008);
-
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
-
-    // Iluminação
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
-
-    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    sunLight.position.set(100, 200, 50);
-    sunLight.castShadow = true;
-    scene.add(sunLight);
-
-    // --- Física do Ônibus ---
-    const bus = {
-      speed: 0,
-      maxSpeed: 90,
-      maxReverseSpeed: -25,
-      acceleration: 0.25,
-      deceleration: 0.15,
-      brakePower: 0.6,
-      steeringAngle: 0,
-      maxSteering: 0.03,
-      position: new THREE.Vector3(0, 1.6, 0),
-      rotation: 0,
-      handbrake: false
-    };
-
-    // --- Construção do Ônibus (Visão Interna + Painel) ---
-    const busGroup = new THREE.Group();
-    scene.add(busGroup);
-
-    // Painel do Ônibus
-    const dashGeo = new THREE.BoxGeometry(2.4, 0.6, 0.8);
-    const dashMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
-    const dashMesh = new THREE.Mesh(dashGeo, dashMat);
-    dashMesh.position.set(0, 1.1, -0.6);
-    busGroup.add(dashMesh);
-
-    // Para-brisa (Estrutura)
-    const frameGeo = new THREE.BoxGeometry(2.6, 0.1, 0.1);
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
-    const topFrame = new THREE.Mesh(frameGeo, frameMat);
-    topFrame.position.set(0, 2.3, -0.8);
-    busGroup.add(topFrame);
-
-    camera.position.set(-0.5, 1.7, -0.2); // Posição do Motorista
-    busGroup.add(camera);
-
-    // --- EstradaProcedural e Terreno Infinito ---
-    const roadChunks = [];
-    const chunkLength = 100;
-    const roadWidth = 10;
-
-    function createChunk(zPosition) {
-      const group = new THREE.Group();
-
-      // Asfalto
-      const roadGeo = new THREE.PlaneGeometry(roadWidth, chunkLength);
-      const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
-      const road = new THREE.Mesh(roadGeo, roadMat);
-      road.rotation.x = -Math.PI / 2;
-      road.position.z = -chunkLength / 2;
-      group.add(road);
-
-      // Faixas Amarelas
-      for (let z = 0; z > -chunkLength; z -= 10) {
-        const stripeGeo = new THREE.PlaneGeometry(0.3, 4);
-        const stripeMat = new THREE.MeshBasicMaterial({ color: 0xf1c40f });
-        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-        stripe.rotation.x = -Math.PI / 2;
-        stripe.position.set(0, 0.01, z - 2);
-        group.add(stripe);
-      }
-
-      // Grama / Terreno ao lado
-      const grassGeo = new THREE.PlaneGeometry(300, chunkLength);
-      const grassMat = new THREE.MeshStandardMaterial({ color: 0x27ae60, roughness: 1.0 });
-      const grass = new THREE.Mesh(grassGeo, grassMat);
-      grass.rotation.x = -Math.PI / 2;
-      grass.position.set(0, -0.05, -chunkLength / 2);
-      group.add(grass);
-
-      group.position.z = zPosition;
-      scene.add(group);
-      return group;
-    }
-
-    // Inicializar Chunks da Estrada
-    for (let i = 0; i < 6; i++) {
-      roadChunks.push(createChunk(-i * chunkLength));
-    }
-
-    // --- Entradas e Controles UI ---
-    let keys = { gas: false, reverse: false, handbrake: false };
-    let isSteering = false;
-    let startX = 0;
-
-    const wheelUI = document.getElementById('wheel-container');
-    const btnGas = document.getElementById('btn-gas');
-    const btnReverse = document.getElementById('btn-reverse');
-    const btnHandbrake = document.getElementById('btn-handbrake');
-
-    // Volante - Interação com Touch / Mouse
-    function setSteering(angle) {
-      bus.steeringAngle = angle;
-      wheelUI.style.transform = `rotate(${angle * 1200}deg)`;
-    }
-
-    wheelUI.addEventListener('mousedown', (e) => { isSteering = true; startX = e.clientX; });
-    window.addEventListener('mouseup', () => { isSteering = false; setSteering(0); });
-    window.addEventListener('mousemove', (e) => {
-      if (!isSteering) return;
-      let delta = (e.clientX - startX) / 100;
-      delta = Math.max(-1, Math.min(1, delta));
-      setSteering(delta * bus.maxSteering);
-    });
-
-    // Pedais
-    const bindPedal = (btn, key) => {
-      btn.addEventListener('mousedown', () => keys[key] = true);
-      btn.addEventListener('mouseup', () => keys[key] = false);
-      btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
-      btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-    };
-
-    bindPedal(btnGas, 'gas');
-    bindPedal(btnReverse, 'reverse');
-
-    btnHandbrake.addEventListener('click', () => {
-      bus.handbrake = !bus.handbrake;
-      btnHandbrake.classList.toggle('active', bus.handbrake);
-    });
-
-    // Teclado Fallback (WASD/Setas)
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'w' || e.key === 'ArrowUp') keys.gas = true;
-      if (e.key === 's' || e.key === 'ArrowDown') keys.reverse = true;
-      if (e.key === 'a' || e.key === 'ArrowLeft') setSteering(-bus.maxSteering);
-      if (e.key === 'd' || e.key === 'ArrowRight') setSteering(bus.maxSteering);
-      if (e.key === ' ') bus.handbrake = !bus.handbrake;
-    });
-
-    window.addEventListener('keyup', (e) => {
-      if (e.key === 'w' || e.key === 'ArrowUp') keys.gas = false;
-      if (e.key === 's' || e.key === 'ArrowDown') keys.reverse = false;
-      if (e.key === 'a' || e.key === 'd' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') setSteering(0);
-    });
-
-    // --- Loop Principal de Atualização/Física ---
-    function updatePhysics() {
-      // Aceleração / Freio
-      if (bus.handbrake) {
-        bus.speed *= 0.9;
-      } else if (keys.gas) {
-        bus.speed = Math.min(bus.maxSpeed, bus.speed + bus.acceleration);
-      } else if (keys.reverse) {
-        bus.speed = Math.max(bus.maxReverseSpeed, bus.speed - bus.acceleration);
-      } else {
-        // Desaceleração Natural
-        if (bus.speed > 0) bus.speed = Math.max(0, bus.speed - bus.deceleration);
-        if (bus.speed < 0) bus.speed = Math.min(0, bus.speed + bus.deceleration);
-      }
-
-      // Direção
-      if (Math.abs(bus.speed) > 0.1) {
-        const dir = bus.speed > 0 ? 1 : -1;
-        bus.rotation -= bus.steeringAngle * dir * (bus.speed / bus.maxSpeed);
-      }
-
-      // Movimento do Ônibus
-      bus.position.x += Math.sin(bus.rotation) * (bus.speed * 0.05);
-      bus.position.z -= Math.cos(bus.rotation) * (bus.speed * 0.05);
-
-      busGroup.position.copy(bus.position);
-      busGroup.rotation.y = bus.rotation;
-
-      // Câmera Bouncing (Efeito de vibração da estrada)
-      if (Math.abs(bus.speed) > 5) {
-        camera.position.y = 1.7 + Math.sin(Date.now() * 0.01) * 0.02;
-      }
-
-      // Reciclagem de Chunks da Estrada Infinita
-      roadChunks.forEach(chunk => {
-        if (chunk.position.z - bus.position.z > 50) {
-          chunk.position.z -= roadChunks.length * chunkLength;
+    <!-- Three.js CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+            }
         }
-      });
+    </script>
 
-      // Atualizar HUD UI
-      document.getElementById('speed-val').innerText = Math.round(Math.abs(bus.speed));
-      document.getElementById('gear-val').innerText = bus.handbrake ? 'P' : (bus.speed > 0.5 ? 'D' : (bus.speed < -0.5 ? 'R' : 'N'));
-    }
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
 
-    function animate() {
-      requestAnimationFrame(animate);
-      updatePhysics();
-      renderer.render(scene, camera);
-    }
+        // --- Configurações iniciais ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // céu base
+        scene.fog = new THREE.FogExp2(0x87CEEB, 0.0025); // névoa atmosférica
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2.2, 0); // posição da cabine (primeira pessoa)
 
-    animate();
-  </script>
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // sombras para profundidade
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // --- Iluminação ---
+        // Luz ambiente suave
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+
+        // Sol (direcional) com sombras
+        const sunLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+        sunLight.position.set(50, 100, 50);
+        sunLight.castShadow = true;
+        sunLight.receiveShadow = true;
+        sunLight.shadow.mapSize.width = 1024;
+        sunLight.shadow.mapSize.height = 1024;
+        const d = 150;
+        sunLight.shadow.camera.left = -d;
+        sunLight.shadow.camera.right = d;
+        sunLight.shadow.camera.top = d;
+        sunLight.shadow.camera.bottom = -d;
+        sunLight.shadow.camera.near = 1;
+        sunLight.shadow.camera.far = 300;
+        scene.add(sunLight);
+
+        // Luz de preenchimento
+        const fillLight = new THREE.HemisphereLight(0x87CEEB, 0x3a4a3a, 0.8);
+        scene.add(fillLight);
+
+        // --- Estrutura do ônibus (cockpit em primeira pessoa) ---
+        // Objetos fixos em relação à câmera (simulando painel, colunas, espelhos)
+        // Utilizamos uma câmera "cabeça" que se move, mas os objetos do cockpit são filhos da câmera.
+        // No entanto, para ter espelhos e colunas realistas, criamos um grupo que segue a câmera.
+        const cockpitGroup = new THREE.Group();
+        camera.add(cockpitGroup); // agora tudo dentro do cockpit se move com a câmera
+        scene.add(camera); // a câmera precisa estar na cena para seus filhos aparecerem
+
+        // Painel do ônibus (superior e inferior)
+        const panelMat = new THREE.MeshStandardMaterial({ color: 0x1a1e24, roughness: 0.7, metalness: 0.2 });
+        const panelMatDark = new THREE.MeshStandardMaterial({ color: 0x0f1217, roughness: 0.9 });
+
+        // Painel superior (acima do para-brisa)
+        const topPanel = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.2, 0.4), panelMatDark);
+        topPanel.position.set(0, 1.1, -0.8);
+        cockpitGroup.add(topPanel);
+
+        // Painel inferior (dashboard)
+        const dashPanel = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.25, 0.8), panelMat);
+        dashPanel.position.set(0, -0.3, -0.9);
+        dashPanel.castShadow = true;
+        dashPanel.receiveShadow = true;
+        cockpitGroup.add(dashPanel);
+
+        // Console central (onde ficam botões)
+        const consoleBox = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.5), panelMatDark);
+        consoleBox.position.set(0, -0.15, -0.7);
+        cockpitGroup.add(consoleBox);
+
+        // Volante dentro do cockpit (visual 3D adicional, mas o volante principal é o SVG)
+        const wheelRing = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.03, 16, 32), new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.5 }));
+        wheelRing.rotation.x = Math.PI / 2;
+        wheelRing.rotation.z = 0.2;
+        wheelRing.position.set(0, -0.1, -0.5);
+        cockpitGroup.add(wheelRing);
+        
+        // Haste do volante
+        const wheelStem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+        wheelStem.position.set(0, -0.2, -0.5);
+        wheelStem.rotation.x = 0.3;
+        cockpitGroup.add(wheelStem);
+
+        // Colunas A (laterais do para-brisa)
+        const pillarMat = new THREE.MeshStandardMaterial({ color: 0x2a2e35, roughness: 0.6 });
+        const pillarLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.1), pillarMat);
+        pillarLeft.position.set(-1.1, 0.4, -1.2);
+        cockpitGroup.add(pillarLeft);
+        const pillarRight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 0.1), pillarMat);
+        pillarRight.position.set(1.1, 0.4, -1.2);
+        cockpitGroup.add(pillarRight);
+
+        // Teto
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 1.0), panelMatDark);
+        roof.position.set(0, 0.9, -1.1);
+        cockpitGroup.add(roof);
+
+        // Espelhos retrovisores (laterais)
+        const mirrorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3, metalness: 0.8 });
+        const mirrorArmMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+        
+        // Espelho esquerdo
+        const mirrorLeftGroup = new THREE.Group();
+        mirrorLeftGroup.position.set(-1.3, 0.3, -1.0);
+        const armL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.3), mirrorArmMat);
+        armL.position.set(0.15, 0, 0);
+        mirrorLeftGroup.add(armL);
+        const mirrorL = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.15, 0.05), mirrorMat);
+        mirrorL.position.set(0.3, 0, 0);
+        mirrorLeftGroup.add(mirrorL);
+        cockpitGroup.add(mirrorLeftGroup);
+
+        // Espelho direito
+        const mirrorRightGroup = new THREE.Group();
+        mirrorRightGroup.position.set(1.3, 0.3, -1.0);
+        const armR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, 0.3), mirrorArmMat);
+        armR.position.set(-0.15, 0, 0);
+        mirrorRightGroup.add(armR);
+        const mirrorR = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.15, 0.05), mirrorMat);
+        mirrorR.position.set(-0.3, 0, 0);
+        mirrorRightGroup.add(mirrorR);
+        cockpitGroup.add(mirrorRightGroup);
+
+        // --- Mundo procedural ---
+        // Estrada infinita: usamos um sistema de "chunks" que se reposicionam ao redor do jogador
+        // Para simplificar e garantir fluidez, criamos uma estrada longa e a movemos de volta.
+        // O jogador se move para frente (eixo Z negativo), o mundo se move para trás (Z positivo) para dar a ilusão de progresso.
+        
+        const worldGroup = new THREE.Group();
+        scene.add(worldGroup);
+
+        // Parâmetros da estrada
+        const roadWidth = 12;
+        const chunkLength = 200; // comprimento de cada segmento
+        const numChunks = 8; // número de segmentos visíveis
+        const chunks = []; // armazenar os meshes da estrada e laterais
+        const treePositions = []; // armazenar posições das árvores para reciclar
+
+        // Materiais
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.8, emissive: new THREE.Color(0x111111) });
+        const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffaa, emissive: new THREE.Color(0x443300) });
+        const grassMat = new THREE.MeshStandardMaterial({ color: 0x3a6b3a, roughness: 1.0 });
+        const treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3e2a, roughness: 1.0 });
+        const treeLeafMat = new THREE.MeshStandardMaterial({ color: 0x2a6b2a, roughness: 1.0, emissive: new THREE.Color(0x112211) });
+        const mountainMat = new THREE.MeshStandardMaterial({ color: 0x6b7b8b, roughness: 0.9, flatShading: true });
+
+        // Função para criar um segmento da estrada (chunk) que inclui pista, linhas, grama e árvores
+        function createChunk(zOffset) {
+            const chunk = new THREE.Group();
+            
+            // Pista (asfalto)
+            const road = new THREE.Mesh(new THREE.BoxGeometry(roadWidth, 0.1, chunkLength), roadMat);
+            road.position.set(0, 0, zOffset);
+            road.receiveShadow = true;
+            road.castShadow = false;
+            chunk.add(road);
+
+            // Linhas centrais tracejadas
+            for (let i = 0; i < 6; i++) {
+                const line = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 4), lineMat);
+                line.position.set(0, 0.06, zOffset - chunkLength/2 + 10 + i * 30);
+                line.receiveShadow = false;
+                chunk.add(line);
+            }
+
+            // Grama dos lados (grandes planos)
+            const grassLeft = new THREE.Mesh(new THREE.BoxGeometry(60, 0.2, chunkLength), grassMat);
+            grassLeft.position.set(-roadWidth/2 - 30, -0.05, zOffset);
+            grassLeft.receiveShadow = true;
+            chunk.add(grassLeft);
+
+            const grassRight = new THREE.Mesh(new THREE.BoxGeometry(60, 0.2, chunkLength), grassMat);
+            grassRight.position.set(roadWidth/2 + 30, -0.05, zOffset);
+            grassRight.receiveShadow = true;
+            chunk.add(grassRight);
+
+            // Árvores aleatórias nas laterais
+            for (let side = -1; side <= 1; side += 2) {
+                for (let i = 0; i < 12; i++) {
+                    const treeZ = zOffset - chunkLength/2 + 15 + i * 15 + Math.random() * 8;
+                    const offsetX = side * (roadWidth/2 + 3 + Math.random() * 18);
+                    
+                    // Tronco
+                    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 2.2), treeTrunkMat);
+                    trunk.position.set(offsetX, 1.0, treeZ);
+                    trunk.castShadow = true;
+                    trunk.receiveShadow = true;
+                    chunk.add(trunk);
+                    
+                    // Copa (duas esferas para dar volume)
+                    const leaf1 = new THREE.Mesh(new THREE.SphereGeometry(1.2, 5), treeLeafMat);
+                    leaf1.position.set(offsetX, 2.5, treeZ);
+                    leaf1.castShadow = true;
+                    leaf1.receiveShadow = true;
+                    chunk.add(leaf1);
+                    const leaf2 = new THREE.Mesh(new THREE.SphereGeometry(1.0, 5), treeLeafMat);
+                    leaf2.position.set(offsetX + 0.6, 3.2, treeZ + 0.5);
+                    leaf2.castShadow = true;
+                    leaf2.receiveShadow = true;
+                    chunk.add(leaf2);
+                    const leaf3 = new THREE.Mesh(new THREE.SphereGeometry(0.9, 5), treeLeafMat);
+                    leaf3.position.set(offsetX - 0.5, 3.0, treeZ - 0.6);
+                    leaf3.castShadow = true;
+                    leaf3.receiveShadow = true;
+                    chunk.add(leaf3);
+                }
+            }
+
+            return chunk;
+        }
+
+        // Criar chunks iniciais
+        for (let i = 0; i < numChunks; i++) {
+            const zOffset = -i * chunkLength; // começa em 0 e vai para trás (negativo)
+            const chunk = createChunk(zOffset);
+            worldGroup.add(chunk);
+            chunks.push({ mesh: chunk, z: zOffset });
+        }
+
+        // Montanhas ao fundo (estáticas, distantes)
+        function createMountain(x, z, scale) {
+            const group = new THREE.Group();
+            const base = new THREE.Mesh(new THREE.ConeGeometry(scale * 1.5, scale * 2.5, 5), mountainMat);
+            base.position.y = scale * 1.25;
+            base.castShadow = true;
+            base.receiveShadow = true;
+            group.add(base);
+            group.position.set(x, 0, z);
+            return group;
+        }
+
+        // Adicionar algumas montanhas distantes
+        worldGroup.add(createMountain(-180, -400, 40));
+        worldGroup.add(createMountain(200, -550, 60));
+        worldGroup.add(createMountain(-300, -700, 50));
+        worldGroup.add(createMountain(280, -900, 70));
+        worldGroup.add(createMountain(80, -1200, 80));
+        worldGroup.add(createMountain(-250, -1500, 90));
+
+        // --- Estado do veículo ---
+        const busState = {
+            speed: 0,           // km/h (valor real, mas escalamos para unidades do mundo)
+            maxSpeed: 120,      // km/h
+            acceleration: 25,   // km/h por segundo
+            braking: 40,        // km/h por segundo
+            reverseSpeed: -20,  // km/h
+            gear: 'P',          // P, R, N, D
+            handbrake: false,
+            // Posição no mundo (a câmera está fixa em 0,0,0, mas movemos o mundo)
+            worldZ: 0,          // deslocamento acumulado (positivo para trás)
+            steering: 0,        // -1 a 1 (suavizado)
+            targetSteering: 0,
+            // Vibração e inclinação
+            vibrationIntensity: 0,
+            roll: 0,
+        };
+
+        // Controles de entrada
+        const input = {
+            accelerate: false,
+            brake: false,
+            left: false,
+            right: false,
+            handbrake: false,
+        };
+
+        // Elementos UI
+        const speedDisplay = document.getElementById('speedDisplay');
+        const gearDisplay = document.getElementById('gearDisplay');
+        const pedalAccel = document.getElementById('pedalAccel');
+        const pedalBrake = document.getElementById('pedalBrake');
+        const handbrakeBtn = document.getElementById('handbrakeBtn');
+        const steeringWheel = document.getElementById('steeringWheel');
+
+        // --- Lógica de interação com o volante (arrasto) ---
+        let isDraggingWheel = false;
+        let wheelStartAngle = 0;
+        let wheelCurrentAngle = 0; // em radianos, -PI a PI
+        let wheelRotation = 0; // rotação visual (graus)
+
+        // Converter posição do mouse para ângulo em relação ao centro do volante
+        function getAngleFromEvent(e) {
+            const rect = steeringWheel.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const dx = clientX - centerX;
+            const dy = clientY - centerY;
+            return Math.atan2(dy, dx);
+        }
+
+        function onWheelStart(e) {
+            e.preventDefault();
+            isDraggingWheel = true;
+            const angle = getAngleFromEvent(e);
+            wheelStartAngle = angle - wheelCurrentAngle;
+            steeringWheel.style.cursor = 'grabbing';
+        }
+
+        function onWheelMove(e) {
+            if (!isDraggingWheel) return;
+            e.preventDefault();
+            const angle = getAngleFromEvent(e);
+            let newAngle = angle - wheelStartAngle;
+            
+            // Limitar a rotação a -135° a +135° (em radianos)
+            const maxRad = 2.356; // 135 graus
+            newAngle = Math.max(-maxRad, Math.min(maxRad, newAngle));
+            
+            wheelCurrentAngle = newAngle;
+            busState.targetSteering = newAngle / maxRad; // -1 a 1
+            
+            // Atualizar rotação visual
+            wheelRotation = newAngle * (180 / Math.PI);
+            steeringWheel.style.transform = `rotate(${wheelRotation}deg)`;
+        }
+
+        function onWheelEnd(e) {
+            if (!isDraggingWheel) return;
+            isDraggingWheel = false;
+            steeringWheel.style.cursor = 'grab';
+            // O retorno ao centro será tratado no loop de animação, pois é suave
+        }
+
+        steeringWheel.addEventListener('mousedown', onWheelStart);
+        window.addEventListener('mousemove', onWheelMove);
+        window.addEventListener('mouseup', onWheelEnd);
+
+        steeringWheel.addEventListener('touchstart', onWheelStart, { passive: false });
+        window.addEventListener('touchmove', onWheelMove, { passive: false });
+        window.addEventListener('touchend', onWheelEnd);
+        window.addEventListener('touchcancel', onWheelEnd);
+
+        // Retorno suave ao centro quando não estiver arrastando
+        function updateSteeringReturn(deltaTime) {
+            if (!isDraggingWheel) {
+                // Retorna ao centro suavemente
+                busState.targetSteering *= 0.95;
+                if (Math.abs(busState.targetSteering) < 0.01) busState.targetSteering = 0;
+                wheelCurrentAngle = busState.targetSteering * 2.356;
+                wheelRotation = wheelCurrentAngle * (180 / Math.PI);
+                steeringWheel.style.transform = `rotate(${wheelRotation}deg)`;
+            }
+        }
+
+        // --- Controles de pedal (mouse/touch) ---
+        function setupPedal(element, inputKey) {
+            const activate = (e) => {
+                e.preventDefault();
+                input[inputKey] = true;
+                element.classList.add('active');
+            };
+            const deactivate = (e) => {
+                e.preventDefault();
+                input[inputKey] = false;
+                element.classList.remove('active');
+            };
+            element.addEventListener('mousedown', activate);
+            element.addEventListener('mouseup', deactivate);
+            element.addEventListener('mouseleave', deactivate);
+            element.addEventListener('touchstart', activate, { passive: false });
+            element.addEventListener('touchend', deactivate);
+            element.addEventListener('touchcancel', deactivate);
+        }
+        setupPedal(pedalAccel, 'accelerate');
+        setupPedal(pedalBrake, 'brake');
+
+        // Freio de mão toggle
+        handbrakeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            busState.handbrake = !busState.handbrake;
+            handbrakeBtn.classList.toggle('active', busState.handbrake);
+            input.handbrake = busState.handbrake;
+        });
+        // Para toque, evitamos double trigger
+        handbrakeBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            busState.handbrake = !busState.handbrake;
+            handbrakeBtn.classList.toggle('active', busState.handbrake);
+            input.handbrake = busState.handbrake;
+        }, { passive: false });
+
+        // --- Teclado ---
+        window.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'w': case 'arrowup': input.accelerate = true; e.preventDefault(); break;
+                case 's': case 'arrowdown': input.brake = true; e.preventDefault(); break;
+                case 'a': case 'arrowleft': input.left = true; e.preventDefault(); break;
+                case 'd': case 'arrowright': input.right = true; e.preventDefault(); break;
+                case ' ': // espaço = handbrake toggle
+                    busState.handbrake = !busState.handbrake;
+                    handbrakeBtn.classList.toggle('active', busState.handbrake);
+                    input.handbrake = busState.handbrake;
+                    e.preventDefault();
+                    break;
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            switch(e.key.toLowerCase()) {
+                case 'w': case 'arrowup': input.accelerate = false; e.preventDefault(); break;
+                case 's': case 'arrowdown': input.brake = false; e.preventDefault(); break;
+                case 'a': case 'arrowleft': input.left = false; e.preventDefault(); break;
+                case 'd': case 'arrowright': input.right = false; e.preventDefault(); break;
+            }
+        });
+
+        // --- Lógica de marcha e velocidade ---
+        function updateVehicle(deltaTime) {
+            // Aplicar aceleração / freio
+            if (input.accelerate && !busState.handbrake) {
+                busState.speed += busState.acceleration * deltaTime;
+            } else if (input.brake) {
+                if (busState.speed > 0) {
+                    busState.speed -= busState.braking * deltaTime;
+                } else {
+                    // Ré
+                    busState.speed -= busState.acceleration * 0.6 * deltaTime;
+                }
+            } else {
+                // Desaceleração natural
+                busState.speed *= (1 - 0.4 * deltaTime);
+            }
+
+            // Freio de mão
+            if (busState.handbrake) {
+                busState.speed *= (1 - 3.0 * deltaTime);
+            }
+
+            // Limites
+            busState.speed = Math.max(busState.reverseSpeed, Math.min(busState.maxSpeed, busState.speed));
+            if (Math.abs(busState.speed) < 0.1) busState.speed = 0;
+
+            // Determinar marcha
+            if (busState.speed > 0.5) busState.gear = 'D';
+            else if (busState.speed < -0.5) busState.gear = 'R';
+            else {
+                if (input.accelerate || input.brake) busState.gear = 'N';
+                else busState.gear = 'P';
+            }
+
+            // Atualizar display
+            const kmh = Math.round(Math.abs(busState.speed));
+            speedDisplay.textContent = kmh;
+            gearDisplay.textContent = busState.gear;
+
+            // Mover o mundo (efeito de deslocamento)
+            const speedMs = busState.speed / 3.6; // m/s
+            const deltaZ = speedMs * deltaTime;
+            busState.worldZ += deltaZ; // deslocamento acumulado
+
+            // Mover todos os chunks de acordo com a velocidade
+            // O mundo se move em Z positivo quando o ônibus anda para frente (Z negativo)
+            // Vamos mover os chunks no sentido oposto ao movimento do ônibus para simular a passagem
+            // A câmera está fixa em 0,0,0. O mundo se move.
+            worldGroup.position.z = busState.worldZ;
+
+            // Reciclar chunks: verificar se algum chunk passou para trás do jogador (z > 50) e reposicioná-lo à frente
+            chunks.forEach((chunkData, index) => {
+                // Posição local do chunk dentro do worldGroup
+                // O chunkData.z é o offset original. Como worldGroup se move, a posição efetiva é chunkData.z + worldGroup.position.z
+                const effectiveZ = chunkData.z + worldGroup.position.z;
+                
+                // Se o chunk está muito para trás (z > 50), reposicionar para frente
+                if (effectiveZ > 50) {
+                    // Novo offset: - (numChunks * chunkLength) + algo
+                    chunkData.z -= numChunks * chunkLength;
+                    // Atualizar a posição do mesh
+                    chunkData.mesh.position.z = chunkData.z;
+                    // Nota: o mesh já está dentro do worldGroup, então sua posição é relativa ao worldGroup.
+                    // Como worldGroup.position.z é adicionado, precisamos que chunkData.mesh.position.z = chunkData.z
+                }
+            });
+
+            // Ajustar inclinação da câmera (roll) baseada na direção (steering)
+            const targetRoll = -busState.targetSteering * 0.1; // ângulo suave
+            busState.roll += (targetRoll - busState.roll) * 5 * deltaTime;
+            camera.rotation.z = busState.roll;
+
+            // Vibração de suspensão conforme velocidade
+            const vibrationAmp = Math.min(0.02, Math.abs(busState.speed) * 0.0006);
+            const t = performance.now() * 0.02;
+            const vibX = Math.sin(t * 3.7) * vibrationAmp;
+            const vibY = Math.sin(t * 5.3) * vibrationAmp;
+            camera.position.x = vibX;
+            camera.position.y = 2.2 + vibY; // altura base + vibração
+
+            // Atualizar posição da câmera para suavizar (já está fixa, mas vibração ajusta)
+            // A câmera também pode ser afetada por steering para simular movimento lateral leve
+            // Mas para primeira pessoa, é sutil
+        }
+
+        // --- Ciclo dia/noite ---
+        let timeOfDay = 0.25; // 0 = meia-noite, 0.25 = amanhecer, 0.5 = meio-dia, 0.75 = anoitecer
+        const dayNightSpeed = 0.005; // ciclo lento
+
+        function updateDayNight(deltaTime) {
+            timeOfDay = (timeOfDay + deltaTime * dayNightSpeed) % 1;
+            
+            // Ângulo do sol
+            const sunAngle = timeOfDay * Math.PI * 2 - Math.PI/2; // -PI/2 = nascer, PI/2 = poente
+            const sunHeight = Math.sin(sunAngle);
+            const sunX = Math.cos(sunAngle) * 100;
+            const sunY = sunHeight * 100;
+            const sunZ = 50;
+
+            sunLight.position.set(sunX, Math.max(sunY, 5), sunZ);
+            
+            // Ajustar intensidade
+            const intensity = Math.max(0.1, sunHeight * 1.2);
+            sunLight.intensity = intensity;
+            
+            // Cor do céu baseada na posição do sol
+            const skyColor = new THREE.Color();
+            if (sunHeight > 0.2) {
+                skyColor.setHSL(0.6, 0.7, 0.5 + sunHeight * 0.3);
+            } else if (sunHeight > -0.1) {
+                // amanhecer/anoitecer
+                const t = (sunHeight + 0.1) / 0.3;
+                skyColor.lerpColors(new THREE.Color(0x2a1e3a), new THREE.Color(0x87CEEB), t);
+            } else {
+                skyColor.setHex(0x0a0a1a);
+            }
+            scene.background = skyColor;
+            scene.fog.color = skyColor;
+            
+            // Luz ambiente mais escura à noite
+            ambientLight.intensity = Math.max(0.1, sunHeight * 0.6 + 0.1);
+            fillLight.intensity = Math.max(0.1, sunHeight * 0.7 + 0.1);
+        }
+
+        // --- Animação principal ---
+        let lastTime = performance.now();
+
+        function animate() {
+            const now = performance.now();
+            const deltaTime = Math.min(0.05, (now - lastTime) / 1000); // limitar para evitar saltos
+            lastTime = now;
+
+            // Atualizar volante (retorno ao centro)
+            updateSteeringReturn(deltaTime);
+            
+            // Aplicar steering ao movimento lateral (apenas visual, pois a estrada é reta visualmente, mas podemos inclinar levemente a câmera)
+            // Já aplicamos roll. Podemos adicionar um offset X à câmera baseado no steering para dar sensação de curva
+            const steerOffset = busState.targetSteering * 0.3;
+            // Mas a câmera é fixa em X, então movemos o cockpit? Não, movemos a câmera inteira levemente para simular curva
+            // Como o mundo se move em Z, o steering pode deslocar a câmera em X para simular que o ônibus está virando.
+            // No entanto, isso pode quebrar a imersão se exagerado. Vamos deixar sutil.
+            if (!isDraggingWheel) {
+                // já tratado no updateSteeringReturn
+            }
+
+            // Atualizar veículo
+            updateVehicle(deltaTime);
+            
+            // Atualizar ciclo dia/noite
+            updateDayNight(deltaTime);
+
+            // Atualizar HUD handbrake indicator (já tratado no evento)
+            
+            // Renderizar
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        // Ajustar posição do cockpit para ficar na frente da câmera
+        // O cockpitGroup é filho da câmera, então as posições são relativas à câmera.
+        // A câmera está em (0, 2.2, 0) no mundo. O cockpit deve parecer que está ao redor do motorista.
+        // Já definimos as posições dos objetos do cockpit em relação à câmera (0,0,0 no espaço da câmera).
+        // Precisamos que o cockpit fique um pouco à frente para não cortar.
+        // Ajuste fino: mover todo o cockpitGroup para frente (z negativo)
+        cockpitGroup.position.z = -0.5; // traz o painel para frente
+        cockpitGroup.position.y = 0.0;
+
+        // Iniciar animação
+        animate();
+
+        // Redimensionamento
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Inicializar input handbrake
+        input.handbrake = false;
+
+        // Pequeno ajuste: garantir que o volante comece centralizado
+        steeringWheel.style.transform = 'rotate(0deg)';
+
+    </script>
 </body>
 </html>
