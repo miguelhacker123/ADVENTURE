@@ -1,33 +1,409 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sasuke Susano</title>
-    <style>
-        /* Remove as margens padrão do navegador */
-        body {
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden; /* Remove as barras de rolagem */
-            background-color: #000; /* Fundo preto caso a imagem demore a carregar */
-        }
-
-        /* Estiliza a imagem para ocupar a tela inteira */
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* Faz a imagem cobrir toda a tela sem distorcer */
-            display: block;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slow Roads Bus Simulator 3D</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #87ceeb;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* Dashboard Overlay UI */
+    #ui-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px;
+    }
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      padding: 12px 24px;
+      border-radius: 16px;
+      color: #fff;
+      font-weight: 600;
+      width: fit-content;
+      margin: 0 auto;
+    }
+    .hud-stat {
+      margin: 0 15px;
+      font-size: 18px;
+    }
+    .hud-stat span {
+      color: #4facfe;
+      font-size: 24px;
+    }
+    /* Controls Area */
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+      pointer-events: auto;
+    }
+    /* Steering Wheel */
+    #wheel-container {
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, #333 40%, #111 90%);
+      border: 8px solid #444;
+      border-radius: 50%;
+      position: relative;
+      cursor: grab;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      transition: transform 0.1s linear;
+    }
+    #wheel-container:active {
+      cursor: grabbing;
+    }
+    .wheel-spoke-h {
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      width: 80%;
+      height: 12px;
+      background: #222;
+      transform: translateY(-50%);
+      border-radius: 6px;
+    }
+    .wheel-spoke-v {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 40%;
+      background: #222;
+      transform: translateX(-50%);
+      border-radius: 6px;
+    }
+    .wheel-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50px;
+      height: 50px;
+      background: #4facfe;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      box-shadow: inset 0 2px 5px rgba(255,255,255,0.4);
+    }
+    /* Pedals Container */
+    .pedals-container {
+      display: flex;
+      gap: 15px;
+      align-items: flex-end;
+    }
+    .btn-control {
+      width: 70px;
+      height: 110px;
+      background: linear-gradient(180deg, #444 0%, #222 100%);
+      border: 2px solid #555;
+      border-radius: 12px;
+      color: #fff;
+      font-weight: bold;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+      transition: transform 0.05s, background 0.1s;
+    }
+    .btn-control:active, .btn-control.active {
+      transform: translateY(6px);
+      background: linear-gradient(180deg, #222 0%, #111 100%);
+      border-color: #4facfe;
+    }
+    .btn-handbrake {
+      width: 80px;
+      height: 60px;
+      background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+      border-radius: 10px;
+      font-size: 12px;
+    }
+    .btn-handbrake.active {
+      background: linear-gradient(180deg, #27ae60 0%, #2ecc71 100%);
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.min.js"></script>
 </head>
 <body>
 
-    <!-- Aqui está a imagem do Sasuke -->
-    <img src="https://images.wallpapersden.com/image/download/sasuke-susanoo-purple_bGhpZ2WUmZqaraWkpJRmbmdlrWZnZWU.jpg" alt="Sasuke Susano">
+  <div id="canvas-container"></div>
 
+  <div id="ui-container">
+    <div class="hud-top">
+      <div class="hud-stat">VELOCIDADE: <span id="speed-val">0</span> KM/H</div>
+      <div class="hud-stat">MARCHA: <span id="gear-val">N</span></div>
+    </div>
+
+    <div class="hud-bottom">
+      <!-- Volante -->
+      <div id="wheel-container">
+        <div class="wheel-spoke-h"></div>
+        <div class="wheel-spoke-v"></div>
+        <div class="wheel-center">BUS</div>
+      </div>
+
+      <!-- Pedais e Freio de Mão -->
+      <div class="pedals-container">
+        <button class="btn-control btn-handbrake" id="btn-handbrake">FREIO MÃO</button>
+        <button class="btn-control" id="btn-reverse">RÉ</button>
+        <button class="btn-control" id="btn-gas">ACELERA</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Configuração da Cena 3D ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.FogExp2(0x87ceeb, 0.008);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    // Iluminação
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    sunLight.position.set(100, 200, 50);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
+
+    // --- Física do Ônibus ---
+    const bus = {
+      speed: 0,
+      maxSpeed: 90,
+      maxReverseSpeed: -25,
+      acceleration: 0.25,
+      deceleration: 0.15,
+      brakePower: 0.6,
+      steeringAngle: 0,
+      maxSteering: 0.03,
+      position: new THREE.Vector3(0, 1.6, 0),
+      rotation: 0,
+      handbrake: false
+    };
+
+    // --- Construção do Ônibus (Visão Interna + Painel) ---
+    const busGroup = new THREE.Group();
+    scene.add(busGroup);
+
+    // Painel do Ônibus
+    const dashGeo = new THREE.BoxGeometry(2.4, 0.6, 0.8);
+    const dashMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
+    const dashMesh = new THREE.Mesh(dashGeo, dashMat);
+    dashMesh.position.set(0, 1.1, -0.6);
+    busGroup.add(dashMesh);
+
+    // Para-brisa (Estrutura)
+    const frameGeo = new THREE.BoxGeometry(2.6, 0.1, 0.1);
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    const topFrame = new THREE.Mesh(frameGeo, frameMat);
+    topFrame.position.set(0, 2.3, -0.8);
+    busGroup.add(topFrame);
+
+    camera.position.set(-0.5, 1.7, -0.2); // Posição do Motorista
+    busGroup.add(camera);
+
+    // --- EstradaProcedural e Terreno Infinito ---
+    const roadChunks = [];
+    const chunkLength = 100;
+    const roadWidth = 10;
+
+    function createChunk(zPosition) {
+      const group = new THREE.Group();
+
+      // Asfalto
+      const roadGeo = new THREE.PlaneGeometry(roadWidth, chunkLength);
+      const roadMat = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.9 });
+      const road = new THREE.Mesh(roadGeo, roadMat);
+      road.rotation.x = -Math.PI / 2;
+      road.position.z = -chunkLength / 2;
+      group.add(road);
+
+      // Faixas Amarelas
+      for (let z = 0; z > -chunkLength; z -= 10) {
+        const stripeGeo = new THREE.PlaneGeometry(0.3, 4);
+        const stripeMat = new THREE.MeshBasicMaterial({ color: 0xf1c40f });
+        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+        stripe.rotation.x = -Math.PI / 2;
+        stripe.position.set(0, 0.01, z - 2);
+        group.add(stripe);
+      }
+
+      // Grama / Terreno ao lado
+      const grassGeo = new THREE.PlaneGeometry(300, chunkLength);
+      const grassMat = new THREE.MeshStandardMaterial({ color: 0x27ae60, roughness: 1.0 });
+      const grass = new THREE.Mesh(grassGeo, grassMat);
+      grass.rotation.x = -Math.PI / 2;
+      grass.position.set(0, -0.05, -chunkLength / 2);
+      group.add(grass);
+
+      group.position.z = zPosition;
+      scene.add(group);
+      return group;
+    }
+
+    // Inicializar Chunks da Estrada
+    for (let i = 0; i < 6; i++) {
+      roadChunks.push(createChunk(-i * chunkLength));
+    }
+
+    // --- Entradas e Controles UI ---
+    let keys = { gas: false, reverse: false, handbrake: false };
+    let isSteering = false;
+    let startX = 0;
+
+    const wheelUI = document.getElementById('wheel-container');
+    const btnGas = document.getElementById('btn-gas');
+    const btnReverse = document.getElementById('btn-reverse');
+    const btnHandbrake = document.getElementById('btn-handbrake');
+
+    // Volante - Interação com Touch / Mouse
+    function setSteering(angle) {
+      bus.steeringAngle = angle;
+      wheelUI.style.transform = `rotate(${angle * 1200}deg)`;
+    }
+
+    wheelUI.addEventListener('mousedown', (e) => { isSteering = true; startX = e.clientX; });
+    window.addEventListener('mouseup', () => { isSteering = false; setSteering(0); });
+    window.addEventListener('mousemove', (e) => {
+      if (!isSteering) return;
+      let delta = (e.clientX - startX) / 100;
+      delta = Math.max(-1, Math.min(1, delta));
+      setSteering(delta * bus.maxSteering);
+    });
+
+    // Pedais
+    const bindPedal = (btn, key) => {
+      btn.addEventListener('mousedown', () => keys[key] = true);
+      btn.addEventListener('mouseup', () => keys[key] = false);
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+      btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+    };
+
+    bindPedal(btnGas, 'gas');
+    bindPedal(btnReverse, 'reverse');
+
+    btnHandbrake.addEventListener('click', () => {
+      bus.handbrake = !bus.handbrake;
+      btnHandbrake.classList.toggle('active', bus.handbrake);
+    });
+
+    // Teclado Fallback (WASD/Setas)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'w' || e.key === 'ArrowUp') keys.gas = true;
+      if (e.key === 's' || e.key === 'ArrowDown') keys.reverse = true;
+      if (e.key === 'a' || e.key === 'ArrowLeft') setSteering(-bus.maxSteering);
+      if (e.key === 'd' || e.key === 'ArrowRight') setSteering(bus.maxSteering);
+      if (e.key === ' ') bus.handbrake = !bus.handbrake;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'w' || e.key === 'ArrowUp') keys.gas = false;
+      if (e.key === 's' || e.key === 'ArrowDown') keys.reverse = false;
+      if (e.key === 'a' || e.key === 'd' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') setSteering(0);
+    });
+
+    // --- Loop Principal de Atualização/Física ---
+    function updatePhysics() {
+      // Aceleração / Freio
+      if (bus.handbrake) {
+        bus.speed *= 0.9;
+      } else if (keys.gas) {
+        bus.speed = Math.min(bus.maxSpeed, bus.speed + bus.acceleration);
+      } else if (keys.reverse) {
+        bus.speed = Math.max(bus.maxReverseSpeed, bus.speed - bus.acceleration);
+      } else {
+        // Desaceleração Natural
+        if (bus.speed > 0) bus.speed = Math.max(0, bus.speed - bus.deceleration);
+        if (bus.speed < 0) bus.speed = Math.min(0, bus.speed + bus.deceleration);
+      }
+
+      // Direção
+      if (Math.abs(bus.speed) > 0.1) {
+        const dir = bus.speed > 0 ? 1 : -1;
+        bus.rotation -= bus.steeringAngle * dir * (bus.speed / bus.maxSpeed);
+      }
+
+      // Movimento do Ônibus
+      bus.position.x += Math.sin(bus.rotation) * (bus.speed * 0.05);
+      bus.position.z -= Math.cos(bus.rotation) * (bus.speed * 0.05);
+
+      busGroup.position.copy(bus.position);
+      busGroup.rotation.y = bus.rotation;
+
+      // Câmera Bouncing (Efeito de vibração da estrada)
+      if (Math.abs(bus.speed) > 5) {
+        camera.position.y = 1.7 + Math.sin(Date.now() * 0.01) * 0.02;
+      }
+
+      // Reciclagem de Chunks da Estrada Infinita
+      roadChunks.forEach(chunk => {
+        if (chunk.position.z - bus.position.z > 50) {
+          chunk.position.z -= roadChunks.length * chunkLength;
+        }
+      });
+
+      // Atualizar HUD UI
+      document.getElementById('speed-val').innerText = Math.round(Math.abs(bus.speed));
+      document.getElementById('gear-val').innerText = bus.handbrake ? 'P' : (bus.speed > 0.5 ? 'D' : (bus.speed < -0.5 ? 'R' : 'N'));
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      updatePhysics();
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+  </script>
 </body>
 </html>
