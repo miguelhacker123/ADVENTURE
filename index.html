@@ -1,817 +1,353 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-    <title>Wave Rider - 3D Low Poly</title>
-    <style>
-        body { margin: 0; overflow: hidden; font-family: 'Arial', sans-serif; user-select: none; touch-action: pan-x pan-y; }
-        #game-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
-        canvas { display: block; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Quebrar Árvore</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
 
-        /* UI Overlay */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
-        .hud { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; color: white; text-shadow: 3px 3px 0 #1a3a5a; font-weight: bold; pointer-events: none; }
-        .score-box { background: rgba(0, 0, 0, 0.4); border-radius: 30px; padding: 8px 20px; font-size: 28px; display: flex; align-items: center; gap: 5px; border: 2px solid #ffd966; }
-        .score-box span { color: #ffd966; }
-        .stars-box { background: rgba(0, 0, 0, 0.4); border-radius: 30px; padding: 8px 20px; font-size: 24px; display: flex; align-items: center; gap: 5px; border: 2px solid #ffaa00; }
-        .stars-box span { color: #ffaa00; }
+    body {
+      background: linear-gradient(to bottom, #87ceeb 0%, #e0f6ff 60%, #5d9d4f 60%, #3e6b34 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+    }
 
-        /* Bottom Buttons (Hex style) */
-        .bottom-bar { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: center; gap: 20px; pointer-events: auto; padding: 0 15px; box-sizing: border-box; }
-        .hex-btn { width: 60px; height: 60px; background: #2a6f9c; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 0 #0e3b5a; transition: all 0.1s; border: 2px solid #7fc8f0; }
-        .hex-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #0e3b5a; }
-        .hex-btn svg { width: 30px; height: 30px; fill: white; }
+    /* HUD Topo */
+    .hud {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+      z-index: 10;
+    }
 
-        /* Start & Tutorial Screens */
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); z-index: 10; }
-        .hidden { display: none !important; }
-        .title3d { font-size: 64px; font-weight: 900; color: #ffd966; text-shadow: 6px 6px 0 #b45f06, 10px 10px 10px rgba(0,0,0,0.4); letter-spacing: 4px; transform: rotate(-3deg); margin-bottom: 10px; font-family: 'Arial Black', sans-serif; }
-        .subtitle { font-size: 28px; color: white; text-shadow: 3px 3px 0 #1a3a5a; margin-bottom: 40px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } 100% { opacity: 0.8; transform: scale(1); } }
-        .tutorial-box { background: rgba(0, 20, 40, 0.85); border-radius: 40px; padding: 30px 40px; border: 4px solid #7fc8f0; display: flex; flex-direction: column; align-items: center; max-width: 90%; }
-        .tutorial-row { display: flex; gap: 40px; margin: 15px 0; flex-wrap: wrap; justify-content: center; }
-        .tut-item { display: flex; flex-direction: column; align-items: center; color: white; font-size: 18px; }
-        .tut-icon { font-size: 48px; margin-bottom: 5px; }
-        .small-note { margin-top: 20px; color: #aaddff; font-size: 14px; text-align: center; }
-        .btn-play { margin-top: 30px; background: #ffd966; border: none; border-radius: 60px; padding: 15px 50px; font-size: 28px; font-weight: bold; color: #1a3a5a; border-bottom: 6px solid #b45f06; cursor: pointer; pointer-events: auto; transition: 0.1s; }
-        .btn-play:active { transform: translateY(4px); border-bottom-width: 2px; }
-    </style>
+    .hud-box {
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* Área de Jogo */
+    .game-area {
+      position: relative;
+      width: 100%;
+      height: 70vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      cursor: pointer;
+    }
+
+    /* Árvore */
+    .tree-container {
+      position: relative;
+      bottom: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform-origin: bottom center;
+      transition: transform 0.05s ease-out;
+    }
+
+    .foliage {
+      width: 220px;
+      height: 220px;
+      background: #2e7d32;
+      border-radius: 50%;
+      box-shadow: inset -20px -20px 0 rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.3);
+      position: relative;
+      z-index: 2;
+      margin-bottom: -50px;
+    }
+
+    .foliage::before {
+      content: '';
+      position: absolute;
+      top: -30px;
+      left: 30px;
+      width: 160px;
+      height: 160px;
+      background: #388e3c;
+      border-radius: 50%;
+    }
+
+    .trunk {
+      width: 90px;
+      height: 280px;
+      background: linear-gradient(to right, #5d4037, #8d6e63 40%, #4e342e);
+      border-radius: 10px;
+      box-shadow: inset 0 -10px 0 rgba(0,0,0,0.3), 0 10px 25px rgba(0,0,0,0.4);
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    /* Marcas de dano no tronco */
+    .crack {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 4px;
+      display: none;
+    }
+
+    /* Barra de Vida da Árvore */
+    .hp-bar-container {
+      position: absolute;
+      top: -30px;
+      width: 140px;
+      height: 16px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 8px;
+      padding: 2px;
+      border: 1px solid #fff;
+    }
+
+    .hp-bar {
+      width: 100%;
+      height: 100%;
+      background: #4caf50;
+      border-radius: 6px;
+      transition: width 0.1s linear, background-color 0.2s;
+    }
+
+    /* Mão do Jogador */
+    .fist {
+      position: absolute;
+      bottom: 80px;
+      right: 35%;
+      width: 120px;
+      height: 120px;
+      background: #ffcc80;
+      border-radius: 30px;
+      border: 4px solid #e65100;
+      box-shadow: -10px 10px 0 rgba(0,0,0,0.2);
+      z-index: 5;
+      transform: rotate(-20deg) scale(1);
+      transition: transform 0.08s ease-in-out;
+      pointer-events: none;
+    }
+
+    .fist.punch {
+      transform: translate(-140px, -60px) rotate(-45deg) scale(1.15);
+    }
+
+    /* Partículas de Madeira */
+    .wood-chip {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #8d6e63;
+      border: 1px solid #3e2723;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 4;
+      animation: fly 0.6s ease-out forwards;
+    }
+
+    @keyframes fly {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--tw-x), var(--tw-y)) rotate(360deg);
+      }
+    }
+
+    /* Efeito de Texto Flutuante (+1) */
+    .floating-text {
+      position: absolute;
+      color: #ffd54f;
+      font-size: 1.8rem;
+      font-weight: 900;
+      text-shadow: 2px 2px 0 #000;
+      pointer-events: none;
+      animation: floatUp 0.7s ease-out forwards;
+      z-index: 6;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
+    }
+
+    .instructions {
+      margin-bottom: 20px;
+      color: #fff;
+      font-size: 1.1rem;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+      z-index: 10;
+    }
+  </style>
 </head>
 <body>
-    <div id="game-container"></div>
 
-    <!-- HUD (hidden initially) -->
-    <div id="hud" class="overlay hidden">
-        <div class="hud">
-            <div class="score-box">💰 <span id="scoreValue">0</span></div>
-            <div class="stars-box">⭐ <span id="starMultiplier">1x</span></div>
-        </div>
-        <div class="bottom-bar">
-            <div class="hex-btn" id="btnSettings">⚙️</div>
-            <div class="hex-btn" id="btnInfo">ℹ️</div>
-            <div class="hex-btn" id="btnShop">🛒</div>
-        </div>
+  <div class="hud">
+    <div class="hud-box">Madeira: <span id="wood-count">0</span> 🪵</div>
+    <div class="hud-box">Árvores Destruídas: <span id="trees-destroyed">0</span> 🪓</div>
+  </div>
+
+  <div class="game-area" id="game-area">
+    <div class="tree-container" id="tree">
+      <div class="hp-bar-container">
+        <div class="hp-bar" id="hp-bar"></div>
+      </div>
+      <div class="foliage"></div>
+      <div class="trunk" id="trunk">
+        <div class="crack" style="top: 30%; left: 20%; width: 50px; height: 8px;"></div>
+        <div class="crack" style="top: 50%; left: 10%; width: 60px; height: 12px;"></div>
+        <div class="crack" style="top: 70%; left: 30%; width: 40px; height: 10px;"></div>
+      </div>
     </div>
 
-    <!-- Start Screen -->
-    <div id="startScreen" class="screen">
-        <div class="title3d">WAVE RIDER</div>
-        <div class="subtitle">PRESS TO PLAY!</div>
-        <div class="tutorial-box">
-            <div class="tutorial-row">
-                <div class="tut-item"><div class="tut-icon">⬅️➡️</div><div>Toque lateral para virar</div></div>
-                <div class="tut-item"><div class="tut-icon">⬆️⬆️</div><div>Toque ambos os lados p/ pular</div></div>
-            </div>
-            <div class="tutorial-row">
-                <div class="tut-item"><div class="tut-icon">⌨️</div><div>Setas / WASD</div></div>
-                <div class="tut-item"><div class="tut-icon">␣</div><div>Espaço = Confirmar</div></div>
-            </div>
-            <div class="small-note">Pule sobre pedras • Colete moedas e estrelas</div>
-        </div>
-        <button class="btn-play" id="playButton">▶ JOGAR</button>
-    </div>
+    <div class="fist" id="fist"></div>
+  </div>
 
-    <!-- Three.js from CDN -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
-            }
-        }
-    </script>
+  <div class="instructions">
+    Clique ou toque rapidamente na árvore para dar socos!
+  </div>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js'; // only for reference, not used
-        import { Water } from 'three/addons/objects/Water.js';
+  <script>
+    const gameArea = document.getElementById('game-area');
+    const tree = document.getElementById('tree');
+    const trunk = document.getElementById('trunk');
+    const fist = document.getElementById('fist');
+    const hpBar = document.getElementById('hp-bar');
+    const woodCountEl = document.getElementById('wood-count');
+    const treesDestroyedEl = document.getElementById('trees-destroyed');
+    const cracks = document.querySelectorAll('.crack');
 
-        // --- Configuration ---
-        const IS_MOBILE = /Mobi|Android|iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+    let maxHp = 10;
+    let currentHp = maxHp;
+    let woodCount = 0;
+    let treesDestroyed = 0;
+
+    gameArea.addEventListener('click', (e) => {
+      punch(e);
+    });
+
+    function punch(e) {
+      // Animação do soco
+      fist.classList.add('punch');
+      setTimeout(() => fist.classList.remove('punch'), 80);
+
+      // Agitar a árvore (Efeito de Impacto)
+      const shakeX = (Math.random() - 0.5) * 15;
+      tree.style.transform = `scale(0.98) translate(${shakeX}px, 5px)`;
+      setTimeout(() => {
+        tree.style.transform = 'scale(1) translate(0, 0)';
+      }, 50);
+
+      // Reduzir Vida
+      currentHp--;
+      woodCount++;
+      woodCountEl.textContent = woodCount;
+
+      // Atualizar Barra de Vida
+      const hpPercent = (currentHp / maxHp) * 100;
+      hpBar.style.width = `${hpPercent}%`;
+
+      if (hpPercent < 60) hpBar.style.backgroundColor = '#ff9800';
+      if (hpPercent < 30) hpBar.style.backgroundColor = '#f44336';
+
+      // Mostrar rachaduras conforme toma dano
+      if (currentHp <= 7) cracks[0].style.display = 'block';
+      if (currentHp <= 4) cracks[1].style.display = 'block';
+      if (currentHp <= 2) cracks[2].style.display = 'block';
+
+      // Criar Efeitos Visuais (Partículas e Texto)
+      createWoodChips(e);
+      createFloatingText(e);
+
+      // Verificar se a árvore caiu
+      if (currentHp <= 0) {
+        destroyTree();
+      }
+    }
+
+    function createWoodChips(e) {
+      const rect = trunk.getBoundingClientRect();
+      const clickX = e.clientX || (rect.left + rect.width / 2);
+      const clickY = e.clientY || (rect.top + rect.height / 2);
+
+      for (let i = 0; i < 6; i++) {
+        const chip = document.createElement('div');
+        chip.className = 'wood-chip';
+        chip.style.left = `${clickX}px`;
+        chip.style.top = `${clickY}px`;
+
+        const throwX = (Math.random() - 0.5) * 200 + 'px';
+        const throwY = (Math.random() - 0.8) * 150 + 'px';
+
+        chip.style.setProperty('--tw-x', throwX);
+        chip.style.setProperty('--tw-y', throwY);
+
+        document.body.appendChild(chip);
+        setTimeout(() => chip.remove(), 600);
+      }
+    }
+
+    function createFloatingText(e) {
+      const rect = trunk.getBoundingClientRect();
+      const x = e.clientX || (rect.left + rect.width / 2);
+      const y = e.clientY || (rect.top + rect.height / 2);
+
+      const text = document.createElement('div');
+      text.className = 'floating-text';
+      text.textContent = '+1 Madeira';
+      text.style.left = `${x - 40}px`;
+      text.style.top = `${y - 20}px`;
+
+      document.body.appendChild(text);
+      setTimeout(() => text.remove(), 700);
+    }
+
+    function destroyTree() {
+      treesDestroyed++;
+      treesDestroyedEl.textContent = treesDestroyed;
+
+      // Animação de queda
+      tree.style.transition = 'transform 0.4s ease-in, opacity 0.4s';
+      tree.style.transform = 'rotate(80deg) translateY(100px)';
+      tree.style.opacity = '0';
+
+      setTimeout(() => {
+        // Resetar árvore
+        maxHp = Math.floor(maxHp * 1.1); // Fica levemente mais forte a cada nível
+        currentHp = maxHp;
+        hpBar.style.width = '100%';
+        hpBar.style.backgroundColor = '#4caf50';
+
+        cracks.forEach(c => c.style.display = 'none');
+
+        tree.style.transition = 'none';
+        tree.style.transform = 'rotate(0deg) translateY(0px)';
         
-        // --- Game State ---
-        let gameActive = false;
-        let score = 0;
-        let starMultiplier = 1;
-        let speed = 0.6;
-        let baseSpeed = 0.6;
-        let boatPositionX = 0;
-        let boatTargetX = 0;
-        let boatY = 1.2; // base height above water
-        let jumpVelocity = 0;
-        let isJumping = false;
-        let isDiving = false;
-        let lastTime = 0;
-        let obstacles = [];
-        let coins = [];
-        let stars = [];
-        let particles = [];
-        let wheelRotation = 0;
-
-        // Touch/Key states
-        let leftTouch = false;
-        let rightTouch = false;
-        let touchJumpCooldown = 0;
-        let keyLeft = false, keyRight = false, keyUp = false, keyDown = false;
-
-        // --- Scene, Camera, Renderer ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // sky blue
-        scene.fog = new THREE.Fog(0x87CEEB, 30, 100);
-
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 8, 12);
-        camera.lookAt(0, 0, 0);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        document.getElementById('game-container').appendChild(renderer.domElement);
-
-        // --- Lights ---
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-        dirLight.position.set(10, 20, 5);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 1024;
-        dirLight.shadow.mapSize.height = 1024;
-        dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 50;
-        dirLight.shadow.camera.left = -15;
-        dirLight.shadow.camera.right = 15;
-        dirLight.shadow.camera.top = 15;
-        dirLight.shadow.camera.bottom = -15;
-        scene.add(dirLight);
-
-        const fillLight = new THREE.PointLight(0xffeedd, 0.5);
-        fillLight.position.set(-5, 10, 10);
-        scene.add(fillLight);
-
-        // --- Water (using Three.js Water for nice effect) ---
-        const waterGeometry = new THREE.PlaneGeometry(200, 200);
-        const water = new Water(waterGeometry, {
-            textureWidth: 512,
-            textureHeight: 512,
-            waterNormals: new THREE.CanvasTexture(generateWaterNormalCanvas()),
-            sunDirection: new THREE.Vector3(0, 1, 0),
-            sunColor: 0xffffff,
-            waterColor: 0x4aa3df,
-            distortionScale: 2.0,
-            fog: scene.fog !== undefined
-        });
-        water.rotation.x = -Math.PI / 2;
-        water.position.y = 0;
-        water.receiveShadow = true;
-        scene.add(water);
-
-        // Helper to generate water normal canvas (since we can't load external)
-        function generateWaterNormalCanvas() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#8080ff';
-            ctx.fillRect(0, 0, 512, 512);
-            // Add some noise for normal map
-            for (let i = 0; i < 5000; i++) {
-                const x = Math.random() * 512;
-                const y = Math.random() * 512;
-                const r = Math.random() * 20 + 5;
-                const gradient = ctx.createRadialGradient(x, y, 0, x, y, r);
-                gradient.addColorStop(0, `rgba(128,128,255,${Math.random()*0.5})`);
-                gradient.addColorStop(1, 'rgba(128,128,255,0)');
-                ctx.fillStyle = gradient;
-                ctx.beginPath();
-                ctx.arc(x, y, r, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            return canvas;
-        }
-
-        // --- Terrain and Scenery ---
-
-        // River banks (green strips on sides)
-        function createBank(side) {
-            const bankGroup = new THREE.Group();
-            const width = 12;
-            const length = 200;
-            const xPos = side * 12; // left: -12, right: 12
-            const baseGeo = new THREE.BoxGeometry(8, 0.4, 200);
-            const baseMat = new THREE.MeshStandardMaterial({ color: 0x6ab04c, flatShading: true });
-            const base = new THREE.Mesh(baseGeo, baseMat);
-            base.position.set(xPos, 0.2, 0);
-            base.receiveShadow = true;
-            base.castShadow = false;
-            bankGroup.add(base);
-
-            // Add some low poly rocks and trees
-            for (let i = 0; i < 40; i++) {
-                const z = (Math.random() - 0.5) * 190;
-                const offset = side * (Math.random() * 2 + 1);
-                // rock
-                if (Math.random() > 0.5) {
-                    const rockGeo = new THREE.DodecahedronGeometry(0.6 + Math.random() * 0.8);
-                    const rockMat = new THREE.MeshStandardMaterial({ color: 0x888888, flatShading: true });
-                    const rock = new THREE.Mesh(rockGeo, rockMat);
-                    rock.position.set(xPos + offset, 0.7, z);
-                    rock.castShadow = true;
-                    rock.receiveShadow = true;
-                    bankGroup.add(rock);
-                } else {
-                    // tree/bamboo
-                    const trunkGeo = new THREE.CylinderGeometry(0.2, 0.3, 2);
-                    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B, flatShading: true });
-                    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-                    trunk.position.set(xPos + offset, 1.2, z);
-                    trunk.castShadow = true;
-                    trunk.receiveShadow = true;
-                    bankGroup.add(trunk);
-
-                    const foliageGeo = new THREE.ConeGeometry(1.2, 1.8, 6);
-                    const foliageMat = new THREE.MeshStandardMaterial({ color: 0x2e8b57, flatShading: true });
-                    const foliage = new THREE.Mesh(foliageGeo, foliageMat);
-                    foliage.position.set(xPos + offset, 2.5, z);
-                    foliage.castShadow = true;
-                    foliage.receiveShadow = true;
-                    bankGroup.add(foliage);
-                }
-            }
-            return bankGroup;
-        }
-
-        scene.add(createBank(-1));
-        scene.add(createBank(1));
-
-        // --- Background: Waterwheel and Waterfall ---
-
-        // Waterwheel
-        function createWaterwheel() {
-            const group = new THREE.Group();
-            const woodMat = new THREE.MeshStandardMaterial({ color: 0x8B5A2B, flatShading: true });
-            const wheelRadius = 3;
-            // spokes
-            for (let i = 0; i < 8; i++) {
-                const angle = (i / 8) * Math.PI * 2;
-                const spokeGeo = new THREE.BoxGeometry(0.4, wheelRadius * 2, 0.4);
-                const spoke = new THREE.Mesh(spokeGeo, woodMat);
-                spoke.rotation.z = angle;
-                spoke.castShadow = true;
-                group.add(spoke);
-            }
-            // rim
-            const rimGeo = new THREE.TorusGeometry(wheelRadius, 0.3, 8, 24);
-            const rim = new THREE.Mesh(rimGeo, woodMat);
-            rim.rotation.x = Math.PI / 2;
-            rim.castShadow = true;
-            group.add(rim);
-            // outer rim details
-            const rimOuterGeo = new THREE.TorusGeometry(wheelRadius + 0.6, 0.2, 8, 24);
-            const rimOuter = new THREE.Mesh(rimOuterGeo, woodMat);
-            rimOuter.rotation.x = Math.PI / 2;
-            rimOuter.castShadow = true;
-            group.add(rimOuter);
-            
-            group.position.set(-8, 2.5, -45);
-            group.rotation.y = 0.5;
-            return group;
-        }
-
-        const waterwheel = createWaterwheel();
-        scene.add(waterwheel);
-
-        // Waterfall (simple planes with semi-transparent blue)
-        function createWaterfall() {
-            const group = new THREE.Group();
-            const fallMat = new THREE.MeshStandardMaterial({ color: 0x7fc8f0, transparent: true, opacity: 0.7, emissive: 0x224466 });
-            for (let i = 0; i < 5; i++) {
-                const fallGeo = new THREE.BoxGeometry(1.5, 5, 0.2);
-                const fall = new THREE.Mesh(fallGeo, fallMat);
-                fall.position.set(8 + i * 1.2, 3, -55);
-                fall.castShadow = true;
-                group.add(fall);
-            }
-            // mist
-            const mistMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
-            const mistGeo = new THREE.SphereGeometry(2, 8, 8);
-            const mist = new THREE.Mesh(mistGeo, mistMat);
-            mist.position.set(10, 1.5, -53);
-            group.add(mist);
-            return group;
-        }
-
-        scene.add(createWaterfall());
-
-        // --- Boat (Player) Low poly ---
-        function createBoat() {
-            const group = new THREE.Group();
-            
-            // Hull - main body
-            const hullGeo = new THREE.BoxGeometry(1.6, 0.6, 3);
-            const hullMat = new THREE.MeshStandardMaterial({ color: 0x4a90e2, flatShading: true }); // blue
-            const hull = new THREE.Mesh(hullGeo, hullMat);
-            hull.position.y = 0.3;
-            hull.castShadow = true;
-            hull.receiveShadow = true;
-            group.add(hull);
-
-            // White stripe
-            const stripeGeo = new THREE.BoxGeometry(1.65, 0.2, 2.8);
-            const stripeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, flatShading: true });
-            const stripe = new THREE.Mesh(stripeGeo, stripeMat);
-            stripe.position.y = 0.6;
-            stripe.castShadow = true;
-            stripe.receiveShadow = true;
-            group.add(stripe);
-
-            // Cabin
-            const cabinGeo = new THREE.BoxGeometry(1.0, 0.5, 1.2);
-            const cabinMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, flatShading: true });
-            const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-            cabin.position.set(0, 0.9, -0.3);
-            cabin.castShadow = true;
-            cabin.receiveShadow = true;
-            group.add(cabin);
-
-            // Roof
-            const roofGeo = new THREE.ConeGeometry(0.8, 0.4, 4);
-            const roofMat = new THREE.MeshStandardMaterial({ color: 0xffaa00, flatShading: true });
-            const roof = new THREE.Mesh(roofGeo, roofMat);
-            roof.position.set(0, 1.3, -0.3);
-            roof.rotation.y = Math.PI/4;
-            roof.castShadow = true;
-            roof.receiveShadow = true;
-            group.add(roof);
-
-            // Front bow
-            const bowGeo = new THREE.ConeGeometry(0.8, 1.2, 4);
-            const bowMat = new THREE.MeshStandardMaterial({ color: 0x4a90e2, flatShading: true });
-            const bow = new THREE.Mesh(bowGeo, bowMat);
-            bow.position.set(0, 0.5, 1.8);
-            bow.rotation.x = Math.PI/2;
-            bow.rotation.y = Math.PI/4;
-            bow.castShadow = true;
-            bow.receiveShadow = true;
-            group.add(bow);
-
-            return group;
-        }
-
-        const boat = createBoat();
-        boat.position.set(0, boatY, 0);
-        boat.castShadow = true;
-        boat.receiveShadow = true;
-        scene.add(boat);
-
-        // --- Obstacles (rocks) pool ---
-        function spawnObstacle() {
-            const rockGeo = new THREE.DodecahedronGeometry(0.8 + Math.random() * 0.8);
-            const rockMat = new THREE.MeshStandardMaterial({ color: 0x7a7a7a, flatShading: true });
-            const rock = new THREE.Mesh(rockGeo, rockMat);
-            const lane = Math.floor(Math.random() * 3) - 1; // -1,0,1
-            rock.position.set(lane * 3.5, 0.6, -60 - Math.random() * 20);
-            rock.castShadow = true;
-            rock.receiveShadow = true;
-            rock.userData = { type: 'obstacle', lane: lane };
-            scene.add(rock);
-            obstacles.push(rock);
-        }
-
-        // --- Collectibles: Coins and Stars ---
-        function createCoin() {
-            const geo = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 8);
-            const mat = new THREE.MeshStandardMaterial({ color: 0xffd966, emissive: 0x442200, flatShading: true });
-            const coin = new THREE.Mesh(geo, mat);
-            coin.rotation.x = Math.PI / 2;
-            coin.castShadow = true;
-            coin.receiveShadow = true;
-            return coin;
-        }
-
-        function createStar() {
-            const geo = new THREE.OctahedronGeometry(0.6);
-            const mat = new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0x553300, flatShading: true });
-            const star = new THREE.Mesh(geo, mat);
-            star.castShadow = true;
-            star.receiveShadow = true;
-            return star;
-        }
-
-        function spawnCollectible() {
-            const lane = Math.floor(Math.random() * 3) - 1;
-            const isStar = Math.random() < 0.2; // 20% chance for star
-            if (isStar) {
-                const star = createStar();
-                star.position.set(lane * 3.5, 1.0, -60 - Math.random() * 30);
-                star.userData = { type: 'star', lane: lane, collected: false };
-                scene.add(star);
-                stars.push(star);
-            } else {
-                const coin = createCoin();
-                coin.position.set(lane * 3.5, 1.0, -60 - Math.random() * 30);
-                coin.userData = { type: 'coin', lane: lane, collected: false };
-                scene.add(coin);
-                coins.push(coin);
-            }
-        }
-
-        // --- Particle trail (from boat) ---
-        const particleGeometry = new THREE.BufferGeometry();
-        const particleCount = 200;
-        const particlePositions = new Float32Array(particleCount * 3);
-        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-        const particleMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.3, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending });
-        const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
-        scene.add(particleSystem);
-
-        let particleIndex = 0;
-        const particleLife = new Array(particleCount).fill(0);
-        const particleVelocity = new Array(particleCount).fill().map(() => new THREE.Vector3());
-
-        function emitParticle() {
-            const i = particleIndex % particleCount;
-            const pos = particlePositions;
-            // Position behind boat
-            pos[i*3] = boat.position.x + (Math.random() - 0.5) * 0.8;
-            pos[i*3+1] = boat.position.y - 0.2;
-            pos[i*3+2] = boat.position.z - 1.5;
-            particleLife[i] = 1.0;
-            particleVelocity[i].set((Math.random() - 0.5) * 0.02, -0.01, -0.05);
-            particleIndex++;
-        }
-
-        // --- Initial scenery decoration ---
-        // add some random low poly islands? Not necessary, but we have banks.
-
-        // --- UI Elements ---
-        const startScreen = document.getElementById('startScreen');
-        const hud = document.getElementById('hud');
-        const scoreSpan = document.getElementById('scoreValue');
-        const starMultiplierSpan = document.getElementById('starMultiplier');
-        const playButton = document.getElementById('playButton');
-
-        // --- Input Handling ---
-
-        // Touch
-        function handleTouchStart(e) {
-            if (!gameActive) return;
-            e.preventDefault();
-            const touches = e.touches;
-            let left = false, right = false;
-            for (let i = 0; i < touches.length; i++) {
-                const x = touches[i].clientX;
-                if (x < window.innerWidth / 2) left = true;
-                else right = true;
-            }
-            if (left && right) {
-                // Both sides touched: jump
-                if (!isJumping && touchJumpCooldown <= 0) {
-                    jumpVelocity = 0.18;
-                    isJumping = true;
-                    touchJumpCooldown = 20; // frames
-                }
-            } else {
-                leftTouch = left;
-                rightTouch = right;
-            }
-        }
-
-        function handleTouchEnd(e) {
-            if (!gameActive) return;
-            e.preventDefault();
-            // reset touch states based on remaining touches
-            leftTouch = false;
-            rightTouch = false;
-            const touches = e.touches;
-            for (let i = 0; i < touches.length; i++) {
-                const x = touches[i].clientX;
-                if (x < window.innerWidth / 2) leftTouch = true;
-                else rightTouch = true;
-            }
-        }
-
-        // Keyboard
-        function handleKeyDown(e) {
-            const key = e.key;
-            if (!gameActive) {
-                if (key === ' ' || key === 'Space') {
-                    startGame();
-                }
-                return;
-            }
-            if (key === 'ArrowLeft' || key === 'a' || key === 'A') keyLeft = true;
-            if (key === 'ArrowRight' || key === 'd' || key === 'D') keyRight = true;
-            if (key === 'ArrowUp' || key === 'w' || key === 'W') {
-                if (!isJumping) {
-                    jumpVelocity = 0.18;
-                    isJumping = true;
-                }
-            }
-            if (key === 'ArrowDown' || key === 's' || key === 'S') {
-                isDiving = true;
-            }
-            if (key === ' ' || key === 'Space') {
-                // confirm, nothing else
-            }
-        }
-
-        function handleKeyUp(e) {
-            const key = e.key;
-            if (key === 'ArrowLeft' || key === 'a' || key === 'A') keyLeft = false;
-            if (key === 'ArrowRight' || key === 'd' || key === 'D') keyRight = false;
-            if (key === 'ArrowDown' || key === 's' || key === 'S') isDiving = false;
-        }
-
-        window.addEventListener('touchstart', handleTouchStart, { passive: false });
-        window.addEventListener('touchend', handleTouchEnd, { passive: false });
-        window.addEventListener('touchcancel', handleTouchEnd, { passive: false });
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-
-        // --- Game Start ---
-        function startGame() {
-            startScreen.classList.add('hidden');
-            hud.classList.remove('hidden');
-            gameActive = true;
-            score = 0;
-            starMultiplier = 1;
-            speed = baseSpeed;
-            boatPositionX = 0;
-            boatTargetX = 0;
-            boat.position.set(0, boatY, 0);
-            isJumping = false;
-            isDiving = false;
-            jumpVelocity = 0;
-            // clear obstacles, coins, stars
-            obstacles.forEach(o => scene.remove(o));
-            coins.forEach(c => scene.remove(c));
-            stars.forEach(s => scene.remove(s));
-            obstacles = [];
-            coins = [];
-            stars = [];
-            // reset particles
-            for (let i = 0; i < particleCount; i++) particleLife[i] = 0;
-            
-            // initial spawn
-            for (let i = 0; i < 5; i++) spawnObstacle();
-            for (let i = 0; i < 8; i++) spawnCollectible();
-            
-            updateUI();
-        }
-
-        playButton.addEventListener('click', startGame);
-        // Also allow space to start
-        window.addEventListener('keydown', (e) => {
-            if (!gameActive && (e.key === ' ' || e.key === 'Space')) {
-                startGame();
-            }
-        });
-
-        // --- UI Update ---
-        function updateUI() {
-            scoreSpan.textContent = Math.floor(score);
-            starMultiplierSpan.textContent = starMultiplier + 'x';
-        }
-
-        // --- Collision Detection (simple AABB) ---
-        function checkCollisions() {
-            const boatBox = new THREE.Box3().setFromObject(boat);
-            boatBox.expandByScalar(-0.2); // a bit forgiving
-
-            // Obstacles
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                const obs = obstacles[i];
-                const obsBox = new THREE.Box3().setFromObject(obs);
-                if (boatBox.intersectsBox(obsBox)) {
-                    // Game over
-                    gameActive = false;
-                    hud.classList.add('hidden');
-                    startScreen.classList.remove('hidden');
-                    // Reset title? Keep as is
-                    return;
-                }
-            }
-
-            // Coins
-            for (let i = coins.length - 1; i >= 0; i--) {
-                const coin = coins[i];
-                if (coin.userData.collected) continue;
-                const coinBox = new THREE.Box3().setFromObject(coin);
-                if (boatBox.intersectsBox(coinBox)) {
-                    coin.userData.collected = true;
-                    scene.remove(coin);
-                    coins.splice(i, 1);
-                    score += 10 * starMultiplier;
-                    updateUI();
-                }
-            }
-
-            // Stars
-            for (let i = stars.length - 1; i >= 0; i--) {
-                const star = stars[i];
-                if (star.userData.collected) continue;
-                const starBox = new THREE.Box3().setFromObject(star);
-                if (boatBox.intersectsBox(starBox)) {
-                    star.userData.collected = true;
-                    scene.remove(star);
-                    stars.splice(i, 1);
-                    starMultiplier = Math.min(5, starMultiplier + 1);
-                    score += 50;
-                    updateUI();
-                }
-            }
-        }
-
-        // --- Spawn Manager ---
-        let spawnTimer = 0;
-        function updateSpawns(delta) {
-            spawnTimer += delta;
-            if (spawnTimer > 0.8) { // spawn every 0.8 sec at 60fps? using delta seconds, adjust
-                spawnTimer = 0;
-                if (Math.random() < 0.5) spawnObstacle();
-                else spawnCollectible();
-                // occasionally more
-                if (Math.random() < 0.3) spawnCollectible();
-                if (Math.random() < 0.2) spawnObstacle();
-            }
-        }
-
-        // --- Animation Loop ---
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const delta = Math.min(0.05, (performance.now() - lastTime) / 1000);
-            lastTime = performance.now();
-
-            if (gameActive) {
-                // Increase difficulty over time
-                speed = baseSpeed + Math.min(1.0, (performance.now() / 60000) * 0.5);
-                
-                // Boat forward automatic (we move world instead: obstacles move backward)
-                // Actually we'll move obstacles/coins/stars backward to simulate forward motion
-                const moveAmount = speed * 60 * delta;
-                
-                // Update boat X position based on input
-                if (leftTouch || keyLeft) boatTargetX -= 0.15;
-                if (rightTouch || keyRight) boatTargetX += 0.15;
-                boatTargetX = Math.max(-4.5, Math.min(4.5, boatTargetX));
-                boatPositionX += (boatTargetX - boatPositionX) * 0.15;
-                boat.position.x = boatPositionX;
-
-                // Jumping / Diving
-                if (isJumping) {
-                    jumpVelocity -= 0.008;
-                    boat.position.y += jumpVelocity;
-                    if (boat.position.y <= boatY) {
-                        boat.position.y = boatY;
-                        isJumping = false;
-                        jumpVelocity = 0;
-                    }
-                } else {
-                    // gentle float bob
-                    boat.position.y = boatY + Math.sin(performance.now() * 0.005) * 0.1;
-                }
-
-                if (isDiving) {
-                    // just tilt the boat
-                    boat.rotation.x = 0.3;
-                } else {
-                    boat.rotation.x = 0;
-                }
-
-                // Rotate boat slightly when turning
-                if (leftTouch || keyLeft) boat.rotation.z = 0.2;
-                else if (rightTouch || keyRight) boat.rotation.z = -0.2;
-                else boat.rotation.z = 0;
-
-                // Move obstacles, coins, stars backward
-                const moveZ = speed * 1.5;
-                obstacles.forEach(o => { o.position.z += moveZ; });
-                coins.forEach(c => { c.position.z += moveZ; });
-                stars.forEach(s => { s.position.z += moveZ; });
-
-                // Remove offscreen and spawn new
-                obstacles = obstacles.filter(o => { if (o.position.z > 10) { scene.remove(o); return false; } return true; });
-                coins = coins.filter(c => { if (c.position.z > 10) { scene.remove(c); return false; } return true; });
-                stars = stars.filter(s => { if (s.position.z > 10) { scene.remove(s); return false; } return true; });
-
-                // Spawn new content
-                updateSpawns(delta);
-
-                // Check collisions
-                checkCollisions();
-
-                // Emit particles
-                if (Math.random() < 0.4) emitParticle();
-
-                // Update water time
-                water.material.uniforms.time.value += delta * 0.5;
-
-                // Rotate waterwheel
-                wheelRotation += delta * 0.5;
-                waterwheel.rotation.z = wheelRotation;
-
-                // Camera follow (smooth)
-                camera.position.x += (boat.position.x * 0.5 - camera.position.x) * 0.05;
-                camera.lookAt(boat.position.x * 0.5, 1, -5);
-            } else {
-                // Menu camera slow rotate
-                const t = performance.now() * 0.0005;
-                camera.position.x = Math.sin(t) * 8;
-                camera.position.z = 12 + Math.cos(t) * 4;
-                camera.lookAt(0, 2, -10);
-                water.material.uniforms.time.value += delta * 0.2;
-                wheelRotation += delta * 0.2;
-                waterwheel.rotation.z = wheelRotation;
-            }
-
-            // Update particles
-            const positions = particleSystem.geometry.attributes.position.array;
-            for (let i = 0; i < particleCount; i++) {
-                if (particleLife[i] > 0) {
-                    particleLife[i] -= 0.02;
-                    positions[i*3] += particleVelocity[i].x;
-                    positions[i*3+1] += particleVelocity[i].y;
-                    positions[i*3+2] += particleVelocity[i].z;
-                    if (particleLife[i] <= 0) {
-                        positions[i*3+1] = -100; // hide
-                    }
-                } else {
-                    positions[i*3+1] = -100;
-                }
-            }
-            particleSystem.geometry.attributes.position.needsUpdate = true;
-
-            renderer.render(scene, camera);
-        }
-
-        // --- Resize ---
-        window.addEventListener('resize', onWindowResize, false);
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        // --- Start ---
-        lastTime = performance.now();
-        animate();
-
-        // Touch jump cooldown reset in game loop? We'll handle in animate via variable
-        // Actually we need to decrement cooldown each frame
-        // We'll add to animate: but animate is already long, so let's add a small setInterval? 
-        // Better: integrate into animate. I'll modify by adding a global frame counter.
-        // We'll just decrement in animate.
-        // Add this in animate before use:
-        // touchJumpCooldown = Math.max(0, touchJumpCooldown - 1);
-        // But need to modify animate, let's do it quickly by monkey patching? 
-        // I'll just add it inside the gameActive block.
-        // Actually I'll add after delta calculation:
-        // touchJumpCooldown = Math.max(0, touchJumpCooldown - 1);
-        // But since this is a module, I can just add it before use in handleTouchStart? 
-        // Simpler: use a cooldown timestamp.
-        // I'll refactor: replace touchJumpCooldown with a flag.
-        // Easier: just use a timestamp check. I'll rewrite that part.
-        // For brevity, I'll just remove cooldown and rely on isJumping.
-        // In handleTouchStart: if (left && right) { if (!isJumping) { jumpVelocity = 0.18; isJumping = true; } }
-        // That's fine.
-        // Update: I'll change the touch handler to that. Already did in code above? Yes, I set touchJumpCooldown but not used. I'll remove.
-        // I'll modify the touch handler to not use cooldown.
-        // Actually I defined touchJumpCooldown but never decrement, so it's always 0? I set to 20 on touch, but never decrement, so it never triggers again.
-        // That's a bug. Let's fix: remove cooldown, just use !isJumping.
-        // I'll edit the function handleTouchStart: replace cooldown condition.
-        // We'll do that manually here:
-        // Override the function? We can just redefine it after.
-        // I'll just reassign window touch handler to new function.
-        // But it's already defined. I'll just set touchJumpCooldown = 0 always.
-        // Actually, easiest: I'll modify the code above to not use touchJumpCooldown.
-        // Since this is final, I'll write the correct version:
-        // (I'll make the change in the final code by editing the file content)
-        // I'll just pretend it's correct: in handleTouchStart, condition if (left && right) { if (!isJumping) { jumpVelocity = 0.18; isJumping = true; } }
-        // I'll remove the touchJumpCooldown variable and references.
-        // But the code above already has it. I'll leave it but it's harmless since cooldown never decrements.
-        // Actually to make it work, I'll add decrement in animate. I'll add a line in animate.
-        // I'll add: touchJumpCooldown = Math.max(0, touchJumpCooldown - 1); at the start of animate.
-        // But not in code above. I'll add it in the final version.
-
-        // Final touch: ensure water time updates in menu too.
-        // Already added.
-
-        // Also, the boat should be above water, y=1.2 is fine.
-
-        // One more thing: the water plane is at y=0, boat at y=1.2 looks floating.
-        // Good.
-
-        // Let's ensure the boat is visible in menu: it is.
-
-        // UI buttons - just for show, no action.
-        document.getElementById('btnSettings').addEventListener('click', () => alert('Settings'));
-        document.getElementById('btnInfo').addEventListener('click', () => alert('Wave Rider: Um jogo endless runner!'));
-        document.getElementById('btnShop').addEventListener('click', () => alert('Loja em breve!'));
-
-    </script>
+        // Efeito de reaparecer
+        setTimeout(() => {
+          tree.style.transition = 'opacity 0.3s';
+          tree.style.opacity = '1';
+        }, 50);
+      }, 450);
+    }
+  </script>
 </body>
 </html>
