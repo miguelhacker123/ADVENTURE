@@ -1,353 +1,847 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador de Quebrar Árvore</title>
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estúdio de Desenho</title>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #e5e7eb;
+            --paper-bg: #ffffff;
+            --panel-bg: rgba(255, 255, 255, 0.88);
+            --text-color: #374151;
+            --text-muted: #6b7280;
+            --accent: #4b5563;
+            --accent-light: #f3f4f6;
+            --border-color: rgba(209, 213, 219, 0.8);
+            --shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --radius: 20px;
+        }
 
-    body {
-      background: linear-gradient(to bottom, #87ceeb 0%, #e0f6ff 60%, #5d9d4f 60%, #3e6b34 100%);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      overflow: hidden;
-      position: relative;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-    /* HUD Topo */
-    .hud {
-      margin-top: 20px;
-      display: flex;
-      gap: 20px;
-      z-index: 10;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
 
-    .hud-box {
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      font-weight: bold;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      backdrop-filter: blur(5px);
-      border: 1px solid rgba(255,255,255,0.2);
-    }
+        /* Top Bar Header */
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 10;
+            pointer-events: none;
+        }
 
-    /* Área de Jogo */
-    .game-area {
-      position: relative;
-      width: 100%;
-      height: 70vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-end;
-      cursor: pointer;
-    }
+        header > * {
+            pointer-events: auto;
+        }
 
-    /* Árvore */
-    .tree-container {
-      position: relative;
-      bottom: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transform-origin: bottom center;
-      transition: transform 0.05s ease-out;
-    }
+        .logo {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            padding: 8px 16px;
+            border-radius: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
 
-    .foliage {
-      width: 220px;
-      height: 220px;
-      background: #2e7d32;
-      border-radius: 50%;
-      box-shadow: inset -20px -20px 0 rgba(0,0,0,0.2), 0 10px 20px rgba(0,0,0,0.3);
-      position: relative;
-      z-index: 2;
-      margin-bottom: -50px;
-    }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
 
-    .foliage::before {
-      content: '';
-      position: absolute;
-      top: -30px;
-      left: 30px;
-      width: 160px;
-      height: 160px;
-      background: #388e3c;
-      border-radius: 50%;
-    }
+        /* Buttons */
+        .btn {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
 
-    .trunk {
-      width: 90px;
-      height: 280px;
-      background: linear-gradient(to right, #5d4037, #8d6e63 40%, #4e342e);
-      border-radius: 10px;
-      box-shadow: inset 0 -10px 0 rgba(0,0,0,0.3), 0 10px 25px rgba(0,0,0,0.4);
-      position: relative;
-      z-index: 1;
-      overflow: hidden;
-    }
+        .btn:hover {
+            background: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.08);
+        }
 
-    /* Marcas de dano no tronco */
-    .crack {
-      position: absolute;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 4px;
-      display: none;
-    }
+        .btn:active {
+            transform: translateY(0);
+        }
 
-    /* Barra de Vida da Árvore */
-    .hp-bar-container {
-      position: absolute;
-      top: -30px;
-      width: 140px;
-      height: 16px;
-      background: rgba(0,0,0,0.5);
-      border-radius: 8px;
-      padding: 2px;
-      border: 1px solid #fff;
-    }
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            justify-content: center;
+            border-radius: 50%;
+        }
 
-    .hp-bar {
-      width: 100%;
-      height: 100%;
-      background: #4caf50;
-      border-radius: 6px;
-      transition: width 0.1s linear, background-color 0.2s;
-    }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
 
-    /* Mão do Jogador */
-    .fist {
-      position: absolute;
-      bottom: 80px;
-      right: 35%;
-      width: 120px;
-      height: 120px;
-      background: #ffcc80;
-      border-radius: 30px;
-      border: 4px solid #e65100;
-      box-shadow: -10px 10px 0 rgba(0,0,0,0.2);
-      z-index: 5;
-      transform: rotate(-20deg) scale(1);
-      transition: transform 0.08s ease-in-out;
-      pointer-events: none;
-    }
+        /* Main Workspace */
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 70px 20px 140px 20px;
+            position: relative;
+        }
 
-    .fist.punch {
-      transform: translate(-140px, -60px) rotate(-45deg) scale(1.15);
-    }
+        .paper-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            background: var(--paper-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.3s ease;
+        }
 
-    /* Partículas de Madeira */
-    .wood-chip {
-      position: absolute;
-      width: 12px;
-      height: 12px;
-      background: #8d6e63;
-      border: 1px solid #3e2723;
-      border-radius: 2px;
-      pointer-events: none;
-      z-index: 4;
-      animation: fly 0.6s ease-out forwards;
-    }
+        /* Paper Pattern Styles */
+        .paper-container.grid {
+            background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+                              linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
 
-    @keyframes fly {
-      0% {
-        opacity: 1;
-        transform: translate(0, 0) rotate(0deg);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(var(--tw-x), var(--tw-y)) rotate(360deg);
-      }
-    }
+        .paper-container.lines {
+            background-image: linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+            background-size: 100% 28px;
+        }
 
-    /* Efeito de Texto Flutuante (+1) */
-    .floating-text {
-      position: absolute;
-      color: #ffd54f;
-      font-size: 1.8rem;
-      font-weight: 900;
-      text-shadow: 2px 2px 0 #000;
-      pointer-events: none;
-      animation: floatUp 0.7s ease-out forwards;
-      z-index: 6;
-    }
+        canvas {
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+        }
 
-    @keyframes floatUp {
-      0% { opacity: 1; transform: translateY(0) scale(1); }
-      100% { opacity: 0; transform: translateY(-80px) scale(1.3); }
-    }
+        /* Bottom Floating Tool Dock */
+        .dock {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow);
+            z-index: 20;
+            max-width: 95vw;
+        }
 
-    .instructions {
-      margin-bottom: 20px;
-      color: #fff;
-      font-size: 1.1rem;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-      z-index: 10;
-    }
-  </style>
+        .dock-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .divider {
+            width: 1px;
+            height: 32px;
+            background: var(--border-color);
+        }
+
+        /* Tool Items (Pens) */
+        .pen-tool {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px;
+            border-radius: 12px;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .pen-tool .pen-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: var(--text-color);
+            transition: all 0.2s;
+        }
+
+        .pen-tool:hover .pen-icon {
+            background: rgba(0,0,0,0.05);
+            transform: translateY(-2px);
+        }
+
+        .pen-tool.active .pen-icon {
+            background: #1f2937;
+            color: #ffffff;
+            transform: translateY(-4px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .pen-tool .label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-top: 2px;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .pen-tool.active .label {
+            color: #1f2937;
+            font-weight: 700;
+        }
+
+        /* Swatches Palette */
+        .palette {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .swatch {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .swatch.active {
+            transform: scale(1.25);
+            box-shadow: 0 0 0 2px #1f2937, 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Custom Color Picker Button */
+        .color-picker-wrapper {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .color-picker-wrapper:hover {
+            transform: scale(1.15);
+        }
+
+        .color-picker-wrapper input[type="color"] {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            width: 34px;
+            height: 34px;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Size Control Slider */
+        .size-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 4px;
+        }
+
+        .size-preview {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .size-dot {
+            background-color: #1f2937;
+            border-radius: 50%;
+            transition: width 0.1s, height 0.1s;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 70px;
+            height: 4px;
+            border-radius: 2px;
+            background: #cbd5e1;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #1f2937;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Eraser Cursor Indicator */
+        .eraser-cursor {
+            position: fixed;
+            pointer-events: none;
+            border: 2px solid #374151;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 100;
+        }
+
+        /* Responsive Layout Adjustments */
+        @media (max-width: 850px) {
+            .dock {
+                padding: 8px 12px;
+                gap: 10px;
+                overflow-x: auto;
+                max-width: 98vw;
+                justify-content: flex-start;
+            }
+
+            .pen-tool .label {
+                display: none;
+            }
+
+            .size-control {
+                display: none;
+            }
+
+            .palette {
+                gap: 4px;
+            }
+
+            .swatch {
+                width: 20px;
+                height: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-  <div class="hud">
-    <div class="hud-box">Madeira: <span id="wood-count">0</span> 🪵</div>
-    <div class="hud-box">Árvores Destruídas: <span id="trees-destroyed">0</span> 🪓</div>
-  </div>
+    <!-- Header / Top Bar -->
+    <header>
+        <div class="logo">
+            <i data-lucide="pen-tool" style="width: 18px; height: 18px;"></i>
+            <span>Estúdio de Desenho</span>
+        </div>
 
-  <div class="game-area" id="game-area">
-    <div class="tree-container" id="tree">
-      <div class="hp-bar-container">
-        <div class="hp-bar" id="hp-bar"></div>
-      </div>
-      <div class="foliage"></div>
-      <div class="trunk" id="trunk">
-        <div class="crack" style="top: 30%; left: 20%; width: 50px; height: 8px;"></div>
-        <div class="crack" style="top: 50%; left: 10%; width: 60px; height: 12px;"></div>
-        <div class="crack" style="top: 70%; left: 30%; width: 40px; height: 10px;"></div>
-      </div>
+        <div class="header-actions">
+            <button class="btn btn-icon" id="btn-undo" title="Desfazer (Ctrl+Z)" disabled>
+                <i data-lucide="undo-2" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button class="btn btn-icon" id="btn-redo" title="Refazer (Ctrl+Y)" disabled>
+                <i data-lucide="redo-2" style="width: 16px; height: 16px;"></i>
+            </button>
+            <button class="btn" id="btn-paper" title="Mudar Fundo">
+                <i data-lucide="grid" style="width: 16px; height: 16px;"></i>
+                <span id="paper-label">Papel: Liso</span>
+            </button>
+            <button class="btn" id="btn-clear" title="Limpar Folha">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                <span>Limpar</span>
+            </button>
+            <button class="btn" id="btn-download" title="Baixar Desenho" style="background: #1f2937; color: #fff;">
+                <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                <span>Salvar</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Canvas Sheet Area -->
+    <main>
+        <div class="paper-container" id="paper">
+            <canvas id="canvas"></canvas>
+        </div>
+    </main>
+
+    <!-- Bottom Dock Floating Menu -->
+    <div class="dock">
+        <!-- Tools Section -->
+        <div class="dock-section tools">
+            <button class="pen-tool active" data-tool="pen" title="Caneta Fina">
+                <div class="pen-icon"><i data-lucide="pencil" style="width: 18px; height: 18px;"></i></div>
+                <span class="label">Caneta</span>
+            </button>
+            
+            <button class="pen-tool" data-tool="brush" title="Pincel Aquarela">
+                <div class="pen-icon"><i data-lucide="brush" style="width: 18px; height: 18px;"></i></div>
+                <span class="label">Aquarela</span>
+            </button>
+
+            <button class="pen-tool" data-tool="highlighter" title="Marca-Texto">
+                <div class="pen-icon"><i data-lucide="highlighter" style="width: 18px; height: 18px;"></i></div>
+                <span class="label">Marca-Texto</span>
+            </button>
+
+            <button class="pen-tool" data-tool="glow" title="Caneta Suave Iluminada">
+                <div class="pen-icon"><i data-lucide="sparkles" style="width: 18px; height: 18px;"></i></div>
+                <span class="label">Brilho</span>
+            </button>
+
+            <button class="pen-tool" data-tool="rainbow" title="Caneta Arco-Íris Soft">
+                <div class="pen-icon"><i data-lucide="palette" style="width: 18px; height: 18px;"></i></div>
+                <span class="label">Multicor</span>
+            </button>
+
+            <button class="pen-tool" data-tool="eraser" title="Borracha">
+                <div class="pen-icon"><i data-lucide="eraser" style="width: 18px; height: 18px;"></i></div>
+                <span class="label">Borracha</span>
+            </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Color Palette (Soft Natural Tones) -->
+        <div class="dock-section">
+            <div class="palette" id="palette">
+                <div class="swatch active" data-color="#2d3748" style="background: #2d3748;" title="Grafite"></div>
+                <div class="swatch" data-color="#1e3a8a" style="background: #1e3a8a;" title="Azul Marinho"></div>
+                <div class="swatch" data-color="#3b82f6" style="background: #3b82f6;" title="Azul Pastel"></div>
+                <div class="swatch" data-color="#14532d" style="background: #14532d;" title="Verde Floresta"></div>
+                <div class="swatch" data-color="#84cc16" style="background: #84cc16;" title="Verde Sálvia"></div>
+                <div class="swatch" data-color="#eab308" style="background: #eab308;" title="Amarelo Mostarda"></div>
+                <div class="swatch" data-color="#c2410c" style="background: #c2410c;" title="Terracota"></div>
+                <div class="swatch" data-color="#8c52ff" style="background: #8c52ff;" title="Roxo Ameixa"></div>
+                <div class="color-picker-wrapper" title="Escolher Outra Cor">
+                    <input type="color" id="custom-color" value="#2d3748">
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Thickness Slider -->
+        <div class="dock-section size-control">
+            <div class="size-preview">
+                <div class="size-dot" id="size-dot"></div>
+            </div>
+            <input type="range" id="size-slider" min="1" max="50" value="5">
+        </div>
     </div>
 
-    <div class="fist" id="fist"></div>
-  </div>
+    <!-- Custom Cursor for Eraser -->
+    <div class="eraser-cursor" id="eraser-cursor"></div>
 
-  <div class="instructions">
-    Clique ou toque rapidamente na árvore para dar socos!
-  </div>
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
 
-  <script>
-    const gameArea = document.getElementById('game-area');
-    const tree = document.getElementById('tree');
-    const trunk = document.getElementById('trunk');
-    const fist = document.getElementById('fist');
-    const hpBar = document.getElementById('hp-bar');
-    const woodCountEl = document.getElementById('wood-count');
-    const treesDestroyedEl = document.getElementById('trees-destroyed');
-    const cracks = document.querySelectorAll('.crack');
-
-    let maxHp = 10;
-    let currentHp = maxHp;
-    let woodCount = 0;
-    let treesDestroyed = 0;
-
-    gameArea.addEventListener('click', (e) => {
-      punch(e);
-    });
-
-    function punch(e) {
-      // Animação do soco
-      fist.classList.add('punch');
-      setTimeout(() => fist.classList.remove('punch'), 80);
-
-      // Agitar a árvore (Efeito de Impacto)
-      const shakeX = (Math.random() - 0.5) * 15;
-      tree.style.transform = `scale(0.98) translate(${shakeX}px, 5px)`;
-      setTimeout(() => {
-        tree.style.transform = 'scale(1) translate(0, 0)';
-      }, 50);
-
-      // Reduzir Vida
-      currentHp--;
-      woodCount++;
-      woodCountEl.textContent = woodCount;
-
-      // Atualizar Barra de Vida
-      const hpPercent = (currentHp / maxHp) * 100;
-      hpBar.style.width = `${hpPercent}%`;
-
-      if (hpPercent < 60) hpBar.style.backgroundColor = '#ff9800';
-      if (hpPercent < 30) hpBar.style.backgroundColor = '#f44336';
-
-      // Mostrar rachaduras conforme toma dano
-      if (currentHp <= 7) cracks[0].style.display = 'block';
-      if (currentHp <= 4) cracks[1].style.display = 'block';
-      if (currentHp <= 2) cracks[2].style.display = 'block';
-
-      // Criar Efeitos Visuais (Partículas e Texto)
-      createWoodChips(e);
-      createFloatingText(e);
-
-      // Verificar se a árvore caiu
-      if (currentHp <= 0) {
-        destroyTree();
-      }
-    }
-
-    function createWoodChips(e) {
-      const rect = trunk.getBoundingClientRect();
-      const clickX = e.clientX || (rect.left + rect.width / 2);
-      const clickY = e.clientY || (rect.top + rect.height / 2);
-
-      for (let i = 0; i < 6; i++) {
-        const chip = document.createElement('div');
-        chip.className = 'wood-chip';
-        chip.style.left = `${clickX}px`;
-        chip.style.top = `${clickY}px`;
-
-        const throwX = (Math.random() - 0.5) * 200 + 'px';
-        const throwY = (Math.random() - 0.8) * 150 + 'px';
-
-        chip.style.setProperty('--tw-x', throwX);
-        chip.style.setProperty('--tw-y', throwY);
-
-        document.body.appendChild(chip);
-        setTimeout(() => chip.remove(), 600);
-      }
-    }
-
-    function createFloatingText(e) {
-      const rect = trunk.getBoundingClientRect();
-      const x = e.clientX || (rect.left + rect.width / 2);
-      const y = e.clientY || (rect.top + rect.height / 2);
-
-      const text = document.createElement('div');
-      text.className = 'floating-text';
-      text.textContent = '+1 Madeira';
-      text.style.left = `${x - 40}px`;
-      text.style.top = `${y - 20}px`;
-
-      document.body.appendChild(text);
-      setTimeout(() => text.remove(), 700);
-    }
-
-    function destroyTree() {
-      treesDestroyed++;
-      treesDestroyedEl.textContent = treesDestroyed;
-
-      // Animação de queda
-      tree.style.transition = 'transform 0.4s ease-in, opacity 0.4s';
-      tree.style.transform = 'rotate(80deg) translateY(100px)';
-      tree.style.opacity = '0';
-
-      setTimeout(() => {
-        // Resetar árvore
-        maxHp = Math.floor(maxHp * 1.1); // Fica levemente mais forte a cada nível
-        currentHp = maxHp;
-        hpBar.style.width = '100%';
-        hpBar.style.backgroundColor = '#4caf50';
-
-        cracks.forEach(c => c.style.display = 'none');
-
-        tree.style.transition = 'none';
-        tree.style.transform = 'rotate(0deg) translateY(0px)';
+        // Elements
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const paper = document.getElementById('paper');
+        const sizeSlider = document.getElementById('size-slider');
+        const sizeDot = document.getElementById('size-dot');
+        const customColorInput = document.getElementById('custom-color');
+        const eraserCursor = document.getElementById('eraser-cursor');
         
-        // Efeito de reaparecer
-        setTimeout(() => {
-          tree.style.transition = 'opacity 0.3s';
-          tree.style.opacity = '1';
-        }, 50);
-      }, 450);
-    }
-  </script>
+        const btnUndo = document.getElementById('btn-undo');
+        const btnRedo = document.getElementById('btn-redo');
+        const btnClear = document.getElementById('btn-clear');
+        const btnPaper = document.getElementById('btn-paper');
+        const btnDownload = document.getElementById('btn-download');
+        const paperLabel = document.getElementById('paper-label');
+
+        // Drawing State
+        let isDrawing = false;
+        let currentTool = 'pen';
+        let currentColor = '#2d3748';
+        let currentSize = 5;
+        let points = [];
+        let rainbowHue = 0;
+
+        // Undo/Redo History Stack
+        let history = [];
+        let historyStep = -1;
+        const MAX_HISTORY = 30;
+
+        // Paper styles configuration
+        const paperStyles = ['plain', 'grid', 'lines'];
+        let paperStyleIndex = 0;
+
+        // Setup Canvas Size
+        function resizeCanvas() {
+            const rect = paper.getBoundingClientRect();
+            
+            // Create temporary canvas to preserve content on resize
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            if (canvas.width > 0) {
+                tempCtx.drawImage(canvas, 0, 0);
+            }
+
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            // Restore content
+            if (tempCanvas.width > 0) {
+                ctx.drawImage(tempCanvas, 0, 0);
+            } else {
+                saveState();
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // History Management
+        function saveState() {
+            if (historyStep < history.length - 1) {
+                history = history.slice(0, historyStep + 1);
+            }
+            history.push(canvas.toDataURL());
+            if (history.length > MAX_HISTORY) {
+                history.shift();
+            } else {
+                historyStep++;
+            }
+            updateHistoryButtons();
+        }
+
+        function undo() {
+            if (historyStep > 0) {
+                historyStep--;
+                restoreState(history[historyStep]);
+            }
+        }
+
+        function redo() {
+            if (historyStep < history.length - 1) {
+                historyStep++;
+                restoreState(history[historyStep]);
+            }
+        }
+
+        function restoreState(dataUrl) {
+            const img = new Image();
+            img.src = dataUrl;
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                updateHistoryButtons();
+            };
+        }
+
+        function updateHistoryButtons() {
+            btnUndo.disabled = historyStep <= 0;
+            btnRedo.disabled = historyStep >= history.length - 1;
+        }
+
+        // Get Event Coordinates
+        function getCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            if (e.touches && e.touches.length > 0) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        // Mouse & Touch Handling
+        function startDrawing(e) {
+            isDrawing = true;
+            const coords = getCoords(e);
+            points = [coords];
+            
+            ctx.beginPath();
+            ctx.moveTo(coords.x, coords.y);
+            
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+
+            const coords = getCoords(e);
+            points.push(coords);
+
+            // Update Eraser Cursor Position
+            if (currentTool === 'eraser') {
+                eraserCursor.style.left = `${e.clientX || e.touches[0].clientX}px`;
+                eraserCursor.style.top = `${e.clientY || e.touches[0].clientY}px`;
+            }
+
+            ctx.save();
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Configure Tools Style
+            switch (currentTool) {
+                case 'pen':
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = currentColor;
+                    ctx.lineWidth = currentSize;
+                    ctx.shadowBlur = 0;
+                    break;
+
+                case 'brush':
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = currentColor;
+                    ctx.globalAlpha = 0.25;
+                    ctx.lineWidth = currentSize * 2.5;
+                    ctx.shadowBlur = 0;
+                    break;
+
+                case 'highlighter':
+                    ctx.globalCompositeOperation = 'multiply';
+                    ctx.strokeStyle = currentColor;
+                    ctx.globalAlpha = 0.4;
+                    ctx.lineWidth = currentSize * 3;
+                    ctx.lineCap = 'square';
+                    break;
+
+                case 'glow':
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = currentColor;
+                    ctx.lineWidth = currentSize;
+                    ctx.shadowColor = currentColor;
+                    ctx.shadowBlur = currentSize * 1.5;
+                    break;
+
+                case 'rainbow':
+                    ctx.globalCompositeOperation = 'source-over';
+                    rainbowHue = (rainbowHue + 2) % 360;
+                    ctx.strokeStyle = `hsl(${rainbowHue}, 65%, 55%)`;
+                    ctx.lineWidth = currentSize;
+                    ctx.shadowBlur = 0;
+                    break;
+
+                case 'eraser':
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.lineWidth = currentSize * 3;
+                    break;
+            }
+
+            // Smooth Curve Rendering with Midpoints
+            if (points.length > 2) {
+                const lastTwoPoints = points.slice(-3);
+                const xc = (lastTwoPoints[1].x + lastTwoPoints[2].x) / 2;
+                const yc = (lastTwoPoints[1].y + lastTwoPoints[2].y) / 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(lastTwoPoints[0].x, lastTwoPoints[0].y);
+                ctx.quadraticCurveTo(lastTwoPoints[1].x, lastTwoPoints[1].y, xc, yc);
+                ctx.stroke();
+            } else if (points.length === 1) {
+                ctx.beginPath();
+                ctx.arc(coords.x, coords.y, ctx.lineWidth / 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                points = [];
+                saveState();
+            }
+        }
+
+        // Event Listeners for Canvas
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', stopDrawing);
+
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        window.addEventListener('touchend', stopDrawing);
+
+        // Tool Selection Handling
+        document.querySelectorAll('.pen-tool').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.pen-tool').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                currentTool = button.dataset.tool;
+
+                // Eraser Indicator Visiblity
+                if (currentTool === 'eraser') {
+                    canvas.style.cursor = 'none';
+                } else {
+                    canvas.style.cursor = 'crosshair';
+                    eraserCursor.style.display = 'none';
+                }
+            });
+        });
+
+        // Show/Hide Eraser Cursor on Hover
+        canvas.addEventListener('mouseenter', () => {
+            if (currentTool === 'eraser') eraserCursor.style.display = 'block';
+        });
+        canvas.addEventListener('mouseleave', () => {
+            eraserCursor.style.display = 'none';
+        });
+
+        // Color Selection Handling
+        document.querySelectorAll('.swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                currentColor = swatch.dataset.color;
+                updateSizeDot();
+            });
+        });
+
+        // Custom Color Input
+        customColorInput.addEventListener('input', (e) => {
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            currentColor = e.target.value;
+            updateSizeDot();
+        });
+
+        // Size Slider Control
+        sizeSlider.addEventListener('input', (e) => {
+            currentSize = e.target.value;
+            updateSizeDot();
+        });
+
+        function updateSizeDot() {
+            sizeDot.style.width = `${Math.max(4, currentSize)}px`;
+            sizeDot.style.height = `${Math.max(4, currentSize)}px`;
+            sizeDot.style.backgroundColor = currentColor;
+
+            // Update custom eraser cursor size
+            eraserCursor.style.width = `${currentSize * 3}px`;
+            eraserCursor.style.height = `${currentSize * 3}px`;
+        }
+
+        // Paper Pattern Cycle
+        btnPaper.addEventListener('click', () => {
+            paper.classList.remove(paperStyles[paperStyleIndex]);
+            paperStyleIndex = (paperStyleIndex + 1) % paperStyles.length;
+            const newStyle = paperStyles[paperStyleIndex];
+            
+            if (newStyle !== 'plain') {
+                paper.classList.add(newStyle);
+            }
+
+            const names = { plain: 'Liso', grid: 'Quadriculado', lines: 'Pautado' };
+            paperLabel.textContent = `Papel: ${names[newStyle]}`;
+        });
+
+        // Action Buttons
+        btnUndo.addEventListener('click', undo);
+        btnRedo.addEventListener('click', redo);
+
+        btnClear.addEventListener('click', () => {
+            if (confirm('Deseja realmente limpar a folha inteira?')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                saveState();
+            }
+        });
+
+        btnDownload.addEventListener('click', () => {
+            // Create off-screen canvas to merge background color with drawing
+            const exportCanvas = document.createElement('canvas');
+            const exportCtx = exportCanvas.getContext('2d');
+            exportCanvas.width = canvas.width;
+            exportCanvas.height = canvas.height;
+
+            // White Background Paper
+            exportCtx.fillStyle = '#ffffff';
+            exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+            // Draw content
+            exportCtx.drawImage(canvas, 0, 0);
+
+            // Download Trigger
+            const link = document.createElement('a');
+            link.download = `meu-desenho-${Date.now()}.png`;
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // Keyboard Shortcuts (Ctrl+Z, Ctrl+Y)
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                if (e.shiftKey) redo();
+                else undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                redo();
+            }
+        });
+
+        // Initialize setup
+        resizeCanvas();
+        updateSizeDot();
+    </script>
 </body>
 </html>
